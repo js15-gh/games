@@ -69,10 +69,15 @@
   .linkfield { font-size:13px; margin-top:10px; padding:9px 10px; color:var(--faint); }
   .rb-actions { display:flex; gap:8px; margin-top:10px; }
   .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:20px; color:var(--faint);
+              text-decoration:none; font-size:12px;
+              letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover, .homelink:focus-visible { color:var(--gold); }
 </style>
 </head>
 <body>
 <div class="wrap">
+  <a class="homelink" href="./">← All games</a>
   <header>
     <div class="eyebrow" id="crumb"></div>
     <h1>ITO <span class="ji">糸</span></h1>
@@ -141,18 +146,19 @@ const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.in
 const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
 
 async function loadState(){
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/games?id=eq.${rowId()}&select=state`, { headers: HDRS() });
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(),
+    body: JSON.stringify({ p_id: roomKey() })
+  });
   if (!r.ok) throw new Error('load '+r.status);
-  const rows = await r.json();
-  return rows.length ? rows[0].state : null;
+  return await r.json();          // the state object, or null if no such room
 }
 async function saveState(next){
   if (!ROOM) throw new Error('no room');   // never write to a malformed row id
   next._stamp = ++stamp;
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/games`, {
-    method:'POST',
-    headers:{ ...HDRS(), 'Prefer':'resolution=merge-duplicates' },
-    body: JSON.stringify([{ id: GAME_ID + '-' + ROOM, state: next, updated_at: new Date().toISOString() }])
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(),
+    body: JSON.stringify({ p_id: roomKey(), p_state: next })
   });
   if (!r.ok) throw new Error('save '+r.status);
 }
@@ -401,7 +407,7 @@ let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
 let joined = false;
 let pollTimer = null;
 
-const rowId     = () => encodeURIComponent(GAME_ID + '-' + ROOM);
+const roomKey   = () => GAME_ID + '-' + ROOM;
 const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
 
 function enterRoom(){
