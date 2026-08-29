@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tambola — Housie tickets and caller on your phones</title>
+<meta name="description" content="Play Tambola (Housie) with a group in one room. Real 3x9 tickets on every phone, one caller, and claims checked automatically. No paper tickets, no arguments.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#1A0F12; --panel:#251519; --line:rgba(212,160,80,.24);
+    --gold:#D4A050; --red:#B0303C; --green:#3E8E6E; --ink:#F5EBDD; --faint:#A08F86;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:600px; margin:0 auto; padding:0 16px 40px; }
+  header { text-align:center; padding:34px 8px 4px; }
+  h1 { font-family:'Fraunces',Georgia,serif; font-weight:700; letter-spacing:.04em;
+       font-size:clamp(34px,8vw,54px); margin:6px 0 0; }
+  h1 .dot { color:var(--red); }
+  .eyebrow { color:var(--gold); letter-spacing:.22em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+           padding:20px 18px; margin-top:18px; }
+  .row { display:flex; justify-content:space-between; align-items:center;
+         padding:10px 0; border-bottom:1px solid rgba(245,235,221,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+          gap:10px; margin-top:14px; }
+  input { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:6px;
+          color:var(--ink); padding:12px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:6px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  .btn-gold { background:var(--gold); color:#231318; border:none; padding:14px 20px;
+              font-size:15px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .btn-red { background:var(--red); color:#fff; border:none; padding:14px 20px;
+             font-size:15px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid rgba(160,143,134,.4);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:14px 10px; font-size:16px; }
+  .seat.on { background:var(--gold); border-color:var(--gold); color:#231318; font-weight:700; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:18px; }
+  .ok { color:var(--green); text-align:center; font-size:14px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:10px; margin-top:18px; }
+
+  /* the called number */
+  .callbig { font-family:'Fraunces',serif; font-weight:700; font-size:clamp(64px,20vw,110px);
+             line-height:1; color:var(--gold); }
+  .callword { font-size:15px; color:var(--faint); min-height:20px; }
+  .recent { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:12px; }
+  .recent span { border:1px solid var(--line); border-radius:99px; padding:2px 10px;
+                 font-size:13px; color:var(--faint); }
+
+  /* the 1-90 board */
+  .board { display:grid; grid-template-columns:repeat(10,1fr); gap:3px; margin-top:12px; }
+  .board b { font-weight:400; text-align:center; padding:4px 0; font-size:12px;
+             border-radius:4px; color:var(--faint); background:rgba(255,255,255,.03); }
+  .board b.hit { background:var(--gold); color:#231318; font-weight:700; }
+
+  /* the ticket */
+  .ticket { display:grid; grid-template-columns:repeat(9,1fr); gap:4px; margin-top:14px; }
+  .cell { aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;
+          border-radius:5px; font-size:clamp(13px,3.6vw,17px); font-weight:600;
+          border:1px solid var(--line); background:var(--bg); color:var(--ink);
+          cursor:pointer; user-select:none; padding:0; }
+  .cell.blank { background:transparent; border-color:rgba(245,235,221,.06); cursor:default; }
+  .cell.marked { background:var(--red); border-color:var(--red); color:#fff; }
+  .cell.called:not(.marked) { border-color:var(--gold); color:var(--gold); }
+
+  .prize { display:flex; justify-content:space-between; align-items:center; gap:10px;
+           padding:11px 0; border-bottom:1px solid rgba(245,235,221,.08); }
+  .prize .won { color:var(--green); font-size:14px; font-weight:700; }
+  .prize button { padding:8px 14px; font-size:13px; }
+
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+             padding:14px 16px; margin-top:18px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Fraunces',serif; font-weight:700; letter-spacing:.2em;
+              font-size:26px; color:var(--gold); }
+  .linkfield { font-size:13px; margin-top:10px; padding:9px 10px; color:var(--faint); }
+  .rb-actions { display:flex; gap:8px; margin-top:10px; }
+  .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:20px; color:var(--faint);
+              text-decoration:none; font-size:12px;
+              letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover, .homelink:focus-visible { color:var(--gold); }
+  details summary { color:var(--gold); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:28px; color:var(--faint);
+           font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>TAMBOLA<span class="dot">.</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Printing the tickets…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "tambola";
+
+// Traditional calls for a few numbers. Purely decorative.
+const CALLS = { 1:"Kelly's eye", 2:"One little duck", 7:"Lucky seven", 8:"Garden gate",
+  9:"Doctor's orders", 10:"Big Ben", 11:"Legs eleven", 13:"Unlucky for some",
+  22:"Two little ducks", 25:"Duck and dive", 30:"Dirty thirty", 33:"All the threes",
+  40:"Life begins", 44:"Droopy drawers", 45:"Halfway there", 50:"Half a century",
+  55:"All the fives", 66:"Clickety click", 77:"Sunset strip", 80:"Eight and blank",
+  88:"Two fat ladies", 90:"Top of the shop" };
+
+const PRIZES = [
+  { key:'five',   label:'Early Five',   hint:'First five numbers marked' },
+  { key:'top',    label:'Top Line',     hint:'All five in the first row' },
+  { key:'mid',    label:'Middle Line',  hint:'All five in the middle row' },
+  { key:'bottom', label:'Bottom Line',  hint:'All five in the last row' },
+  { key:'corners',label:'Four Corners', hint:'First and last number of the top and bottom rows' },
+  { key:'full',   label:'Full House',   hint:'Every number on the ticket' }
+];
+
+const FRESH = { phase:'setup', players:[], tickets:{}, called:[], marks:{},
+                prizes:{five:null,top:null,mid:null,bottom:null,corners:null,full:null} };
+
+let G = null;
+let me = null;      // this device's identity (local)
+let stamp = 0;
+let pending = null;
+let flash = '';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setErr(m){ $('err').textContent = m || ''; }
+
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() })
+  });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(),
+    body: JSON.stringify({ p_id: roomKey(), p_state: next })
+  });
+  if (!r.ok) throw new Error('save '+r.status);
+}
+async function mutate(fn){
+  const next = fn(structuredClone(G));
+  G = next; render();
+  try { await saveState(next); setErr(''); }
+  catch { setErr("Couldn't sync — your move may not be visible to others yet. It will retry."); pending = next; }
+}
+async function poll(){
+  if (!joined) return;
+  try {
+    if (pending){ await saveState(pending); pending = null; setErr(''); }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = s; stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch {
+    if (!G){ G = structuredClone(FRESH); render(); }
+  }
+}
+
+// ── ticket generation ───────────────────────────────────────
+// A housie ticket is 3 rows x 9 columns holding 15 numbers: exactly 5 per row,
+// 1-3 per column, column j drawn from its own decade, ascending down each column.
+function colRange(j){
+  if (j === 0) return [1, 9];
+  if (j === 8) return [80, 90];
+  return [j*10, j*10 + 9];
+}
+function shuffle(a){
+  for (let i=a.length-1; i>0; i--){ const k = Math.floor(Math.random()*(i+1)); [a[i],a[k]]=[a[k],a[i]]; }
+  return a;
+}
+function columnCounts(){
+  const c = Array(9).fill(1);          // every column holds at least one
+  let extra = 6;                        // 9 + 6 = 15
+  while (extra > 0){
+    const i = Math.floor(Math.random()*9);
+    if (c[i] < 3){ c[i]++; extra--; }
+  }
+  return c;
+}
+// Place counts into rows so every row ends up with exactly 5. Filling the
+// fullest columns first, into the rows with the most space left, always works.
+function rowLayout(counts){
+  const grid = [Array(9).fill(false), Array(9).fill(false), Array(9).fill(false)];
+  const left = [5,5,5];
+  const order = counts.map((n,j)=>[n,j]).sort((a,b)=> b[0]-a[0] || Math.random()-0.5);
+  for (const [n,j] of order){
+    const rows = [0,1,2]
+      .filter(r => left[r] > 0)
+      .sort((a,b)=> left[b]-left[a] || Math.random()-0.5)
+      .slice(0, n);
+    if (rows.length < n) return null;
+    for (const r of rows){ grid[r][j] = true; left[r]--; }
+  }
+  return left.every(v=>v===0) ? grid : null;
+}
+function makeTicket(){
+  for (let attempt=0; attempt<200; attempt++){
+    const counts = columnCounts();
+    const layout = rowLayout(counts);
+    if (!layout) continue;
+    const t = [Array(9).fill(null), Array(9).fill(null), Array(9).fill(null)];
+    for (let j=0; j<9; j++){
+      const [lo,hi] = colRange(j);
+      const all = [];
+      for (let v=lo; v<=hi; v++) all.push(v);
+      const picked = shuffle(all).slice(0, counts[j]).sort((a,b)=>a-b);
+      let k = 0;
+      for (let r=0; r<3; r++) if (layout[r][j]) t[r][j] = picked[k++];
+    }
+    return t;
+  }
+  return null;
+}
+const ticketNumbers = (t) => t.flat().filter(n => n !== null);
+
+// ── claim checking ──────────────────────────────────────────
+// Checked against the ticket and the called numbers, never against what a
+// player has tapped, so a wrong claim can't be talked through.
+function rowNums(t, r){ return t[r].filter(n => n !== null); }
+function cornerNums(t){
+  const top = rowNums(t,0), bot = rowNums(t,2);
+  return [top[0], top[top.length-1], bot[0], bot[bot.length-1]];
+}
+function claimNumbers(t, key){
+  if (key === 'five')    return null;              // handled by count
+  if (key === 'top')     return rowNums(t,0);
+  if (key === 'mid')     return rowNums(t,1);
+  if (key === 'bottom')  return rowNums(t,2);
+  if (key === 'corners') return cornerNums(t);
+  if (key === 'full')    return ticketNumbers(t);
+  return [];
+}
+function checkClaim(t, called, key){
+  const set = new Set(called);
+  if (key === 'five') return ticketNumbers(t).filter(n => set.has(n)).length >= 5;
+  return claimNumbers(t, key).every(n => set.has(n));
+}
+
+// ── actions ──
+function addPlayer(){
+  const el = $('nameInput'); const n = el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if (G.players.length >= 30){ setErr('Thirty tickets is the limit.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{ g.players.push(n); return g; });
+}
+function removePlayer(n){
+  mutate(g=>{
+    g.players = g.players.filter(p=>p!==n);
+    delete g.tickets[n]; delete g.marks[n];
+    return g;
+  });
+  if (me === n) me = null;
+}
+function dealTickets(){
+  if (G.players.length < 2){ setErr('Tambola needs at least 2 players.'); return; }
+  setErr('');
+  mutate(g=>{
+    g.tickets = {}; g.marks = {};
+    for (const p of g.players){ g.tickets[p] = makeTicket(); g.marks[p] = []; }
+    g.called = [];
+    g.prizes = {five:null,top:null,mid:null,bottom:null,corners:null,full:null};
+    g.phase = 'playing';
+    return g;
+  });
+}
+function callNext(){
+  mutate(g=>{
+    const remainingNums = [];
+    for (let n=1; n<=90; n++) if (!g.called.includes(n)) remainingNums.push(n);
+    if (!remainingNums.length) return g;
+    g.called = [...g.called, remainingNums[Math.floor(Math.random()*remainingNums.length)]];
+    return g;
+  });
+}
+function toggleMark(n){
+  if (!me) return;
+  mutate(g=>{
+    const cur = g.marks[me] || [];
+    g.marks[me] = cur.includes(n) ? cur.filter(x=>x!==n) : [...cur, n];
+    return g;
+  });
+}
+function markAllCalled(){
+  if (!me) return;
+  mutate(g=>{
+    const mine = new Set(ticketNumbers(g.tickets[me]));
+    g.marks[me] = g.called.filter(n => mine.has(n));
+    return g;
+  });
+}
+function claim(key){
+  if (!me){ setErr('Tap your name first.'); return; }
+  const t = G.tickets[me];
+  if (!t){ setErr('You have no ticket in this game.'); return; }
+  if (G.prizes[key]){ setErr('That one has already gone.'); return; }
+  if (!checkClaim(t, G.called, key)){
+    const p = PRIZES.find(x=>x.key===key);
+    setErr(`Not yet — ${p.label.toLowerCase()} isn't complete on your ticket.`);
+    flash = '';
+    render();
+    return;
+  }
+  setErr('');
+  flash = `${me} takes ${PRIZES.find(x=>x.key===key).label}!`;
+  mutate(g=>{ g.prizes[key] = me; return g; });
+}
+function newGame(keep){
+  me = keep ? me : null;
+  flash = '';
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep) n.players = g.players;
+    return n;
+  });
+}
+function backToSetup(){ flash=''; mutate(g=>{ g.phase='setup'; return g; }); }
+
+// ── render ──
+function boardHTML(){
+  let h = '<div class="board">';
+  for (let n=1; n<=90; n++) h += `<b class="${G.called.includes(n)?'hit':''}">${n}</b>`;
+  return h + '</div>';
+}
+function ticketHTML(name){
+  const t = G.tickets[name];
+  if (!t) return '<p class="faint">No ticket.</p>';
+  const marks = new Set(G.marks[name] || []);
+  const called = new Set(G.called);
+  let h = '<div class="ticket">';
+  for (let r=0; r<3; r++) for (let j=0; j<9; j++){
+    const v = t[r][j];
+    if (v === null){ h += '<div class="cell blank"></div>'; continue; }
+    const cls = ['cell', marks.has(v)?'marked':'', called.has(v)?'called':''].filter(Boolean).join(' ');
+    const act = name === me ? ` onclick="toggleMark(${v})"` : '';
+    h += `<button class="${cls}"${act}>${v}</button>`;
+  }
+  return h + '</div>';
+}
+function prizesHTML(){
+  const t = me ? G.tickets[me] : null;
+  return `<div class="panel">
+    <div class="eyebrow">Prizes</div>
+    ${PRIZES.map(p=>{
+      const won = G.prizes[p.key];
+      const can = t && !won && checkClaim(t, G.called, p.key);
+      return `<div class="prize">
+        <span><b>${p.label}</b><br><span class="faint" style="font-size:13px">${p.hint}</span></span>
+        ${won ? `<span class="won">${esc(won)}</span>`
+              : (me ? `<button class="${can?'btn-gold':'btn-ghost'}" onclick="claim('${p.key}')">Claim</button>`
+                    : '<span class="faint" style="font-size:13px">—</span>')}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function render(){
+  if (!configured()){
+    $('app').innerHTML = '<div class="panel"><p class="faint">Supabase is not configured in this file.</p></div>';
+    return;
+  }
+  const app = $('app');
+  const last = G.called.length ? G.called[G.called.length-1] : null;
+  $('crumb').textContent = G.phase === 'setup' ? 'Set up the game'
+      : G.phase === 'done' ? 'Game complete'
+      : `${G.called.length} of 90 called`;
+
+  if (G.phase === 'setup'){
+    const had = $('nameInput'); const keep = had ? had.value : '';
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Who's playing?</div>
+        <p class="faint" style="font-size:14px;margin-top:6px">Everyone gets their own ticket on their
+          own phone. Add a name for each player.</p>
+        <div style="display:flex;gap:8px;margin:14px 0">
+          <input id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-gold" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.players.length === 0
+          ? '<p class="faint" style="font-style:italic">Nobody yet.</p>'
+          : G.players.map(p=>`<div class="row"><span>${esc(p)}</span>
+              <button class="btn-ghost" onclick="removePlayer('${esc(p)}')">Remove</button></div>`).join('')}
+        <button class="btn-red full" style="margin-top:18px"
+          ${G.players.length<2?'disabled style="opacity:.4;margin-top:18px"':''}
+          onclick="dealTickets()">Deal the tickets</button>
+      </div>
+      <div class="panel">
+        <details><summary>How to play</summary>
+          <div class="faint" style="font-size:14px;line-height:1.6;margin-top:8px">
+            <p>Everyone gets a real housie ticket — three rows of nine, fifteen numbers in all.</p>
+            <p>One person calls the numbers. Tap a number on your own ticket to mark it, or use
+               <b style="color:var(--ink)">Mark all called</b> to catch up.</p>
+            <p>When you complete a prize, tap Claim. The claim is checked against your ticket and
+               the numbers actually called — so a wrong claim just gets told no, and nobody argues.</p>
+          </div>
+        </details>
+      </div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase === 'playing' || G.phase === 'done'){
+    const allGone = Object.values(G.prizes).every(v => v);
+    const recent = G.called.slice(-6, -1).reverse();
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Last called</div>
+        <div class="callbig">${last === null ? '—' : last}</div>
+        <div class="callword">${last !== null && CALLS[last] ? esc(CALLS[last]) : ''}</div>
+        ${recent.length ? `<div class="recent">${recent.map(n=>`<span>${n}</span>`).join('')}</div>` : ''}
+        ${G.called.length < 90 && !allGone
+          ? `<button class="btn-red full" style="margin-top:16px" onclick="callNext()">Call next number</button>`
+          : `<p class="faint" style="margin-top:16px">${allGone?'Every prize has gone.':'All 90 numbers are out.'}</p>`}
+        <details style="margin-top:14px"><summary>Show the full board</summary>${boardHTML()}</details>
+      </div>
+      ${flash ? `<p class="ok">${esc(flash)}</p>` : ''}
+      ${me
+        ? `<div class="panel">
+             <div class="rb-top">
+               <span class="eyebrow">${esc(me)}'s ticket</span>
+               <button class="btn-ghost" onclick="me=null;render()">Not you?</button>
+             </div>
+             ${ticketHTML(me)}
+             <button class="btn-ghost full" onclick="markAllCalled()">Mark all called</button>
+           </div>`
+        : `<div class="panel">
+             <div class="eyebrow">Which ticket is yours?</div>
+             <div class="grid">${G.players.map(p=>
+               `<button class="seat" onclick="me='${esc(p)}';render()">${esc(p)}</button>`).join('')}</div>
+           </div>`}
+      ${prizesHTML()}
+      <div class="panel">
+        <button class="btn-ghost full" style="margin-top:0" onclick="newGame(true)">New game · same players</button>
+        <button class="btn-ghost full" onclick="backToSetup()">Change players</button>
+      </div>`;
+    return;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+
+function newCode(){
+  const r = new Uint32Array(4);
+  crypto.getRandomValues(r);
+  let c = '';
+  for (let i = 0; i < 4; i++) c += CODE_ALPHABET[r[i] % CODE_ALPHABET.length];
+  return c;
+}
+
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false;
+let pollTimer = null;
+
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+
+function enterRoom(){
+  joined = true;
+  history.replaceState(null, '', inviteURL());
+  renderRoomBar();
+  render();
+  if (!pollTimer) pollTimer = setInterval(poll, 2500);
+}
+
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  joined = false; ROOM = ''; G = null; me = null; pending = null; flash = '';
+  history.replaceState(null, '', location.pathname);
+  $('roombar').innerHTML = '';
+  $('crumb').textContent = '';
+  setErr('');
+  renderLobby();
+}
+
+async function createRoom(){
+  setErr('');
+  const btn = $('createBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Creating…'; }
+  try {
+    for (let i = 0; i < 5; i++){
+      ROOM = newCode();
+      if (await loadState()) continue;
+      G = structuredClone(FRESH);
+      await saveState(G);
+      enterRoom();
+      return;
+    }
+    ROOM = '';
+    setErr('Could not find a free code. Please try again.');
+  } catch {
+    ROOM = '';
+    setErr("Couldn't reach the game service. Check your connection and try again.");
+  }
+  if ($('createBtn')){ $('createBtn').disabled = false; $('createBtn').textContent = 'Create a game'; }
+}
+
+async function joinRoom(raw){
+  setErr('');
+  const c = cleanCode(raw);
+  if (c.length < 4){ setErr('Enter the 4-character code.'); return; }
+  ROOM = c;
+  let s;
+  try { s = await loadState(); }
+  catch { ROOM = ''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM = ''; renderLobby('No game found with code ' + c + '. Check the code, or start a new one.'); return; }
+  G = s; stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+
+function copyInvite(){
+  const url = inviteURL();
+  const done = () => {
+    const b = $('copyBtn'); if (!b) return;
+    b.textContent = 'Link copied';
+    setTimeout(() => { if ($('copyBtn')) $('copyBtn').textContent = 'Copy invite link'; }, 1600);
+  };
+  const fallback = () => { const f = $('inviteField'); if (f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done, fallback);
+  } else fallback();
+}
+
+function renderRoomBar(){
+  $('roombar').innerHTML = `
+    <div class="roombar">
+      <div class="rb-top">
+        <span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span>
+      </div>
+      <input id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div>
+    </div>`;
+}
+
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game, then send the link to
+        everyone playing. Each phone gets its own ticket.</p>
+      <button class="btn-red full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <input id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false"
+               style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-gold" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(e.target.value); });
+}
+
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM);
+  else renderLobby();
+})();
+</script>
+</body>
+</html>

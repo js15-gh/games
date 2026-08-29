@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dumb Charades — Bollywood, on your phones</title>
+<meta name="description" content="Bollywood dumb charades for a group in one room. The film shows only on the actor's phone — no whispering, no walking out of the room.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#12101C; --panel:#1B1830; --line:rgba(240,180,60,.22);
+    --gold:#F0B43C; --pink:#E0457B; --ink:#F2EDE4; --faint:#948CA8;
+    --green:#48B07E;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:560px; margin:0 auto; padding:0 16px 40px; }
+  header { text-align:center; padding:34px 8px 4px; }
+  h1 { font-family:'Bebas Neue',Impact,sans-serif; font-weight:400; letter-spacing:.08em;
+       font-size:clamp(34px,8vw,56px); margin:6px 0 0; line-height:1; }
+  h1 .amp { color:var(--pink); }
+  .eyebrow { color:var(--gold); letter-spacing:.24em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+           padding:22px 20px; margin-top:18px; }
+  .row { display:flex; justify-content:space-between; align-items:center;
+         padding:10px 0; border-bottom:1px solid rgba(240,237,228,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+          gap:10px; margin-top:14px; }
+  input { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:6px;
+          color:var(--ink); padding:12px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:6px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  .btn-gold { background:var(--gold); color:#171320; border:none; padding:14px 20px;
+              font-size:15px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .btn-pink { background:var(--pink); color:#fff; border:none; padding:14px 20px;
+              font-size:15px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .btn-green { background:var(--green); color:#0d1a14; border:none; padding:14px 20px;
+               font-size:15px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid rgba(148,140,168,.4);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:14px 10px; font-size:16px; }
+  .seat.on { background:var(--gold); border-color:var(--gold); color:#171320; font-weight:700; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--pink); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:10px; margin-top:18px; }
+  .teamtag { font-weight:700; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+             padding:3px 9px; border-radius:99px; border:1px solid; }
+  .teamtag.A { color:var(--gold); border-color:rgba(240,180,60,.5); }
+  .teamtag.B { color:var(--pink); border-color:rgba(224,69,123,.5); }
+  .score { display:flex; justify-content:center; gap:26px; margin-top:14px; }
+  .score div { text-align:center; }
+  .score .n { font-family:'Bebas Neue',sans-serif; font-size:40px; line-height:1; }
+  .score .A .n { color:var(--gold); } .score .B .n { color:var(--pink); }
+  .movie { font-family:'Bebas Neue',sans-serif; font-size:clamp(30px,8vw,50px);
+           line-height:1.1; letter-spacing:.02em; margin:10px 0 6px; }
+  .timer { font-family:'Bebas Neue',sans-serif; font-size:64px; line-height:1;
+           text-align:center; letter-spacing:.04em; }
+  .timer.low { color:var(--pink); }
+  .secret { border:1px dashed rgba(240,180,60,.45); border-radius:10px; min-height:130px;
+            display:flex; align-items:center; justify-content:center; margin:14px 0;
+            padding:16px; text-align:center; user-select:none; cursor:pointer; }
+  .bar { height:6px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; margin-top:12px; }
+  .bar > i { display:block; height:100%; background:var(--gold); transition:width .3s linear; }
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+             padding:14px 16px; margin-top:18px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Bebas Neue',sans-serif; letter-spacing:.22em;
+              font-size:28px; color:var(--gold); }
+  .linkfield { font-size:13px; margin-top:10px; padding:9px 10px; color:var(--faint); }
+  .rb-actions { display:flex; gap:8px; margin-top:10px; }
+  .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:20px; color:var(--faint);
+              text-decoration:none; font-size:12px;
+              letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover, .homelink:focus-visible { color:var(--gold); }
+  details summary { color:var(--gold); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:28px; color:var(--faint);
+           font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>DUMB CHARADES</h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Rolling the titles…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "charades";
+
+// ── the films ───────────────────────────────────────────────
+const FILMS = {
+  easy: ["Sholay","3 Idiots","Dangal","Lagaan","Om Shanti Om","Chennai Express","PK",
+    "Munna Bhai M.B.B.S.","Kuch Kuch Hota Hai","Dilwale Dulhania Le Jayenge","Krrish",
+    "Dhoom","Singham","Ghajini","Taare Zameen Par","Bajrangi Bhaijaan","Don","Devdas",
+    "Hera Pheri","Golmaal","Welcome","Bhool Bhulaiyaa","Kabhi Khushi Kabhie Gham",
+    "Jab We Met","Chak De! India","Rang De Basanti","Baahubali","RRR","KGF","Pathaan",
+    "Jawan","Padmaavat","Ra.One","Housefull","Judwaa","Koi... Mil Gaya","Wanted",
+    "Bodyguard","Race","Border"],
+  medium: ["Zindagi Na Milegi Dobara","Dil Chahta Hai","Queen","Andaz Apna Apna","Barfi!",
+    "Piku","Vicky Donor","Badhaai Ho","Stree","Andhadhun","Drishyam","Kahaani","Swades",
+    "Bhaag Milkha Bhaag","Yeh Jawaani Hai Deewani","Rockstar","Tamasha","Highway","Haider",
+    "Omkara","Kaminey","Delhi Belly","Fukrey","Go Goa Gone","Bala","Dream Girl",
+    "Luka Chuppi","Chhichhore","Simmba","Uri: The Surgical Strike","Raazi","Special 26",
+    "English Vinglish","Hindi Medium","Gully Boy","Article 15","Veer-Zaara","Kal Ho Naa Ho",
+    "My Name Is Khan","Bajirao Mastani","Jodhaa Akbar","Lakshya","Phir Hera Pheri",
+    "Amar Akbar Anthony","Deewaar","Karan Arjun","Baazigar","Darr","Pushpa","Kantara",
+    "12th Fail","Laapataa Ladies","Munjya","Drishyam 2","Sooryavanshi","Brahmastra"],
+  hard: ["Tumbbad","Gangs of Wasseypur","Masaan","Newton","Court","The Lunchbox","Talvar",
+    "A Wednesday","Ishqiya","Maqbool","Mughal-e-Azam","Mother India","Pyaasa","Guide",
+    "Anand","Ankhon Dekhi","Ship of Theseus","Titli","Udaan","Dev.D",
+    "No Smoking","Manorama Six Feet Under","Johnny Gaddaar","Khosla Ka Ghosla",
+    "Bheja Fry","Peepli Live","Shanghai","Trapped","Aligarh","Sir","Photograph"]
+};
+const DIFFS = ['easy','medium','hard'];
+
+const START_SECONDS = 90;
+const FRESH = { phase:'setup', players:[], teams:{A:[],B:[]}, turn:'A', actorIdx:{A:0,B:0},
+                film:null, level:'mixed', seconds:START_SECONDS, endsAt:null,
+                scores:{A:0,B:0}, used:[], round:1, rounds:8, last:null, revealed:false };
+
+let G = null;
+let me = null;      // this device's identity (local)
+let stamp = 0;
+let pending = null;
+let tick = null;    // local 1s countdown repaint
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setErr(m){ $('err').textContent = m || ''; }
+
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() })
+  });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(),
+    body: JSON.stringify({ p_id: roomKey(), p_state: next })
+  });
+  if (!r.ok) throw new Error('save '+r.status);
+}
+async function mutate(fn){
+  const next = fn(structuredClone(G));
+  G = next; render();
+  try { await saveState(next); setErr(''); }
+  catch { setErr("Couldn't sync — your move may not be visible to others yet. It will retry."); pending = next; }
+}
+async function poll(){
+  if (!joined) return;
+  try {
+    if (pending){ await saveState(pending); pending = null; setErr(''); }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = s; stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch {
+    if (!G){ G = structuredClone(FRESH); render(); }
+  }
+}
+
+// ── game helpers ──
+function pool(level){
+  if (level === 'mixed') return [...FILMS.easy, ...FILMS.medium, ...FILMS.hard];
+  return FILMS[level] ? [...FILMS[level]] : [...FILMS.easy];
+}
+function pickFilm(g){
+  const all = pool(g.level);
+  const fresh = all.filter(f => !g.used.includes(f));
+  const from = fresh.length ? fresh : all;
+  return from[Math.floor(Math.random()*from.length)];
+}
+function actorOf(g, team){
+  const t = g.teams[team];
+  if (!t.length) return null;
+  return t[g.actorIdx[team] % t.length];
+}
+const currentActor = () => G ? actorOf(G, G.turn) : null;
+const other = (t) => t === 'A' ? 'B' : 'A';
+function remaining(){
+  if (!G || !G.endsAt) return 0;
+  return Math.max(0, Math.ceil((G.endsAt - Date.now())/1000));
+}
+function teamOf(g, name){
+  if (g.teams.A.includes(name)) return 'A';
+  if (g.teams.B.includes(name)) return 'B';
+  return null;
+}
+
+// ── actions ──
+function addPlayer(){
+  const el = $('nameInput'); const n = el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if (G.players.length >= 20){ setErr('Twenty players is plenty.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{
+    g.players.push(n);
+    (g.teams.A.length <= g.teams.B.length ? g.teams.A : g.teams.B).push(n);
+    return g;
+  });
+}
+function removePlayer(n){
+  mutate(g=>{
+    g.players = g.players.filter(p=>p!==n);
+    g.teams.A = g.teams.A.filter(p=>p!==n);
+    g.teams.B = g.teams.B.filter(p=>p!==n);
+    return g;
+  });
+  if (me === n) me = null;
+}
+function swapTeam(n){
+  mutate(g=>{
+    const from = g.teams.A.includes(n) ? 'A' : 'B';
+    g.teams[from] = g.teams[from].filter(p=>p!==n);
+    g.teams[other(from)].push(n);
+    return g;
+  });
+}
+function setLevel(l){ mutate(g=>{ g.level = l; return g; }); }
+function setSeconds(s){ mutate(g=>{ g.seconds = s; return g; }); }
+function setRounds(r){ mutate(g=>{ g.rounds = r; return g; }); }
+
+function startGame(){
+  if (G.teams.A.length < 1 || G.teams.B.length < 1){ setErr('Both teams need at least one player.'); return; }
+  if (G.players.length < 4){ setErr('Dumb charades wants at least 4 players.'); return; }
+  setErr('');
+  mutate(g=>{
+    g.phase='ready'; g.turn='A'; g.round=1;
+    g.scores={A:0,B:0}; g.used=[]; g.actorIdx={A:0,B:0}; g.film=null; g.last=null;
+    return g;
+  });
+}
+function beginTurn(){
+  mutate(g=>{
+    const f = pickFilm(g);
+    g.film = f; g.used = [...g.used, f].slice(-60);
+    g.endsAt = Date.now() + g.seconds*1000;
+    g.phase = 'acting'; g.revealed = false;
+    return g;
+  });
+}
+function finishTurn(guessed){
+  mutate(g=>{
+    if (guessed) g.scores[g.turn] += 1;
+    g.last = { team:g.turn, film:g.film, guessed:!!guessed, actor:actorOf(g,g.turn) };
+    g.phase = 'result'; g.endsAt = null;
+    return g;
+  });
+}
+function skipFilm(){
+  mutate(g=>{
+    const f = pickFilm(g);
+    g.film = f; g.used = [...g.used, f].slice(-60);
+    return g;
+  });
+}
+function nextTurn(){
+  mutate(g=>{
+    g.actorIdx[g.turn] = (g.actorIdx[g.turn] + 1);
+    const wasB = g.turn === 'B';
+    g.turn = other(g.turn);
+    if (wasB) g.round += 1;
+    g.film = null; g.endsAt = null;
+    g.phase = (g.round > g.rounds) ? 'gameover' : 'ready';
+    return g;
+  });
+}
+function toggleReveal(){ G.revealed = !G.revealed; render(); }
+function playAgain(keep){
+  me = keep ? me : null;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep){ n.players=g.players; n.teams=g.teams; n.level=g.level; n.seconds=g.seconds; n.rounds=g.rounds; }
+    return n;
+  });
+}
+function editTeams(){ mutate(g=>{ g.phase='setup'; g.film=null; g.endsAt=null; return g; }); }
+
+// ── render ──
+function scoreHTML(){
+  return `<div class="score">
+    <div class="A"><div class="n">${G.scores.A}</div><div class="eyebrow">Team A</div></div>
+    <div class="B"><div class="n">${G.scores.B}</div><div class="eyebrow">Team B</div></div>
+  </div>`;
+}
+function rosterHTML(){
+  return ['A','B'].map(t=>`
+    <div style="margin-top:14px">
+      <span class="teamtag ${t}">Team ${t}</span>
+      ${G.teams[t].length===0 ? '<p class="faint" style="font-size:14px;margin:8px 0 0">Nobody yet.</p>' :
+        G.teams[t].map(p=>`<div class="row"><span>${esc(p)}</span>
+          <span style="display:flex;gap:6px">
+            <button class="btn-ghost" onclick="swapTeam('${esc(p)}')">→ ${t==='A'?'B':'A'}</button>
+            <button class="btn-ghost" onclick="removePlayer('${esc(p)}')">Remove</button>
+          </span></div>`).join('')}
+    </div>`).join('');
+}
+
+function render(){
+  if (!configured()){
+    $('app').innerHTML = '<div class="panel"><p class="faint">Supabase is not configured in this file.</p></div>';
+    return;
+  }
+  const app = $('app');
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the teams'
+      : G.phase==='gameover' ? 'Final score'
+      : `Round ${Math.min(G.round,G.rounds)} of ${G.rounds} · Team ${G.turn}`;
+
+  if (G.phase === 'setup'){
+    const had = $('nameInput'); const keep = had ? had.value : '';
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Who's playing?</div>
+        <p class="faint" style="font-size:14px;margin-top:6px">Added players alternate between the
+          two teams. Move anyone across with the arrow.</p>
+        <div style="display:flex;gap:8px;margin:14px 0">
+          <input id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-gold" onclick="addPlayer()">Add</button>
+        </div>
+        ${rosterHTML()}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Difficulty</div>
+        <div class="grid">
+          ${['easy','medium','hard','mixed'].map(l=>
+            `<button class="seat ${G.level===l?'on':''}" onclick="setLevel('${l}')">${l}</button>`).join('')}
+        </div>
+        <div class="eyebrow" style="margin-top:20px">Seconds per turn</div>
+        <div class="grid">
+          ${[60,90,120].map(s=>
+            `<button class="seat ${G.seconds===s?'on':''}" onclick="setSeconds(${s})">${s}s</button>`).join('')}
+        </div>
+        <div class="eyebrow" style="margin-top:20px">Rounds</div>
+        <div class="grid">
+          ${[4,6,8,10].map(r=>
+            `<button class="seat ${G.rounds===r?'on':''}" onclick="setRounds(${r})">${r}</button>`).join('')}
+        </div>
+        <button class="btn-pink full" style="margin-top:20px" onclick="startGame()">Start the game</button>
+      </div>
+      <div class="panel">
+        <details><summary>How to play</summary>
+          <div class="faint" style="font-size:14px;line-height:1.6;margin-top:8px">
+            <p>Two teams take turns. One player acts out a Hindi film while their own team guesses.</p>
+            <p>The film appears <b style="color:var(--ink)">only on the actor's phone</b> — everyone else
+               just sees the clock, so nobody has to whisper or leave the room.</p>
+            <p>No speaking, no mouthing words, no pointing at letters. A correct guess before the
+               buzzer is one point.</p>
+          </div>
+        </details>
+      </div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase === 'ready'){
+    const actor = currentActor();
+    app.innerHTML = scoreHTML() + `
+      <div class="panel center">
+        <span class="teamtag ${G.turn}">Team ${G.turn}</span>
+        <p class="movie">${esc(actor || '—')}</p>
+        <p class="faint" style="font-size:15px">is acting this turn. Hand them the phone — the film
+           shows only on their screen.</p>
+        ${me === actor
+          ? `<button class="btn-gold full" onclick="beginTurn()">I'm ${esc(actor)} — show me the film</button>`
+          : `<p class="faint" style="font-size:14px;margin-top:16px">Waiting for ${esc(actor||'the actor')} to start.</p>
+             <button class="btn-ghost full" onclick="beginTurn()">Start anyway</button>`}
+      </div>` + whoAmIHTML() + `
+      <div class="panel">
+        <button class="btn-ghost full" style="margin-top:0" onclick="editTeams()">Change teams or settings</button>
+      </div>`;
+    return;
+  }
+
+  if (G.phase === 'acting'){
+    const actor = currentActor();
+    const left = remaining();
+    const pct = G.seconds ? Math.max(0, Math.min(100, (left / G.seconds) * 100)) : 0;
+    const iAmActor = me === actor;
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="timer ${left<=10?'low':''}">${left}</div>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+        <p class="faint" style="font-size:14px;margin-top:10px">
+          <span class="teamtag ${G.turn}">Team ${G.turn}</span>
+          &nbsp;${esc(actor||'')} is acting</p>
+      </div>
+      <div class="panel center">
+        ${iAmActor
+          ? `<div class="eyebrow">Your film — keep it hidden</div>
+             <div class="secret" onclick="toggleReveal()" role="button">
+               ${G.revealed ? `<span class="movie">${esc(G.film||'')}</span>`
+                            : '<span class="faint">Tap to see the film</span>'}
+             </div>
+             <button class="btn-ghost full" onclick="skipFilm()">Different film</button>`
+          : `<div class="eyebrow">Shout your guesses</div>
+             <p class="faint" style="font-size:15px;margin-top:10px">Only ${esc(actor||'the actor')}
+                can see the film. No talking from them — acting only.</p>`}
+      </div>
+      <div class="panel">
+        <button class="btn-green full" style="margin-top:0" onclick="finishTurn(true)">Guessed it!</button>
+        <button class="btn-ghost full" onclick="finishTurn(false)">Give up / time's up</button>
+      </div>`;
+    if (left === 0 && G.endsAt) finishTurn(false);
+    return;
+  }
+
+  if (G.phase === 'result'){
+    const L = G.last || {};
+    app.innerHTML = scoreHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">${L.guessed ? 'Got it' : 'Missed'}</div>
+        <p class="movie" style="color:${L.guessed?'var(--green)':'var(--faint)'}">${esc(L.film||'')}</p>
+        <p class="faint" style="font-size:15px">${esc(L.actor||'')} was acting for
+           <span class="teamtag ${L.team||'A'}">Team ${L.team||''}</span></p>
+        <button class="btn-gold full" style="margin-top:18px" onclick="nextTurn()">
+          ${G.round >= G.rounds && G.turn === 'B' ? 'See the final score' : 'Next turn'}</button>
+      </div>`;
+    return;
+  }
+
+  if (G.phase === 'gameover'){
+    const win = G.scores.A === G.scores.B ? null : (G.scores.A > G.scores.B ? 'A' : 'B');
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">That's a wrap</div>
+        <p class="movie">${win ? 'TEAM '+win+' WINS' : "IT'S A TIE"}</p>
+        ${scoreHTML()}
+        <div class="stack">
+          <button class="btn-pink" onclick="playAgain(true)">Play again · same teams</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New group</button>
+        </div>
+      </div>`;
+    return;
+  }
+}
+
+function whoAmIHTML(){
+  if (me) return `<div class="panel center">
+      <p class="faint" style="font-size:14px;margin:0">You are <b style="color:var(--ink)">${esc(me)}</b>
+      (Team ${teamOf(G,me)||'?'}) · <a href="#" onclick="me=null;render();return false" style="color:var(--gold)">not you?</a></p>
+    </div>`;
+  return `<div class="panel">
+      <div class="eyebrow">Who are you?</div>
+      <p class="faint" style="font-size:14px;margin-top:6px">Tap your name so this phone knows when it's your turn to act.</p>
+      <div class="grid">${G.players.map(p=>
+        `<button class="seat" onclick="me='${esc(p)}';render()">${esc(p)}</button>`).join('')}</div>
+    </div>`;
+}
+
+// ── local countdown repaint ──
+function startTick(){
+  if (tick) return;
+  tick = setInterval(()=>{ if (G && G.phase === 'acting') render(); }, 1000);
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+
+function newCode(){
+  const r = new Uint32Array(4);
+  crypto.getRandomValues(r);
+  let c = '';
+  for (let i = 0; i < 4; i++) c += CODE_ALPHABET[r[i] % CODE_ALPHABET.length];
+  return c;
+}
+
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false;
+let pollTimer = null;
+
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+
+function enterRoom(){
+  joined = true;
+  history.replaceState(null, '', inviteURL());
+  renderRoomBar();
+  render();
+  startTick();
+  if (!pollTimer) pollTimer = setInterval(poll, 2500);
+}
+
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  if (tick){ clearInterval(tick); tick = null; }
+  joined = false; ROOM = ''; G = null; me = null; pending = null;
+  history.replaceState(null, '', location.pathname);
+  $('roombar').innerHTML = '';
+  $('crumb').textContent = '';
+  setErr('');
+  renderLobby();
+}
+
+async function createRoom(){
+  setErr('');
+  const btn = $('createBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Creating…'; }
+  try {
+    for (let i = 0; i < 5; i++){
+      ROOM = newCode();
+      if (await loadState()) continue;
+      G = structuredClone(FRESH);
+      await saveState(G);
+      enterRoom();
+      return;
+    }
+    ROOM = '';
+    setErr('Could not find a free code. Please try again.');
+  } catch {
+    ROOM = '';
+    setErr("Couldn't reach the game service. Check your connection and try again.");
+  }
+  if ($('createBtn')){ $('createBtn').disabled = false; $('createBtn').textContent = 'Create a game'; }
+}
+
+async function joinRoom(raw){
+  setErr('');
+  const c = cleanCode(raw);
+  if (c.length < 4){ setErr('Enter the 4-character code.'); return; }
+  ROOM = c;
+  let s;
+  try { s = await loadState(); }
+  catch { ROOM = ''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM = ''; renderLobby('No game found with code ' + c + '. Check the code, or start a new one.'); return; }
+  G = s; stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+
+function copyInvite(){
+  const url = inviteURL();
+  const done = () => {
+    const b = $('copyBtn'); if (!b) return;
+    b.textContent = 'Link copied';
+    setTimeout(() => { if ($('copyBtn')) $('copyBtn').textContent = 'Copy invite link'; }, 1600);
+  };
+  const fallback = () => { const f = $('inviteField'); if (f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done, fallback);
+  } else fallback();
+}
+
+function renderRoomBar(){
+  $('roombar').innerHTML = `
+    <div class="roombar">
+      <div class="rb-top">
+        <span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span>
+      </div>
+      <input id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div>
+    </div>`;
+}
+
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game, then send the link to
+        everyone playing. The film shows only on the acting player's phone.</p>
+      <button class="btn-pink full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <input id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false"
+               style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-gold" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(e.target.value); });
+}
+
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM);
+  else renderLobby();
+})();
+</script>
+</body>
+</html>
