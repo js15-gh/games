@@ -147,6 +147,7 @@ async function loadState(){
   return rows.length ? rows[0].state : null;
 }
 async function saveState(next){
+  if (!ROOM) throw new Error('no room');   // never write to a malformed row id
   next._stamp = ++stamp;
   const r = await fetch(`${SUPABASE_URL}/rest/v1/games`, {
     method:'POST',
