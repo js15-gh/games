@@ -52,6 +52,14 @@
   details summary { color:var(--faint); cursor:pointer; font-size:14px; }
   footer { text-align:center; padding-top:28px; color:var(--goldDim);
            font-size:12px; letter-spacing:.2em; }
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:4px;
+             padding:14px 16px; margin-top:18px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.28em;
+              font-size:26px; color:var(--gold); }
+  .linkfield { font-size:13px; margin-top:10px; padding:9px 10px; color:var(--faint); }
+  .rb-actions { display:flex; gap:8px; margin-top:10px; }
+  .rb-actions button { flex:1; }
 </style>
 </head>
 <body>
@@ -62,6 +70,7 @@
     <div class="rule"></div>
   </header>
   <p class="err" id="err"></p>
+  <div id="roombar"></div>
   <div id="app"><p class="faint center" style="margin-top:60px">Lighting the candles…</p></div>
   <footer id="foot">LIVE TABLE — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
 </div>
@@ -74,7 +83,7 @@
 // ════════════════════════════════════════════════════════════
 const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";      // e.g. https://abcd1234.supabase.co
 const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
-const ROOM = "traitors";  // change to run separate tables at once
+const GAME_ID = "traitors";   // namespaces this game's rows; the table code is appended per game
 // ════════════════════════════════════════════════════════════
 
 const FRESH = { phase:'setup', roster:[], players:[], votes:{}, round:1, gameNo:1,
@@ -95,7 +104,7 @@ const HDRS = () => ({
 });
 
 async function loadState(){
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/games?id=eq.${ROOM}&select=state`, { headers: HDRS() });
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/games?id=eq.${rowId()}&select=state`, { headers: HDRS() });
   if (!r.ok) throw new Error('load '+r.status);
   const rows = await r.json();
   return rows.length ? rows[0].state : null;
@@ -105,7 +114,7 @@ async function saveState(next){
   const r = await fetch(`${SUPABASE_URL}/rest/v1/games`, {
     method:'POST',
     headers:{ ...HDRS(), 'Prefer':'resolution=merge-duplicates' },
-    body: JSON.stringify([{ id: ROOM, state: next, updated_at: new Date().toISOString() }])
+    body: JSON.stringify([{ id: GAME_ID + '-' + ROOM, state: next, updated_at: new Date().toISOString() }])
   });
   if (!r.ok) throw new Error('save '+r.status);
 }
@@ -119,6 +128,7 @@ async function mutate(fn){
 let pending = null;
 
 async function poll(){
+  if (!joined) return;
   try {
     if (pending){ await saveState(pending); pending = null; setErr(''); }
     const s = await loadState();
@@ -307,8 +317,137 @@ function historyHTML(){
     </div></details></div>`;
 }
 
-poll();
-setInterval(poll, 2500);
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES — each table gets its own short code, so many
+//  groups can play at the same time without colliding.
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no I/O/0/1 — easy to read aloud
+const cleanCode = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+
+function newCode(){
+  const r = new Uint32Array(4);
+  crypto.getRandomValues(r);
+  let c = '';
+  for (let i = 0; i < 4; i++) c += CODE_ALPHABET[r[i] % CODE_ALPHABET.length];
+  return c;
+}
+
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false;
+let pollTimer = null;
+
+const rowId     = () => encodeURIComponent(GAME_ID + '-' + ROOM);
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+
+function enterRoom(){
+  joined = true;
+  history.replaceState(null, '', inviteURL());
+  renderRoomBar();
+  render();
+  if (!pollTimer) pollTimer = setInterval(poll, 2500);
+}
+
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  joined = false; ROOM = ''; G = null; me = null; pending = null; 
+  history.replaceState(null, '', location.pathname);
+  $('roombar').innerHTML = '';
+  $('crumb').textContent = '';
+  setErr('');
+  renderLobby();
+}
+
+async function createRoom(){
+  setErr('');
+  const btn = $('createBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Creating…'; }
+  try {
+    for (let i = 0; i < 5; i++){
+      ROOM = newCode();
+      if (await loadState()) continue;   // code already in use — draw another
+      G = structuredClone(FRESH);
+      await saveState(G);
+      enterRoom();
+      return;
+    }
+    ROOM = '';
+    setErr('Could not find a free code. Please try again.');
+  } catch {
+    ROOM = '';
+    setErr("Couldn't reach the game service. Check your connection and try again.");
+  }
+  if ($('createBtn')){ $('createBtn').disabled = false; $('createBtn').textContent = 'Create a table'; }
+}
+
+async function joinRoom(raw){
+  setErr('');
+  const c = cleanCode(raw);
+  if (c.length < 4){ setErr('Enter the 4-character code.'); return; }
+  ROOM = c;
+  let s;
+  try { s = await loadState(); }
+  catch { ROOM = ''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM = ''; renderLobby('No game found with code ' + c + '. Check the code, or start a new one.'); return; }
+  G = s; stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+
+function copyInvite(){
+  const url = inviteURL();
+  const done = () => {
+    const b = $('copyBtn');
+    if (!b) return;
+    b.textContent = 'Link copied';
+    setTimeout(() => { if ($('copyBtn')) $('copyBtn').textContent = 'Copy invite link'; }, 1600);
+  };
+  const fallback = () => { const f = $('inviteField'); if (f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done, fallback);
+  } else fallback();
+}
+
+function renderRoomBar(){
+  $('roombar').innerHTML = `
+    <div class="roombar">
+      <div class="rb-top">
+        <span class="eyebrow">Table code</span>
+        <span class="roomcode">${esc(ROOM)}</span>
+      </div>
+      <input id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div>
+    </div>`;
+}
+
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new table</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a table, then send the link to
+        everyone playing. You all share one live game — each player votes from their own phone.</p>
+      <button class="btn-crimson full" id="createBtn" onclick="createRoom()">Create a table</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a table</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <input id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false"
+               style="text-transform:uppercase;letter-spacing:.24em;font-family:'Cinzel',serif">
+        <button class="btn-gold" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(e.target.value); });
+}
+
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM);
+  else renderLobby();
+})();
 </script>
 </body>
 </html>

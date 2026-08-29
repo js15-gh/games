@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy — Party Games</title>
+<meta name="description" content="What these games store, and what they don't.">
+<meta name="robots" content="index, follow">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0C0F0E; --gold:#C9A44C; --goldDim:#8a7340; --ink:#E8E0CE; --faint:#8B9089; }
+  * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); }
+  .wrap { max-width:620px; margin:0 auto; padding:0 16px 48px; }
+  header { text-align:center; padding:52px 8px 8px; }
+  .eyebrow { color:var(--gold); letter-spacing:.28em; font-size:12px;
+             text-transform:uppercase; font-family:'Cinzel',serif; }
+  h1 { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.06em;
+       font-size:clamp(28px,6vw,44px); margin:10px 0 0; }
+  h2 { font-family:'Cinzel',serif; letter-spacing:.16em; text-transform:uppercase;
+       font-size:14px; color:var(--gold); margin:32px 0 10px; font-weight:600; }
+  p, li { color:var(--faint); line-height:1.7; font-size:17px; }
+  b { color:var(--ink); font-weight:600; }
+  ul { padding-left:20px; }
+  .rule { height:1px; margin:24px 0; opacity:.5;
+          background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+  a { color:var(--gold); }
+  footer { text-align:center; padding-top:32px; color:var(--goldDim); font-size:13px; }
+  footer a { color:var(--goldDim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Party Games</div>
+    <h1>PRIVACY</h1>
+    <div class="rule"></div>
+  </header>
+
+  <main>
+    <p>Short version: these games have no accounts, no logins, and no tracking. The only thing
+       stored is whatever you type into a game so the other players can see it.</p>
+
+    <h2>What is stored</h2>
+    <ul>
+      <li><b>Game state.</b> The player names you type, the votes or cards played, and the game's
+          progress. This is saved to a hosted database (<a href="https://supabase.com/privacy"
+          rel="noopener">Supabase</a>) so everyone sharing your game code sees the same game.</li>
+      <li><b>The game code.</b> A short random code that identifies your game.</li>
+    </ul>
+    <p>Use nicknames rather than full names if you would rather not put real names in. Anyone who
+       has your game code can see that game's contents, so treat the invite link as shareable.</p>
+
+    <h2>What is not stored</h2>
+    <ul>
+      <li>No accounts, email addresses, or passwords.</li>
+      <li>No cookies, and no analytics or tracking scripts.</li>
+      <li>No payment details — the games are free.</li>
+    </ul>
+
+    <h2>Other services</h2>
+    <ul>
+      <li><b>GitHub Pages</b> hosts these pages and keeps standard server logs, which include
+          visitor IP addresses. See the <a href="https://docs.github.com/site-policy/privacy-policies/github-privacy-statement"
+          rel="noopener">GitHub Privacy Statement</a>.</li>
+      <li><b>Google Fonts</b> serves the typefaces, so Google receives your IP address when a page
+          loads. See the <a href="https://policies.google.com/privacy" rel="noopener">Google Privacy Policy</a>.</li>
+    </ul>
+
+    <h2>Keeping and deleting game data</h2>
+    <p>Old games are cleared out periodically. If you want a specific game deleted sooner, get in
+       touch with the code and it will be removed.</p>
+
+    <h2>Children</h2>
+    <p>These games are made for general audiences and are not directed at children under 13. No
+       personal information is knowingly collected from them.</p>
+
+    <h2>Changes</h2>
+    <p>If what these pages collect changes — for example if advertising is added later — this page
+       will be updated before that happens.</p>
+
+    <div class="rule"></div>
+    <p style="font-size:15px">Last updated: 29 August 2026.</p>
+  </main>
+
+  <footer>
+    <p><a href="./">← Back to the games</a></p>
+  </footer>
+
+</div>
+</body>
+</html>

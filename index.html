@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Party Games — free browser games for a group in one room</title>
+<meta name="description" content="Free party games you play together in one room, each on your own phone. No app, no sign-up — create a game, share the link, and play.">
+<link rel="canonical" href="https://js15-gh.github.io/games/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Party Games — free browser games for a group in one room">
+<meta property="og:description" content="Free party games you play together in one room, each on your own phone. No app, no sign-up.">
+<meta property="og:url" content="https://js15-gh.github.io/games/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0C0F0E; --panel:#131816; --line:rgba(201,164,76,.28);
+    --gold:#C9A44C; --goldDim:#8a7340; --ink:#E8E0CE; --faint:#8B9089;
+    --crimson:#A32633; --thread:#D9483B;
+  }
+  * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:680px; margin:0 auto; padding:0 16px 48px; }
+
+  header { text-align:center; padding:56px 8px 8px; }
+  .eyebrow { color:var(--gold); letter-spacing:.28em; font-size:12px;
+             text-transform:uppercase; font-family:'Cinzel',serif; }
+  h1 { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.06em;
+       font-size:clamp(32px,7vw,54px); margin:10px 0 0; }
+  .lede { color:var(--faint); font-size:clamp(17px,2.4vw,19px); line-height:1.6;
+          max-width:460px; margin:16px auto 0; }
+  .rule { height:1px; margin:26px 0; opacity:.5;
+          background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+
+  h2 { font-family:'Cinzel',serif; letter-spacing:.2em; text-transform:uppercase;
+       font-size:13px; color:var(--gold); text-align:center; margin:36px 0 0; font-weight:600; }
+
+  .card { display:block; text-decoration:none; color:inherit;
+          background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent);
+          border-radius:4px; padding:24px 22px; margin-top:18px;
+          transition:border-color .15s, transform .15s; }
+  .card:hover, .card:focus-visible { border-color:var(--accent); transform:translateY(-2px); outline:none; }
+  .card h3 { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.08em;
+             font-size:clamp(22px,4.5vw,28px); margin:6px 0 0; }
+  .card .ji { color:var(--accent); }
+  .card p { color:var(--faint); line-height:1.6; font-size:17px; margin:12px 0 0; }
+  .meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .tag { border:1px solid var(--line); border-radius:99px; padding:4px 12px;
+         font-size:13px; color:var(--faint); letter-spacing:.04em; }
+  .cta { display:inline-block; margin-top:18px; color:var(--accent);
+         font-family:'Cinzel',serif; font-size:14px; letter-spacing:.14em; text-transform:uppercase; }
+
+  .steps { counter-reset:s; list-style:none; padding:0; margin:18px 0 0; }
+  .steps li { counter-increment:s; position:relative; padding:10px 0 10px 44px;
+              color:var(--faint); line-height:1.6; font-size:17px; }
+  .steps li::before { content:counter(s); position:absolute; left:0; top:9px;
+              width:28px; height:28px; border:1px solid var(--line); border-radius:50%;
+              display:flex; align-items:center; justify-content:center;
+              font-family:'Cinzel',serif; font-size:13px; color:var(--gold); }
+  .steps b { color:var(--ink); font-weight:600; }
+
+  footer { text-align:center; padding-top:36px; color:var(--goldDim); font-size:13px; }
+  footer a { color:var(--goldDim); }
+  @media (prefers-reduced-motion: reduce) { .card { transition:none; } .card:hover { transform:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Free · No app · No sign-up</div>
+    <h1>PARTY GAMES</h1>
+    <p class="lede">Games for a group in one room, each playing on their own phone.
+       Create a game, share the link, and everyone joins the same table.</p>
+    <div class="rule"></div>
+  </header>
+
+  <main>
+    <h2>Choose a game</h2>
+
+    <a class="card" style="--accent:var(--crimson)" href="traitors-vote-online.html">
+      <div class="eyebrow">3–20 players</div>
+      <h3>THE ROUND TABLE</h3>
+      <p>A live voting table for Traitors-style games. Everyone casts a secret vote from their
+         own phone, then the table reveals together and banishes the accused. Keeps score across
+         rounds and games.</p>
+      <div class="meta">
+        <span class="tag">Social deduction</span>
+        <span class="tag">10–30 min</span>
+        <span class="tag">Best with 6+</span>
+      </div>
+      <span class="cta">Play →</span>
+    </a>
+
+    <a class="card" style="--accent:var(--thread)" href="ito-game-online.html">
+      <div class="eyebrow">2–10 players</div>
+      <h3>ITO <span class="ji">糸</span></h3>
+      <p>Everyone holds a secret number from 1 to 100. Describe it through a theme — "scariness of
+         animals", "how expensive is it" — without ever saying the number, then play your cards in
+         order. Miss the order and the thread snaps.</p>
+      <div class="meta">
+        <span class="tag">Co-operative</span>
+        <span class="tag">15–30 min</span>
+        <span class="tag">26 themes</span>
+      </div>
+      <span class="cta">Play →</span>
+    </a>
+
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li>One person opens a game and taps <b>Create</b>. They get a four-letter code.</li>
+      <li>They <b>share the link</b> — everyone else opens it, or types the code in.</li>
+      <li>Everyone plays <b>on their own phone</b>, in the same room, on the same live game.</li>
+    </ol>
+
+    <div class="rule"></div>
+    <p class="lede">Nothing to install and no account to make. Works on any phone, tablet or laptop
+       with a browser.</p>
+  </main>
+
+  <footer>
+    <p>Made for playing around a table. <a href="privacy.html">Privacy</a></p>
+  </footer>
+
+</div>
+</body>
+</html>
