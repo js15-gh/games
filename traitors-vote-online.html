@@ -60,6 +60,12 @@
   .linkfield { font-size:13px; margin-top:10px; padding:9px 10px; color:var(--faint); }
   .rb-actions { display:flex; gap:8px; margin-top:10px; }
   .rb-actions button { flex:1; }
+  .pill { font-family:'Cinzel',serif; font-size:11px; letter-spacing:.16em;
+          text-transform:uppercase; padding:4px 11px; border-radius:99px;
+          border:1px solid; white-space:nowrap; }
+  .pill.in  { color:var(--gold);  border-color:rgba(201,164,76,.5); }
+  .pill.out { color:var(--faint); border-color:rgba(139,144,137,.3); }
+  .you { color:var(--faint); font-size:13px; }
   .homelink { display:inline-block; margin-top:20px; color:var(--faint);
               text-decoration:none; font-family:'Cinzel',serif; font-size:12px;
               letter-spacing:.18em; text-transform:uppercase; }
@@ -239,18 +245,18 @@ function render(){
       inner = `<div class="eyebrow">Who are you?</div>
         <p class="faint" style="font-size:14px;margin-top:6px">Choose your own name. Your vote stays hidden until the reveal.</p>
         <div class="grid">${G.players.map(p=>
-          `<button class="seat" onclick="pickMe('${esc(p)}')">${esc(p)}${G.votes[p]?' ✦':''}</button>`).join('')}</div>`;
+          `<button class="seat" onclick="pickMe('${esc(p)}')">${esc(p)}</button>`).join('')}</div>`;
     } else {
       inner = `<div class="eyebrow">${G.votes[me]?'Your vote is cast':esc(me)+', cast your vote'}</div>
         <p class="faint" style="font-size:14px;margin-top:6px">${G.votes[me]?'You may change it until the reveal.':'Choose who you suspect.'}</p>
         <div class="grid">${G.players.filter(p=>p!==me).map(p=>
-          `<button class="seat ${G.votes[me]===p?'chosen':''}" onclick="castVote('${esc(p)}')">${esc(p)}${G.votes[p]&&G.votes[me]!==p?' ✦':''}</button>`).join('')}</div>
+          `<button class="seat ${G.votes[me]===p?'chosen':''}" onclick="castVote('${esc(p)}')">${esc(p)}</button>`).join('')}</div>
         <button class="btn-ghost" style="margin-top:14px" onclick="me=null;render()">Not ${esc(me)}? Switch player</button>`;
     }
-    app.innerHTML = `<div class="panel">${inner}
-        <div class="rule"></div>
-        <p class="faint center" style="font-size:14px">${votedCount} of ${G.players.length} votes cast</p>
-        <button class="btn-gold full" onclick="reveal()">Reveal the votes</button>
+    app.innerHTML = `<div class="panel">${inner}</div>`
+      + voteStatusHTML()
+      + `<div class="panel">
+        <button class="btn-gold full" style="margin-top:0" onclick="reveal()">Reveal the votes</button>
         <button class="btn-ghost full" onclick="endGame()">End this game early</button>
       </div>` + banishedLineHTML() + historyHTML();
     return;
@@ -299,6 +305,27 @@ function render(){
         </div>
       </div>` + historyHTML();
   }
+}
+
+// Who has voted and who hasn't — never who they voted for.
+function voteStatusHTML(){
+  const voted   = G.players.filter(p => G.votes[p]);
+  const waiting = G.players.filter(p => !G.votes[p]);
+  return `<div class="panel">
+    <div class="rb-top">
+      <span class="eyebrow">Votes in</span>
+      <span class="roomcode" style="font-size:20px">${voted.length}/${G.players.length}</span>
+    </div>
+    <div style="margin-top:12px">
+      ${G.players.map(p => `<div class="row">
+        <span>${esc(p)}${p===me?' <span class="you">(you)</span>':''}</span>
+        <span class="pill ${G.votes[p]?'in':'out'}">${G.votes[p]?'Voted':'Waiting'}</span>
+      </div>`).join('')}
+    </div>
+    ${waiting.length
+      ? `<p class="faint center" style="font-size:13px;margin-top:14px">Waiting on ${waiting.map(esc).join(' · ')}</p>`
+      : `<p class="center" style="font-size:14px;margin-top:14px;color:var(--gold);font-family:'Cinzel',serif;letter-spacing:.12em">EVERYONE HAS VOTED</p>`}
+  </div>`;
 }
 
 function banishedLineHTML(){
