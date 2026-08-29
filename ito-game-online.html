@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITO 糸 — the thread game</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#111A2B; --panel:#18243A; --line:rgba(212,220,232,.16);
+    --thread:#D9483B; --ink:#EDEFF4; --faint:#8C99AD; --gold:#D9B96C;
+  }
+  * { box-sizing:border-box; font-family:-apple-system,'Segoe UI',Roboto,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:560px; margin:0 auto; padding:0 16px 40px; }
+  header { text-align:center; padding:36px 8px 4px; }
+  h1 { font-family:'Shippori Mincho',serif; font-weight:700; letter-spacing:.28em;
+       font-size:clamp(34px,8vw,54px); margin:6px 0 0; }
+  h1 .ji { color:var(--thread); }
+  .eyebrow { color:var(--gold); letter-spacing:.24em; font-size:12px; text-transform:uppercase; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:6px;
+           padding:22px 20px; margin-top:18px; }
+  .row { display:flex; justify-content:space-between; align-items:center;
+         padding:10px 0; border-bottom:1px solid rgba(212,220,232,.1); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+          gap:10px; margin-top:14px; }
+  input { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:6px;
+          color:var(--ink); padding:12px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:6px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  .btn-red { background:var(--thread); color:#fff; border:none; padding:13px 20px;
+             font-size:15px; font-weight:600; letter-spacing:.06em; }
+  .btn-ghost { background:transparent; border:1px solid rgba(140,153,173,.4);
+               color:var(--faint); padding:9px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:14px 10px; font-size:16px; }
+  .seat.done { opacity:.35; }
+  .full { width:100%; margin-top:14px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--thread); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .lives { display:flex; justify-content:center; gap:14px; margin-top:14px; }
+  .life { width:52px; height:3px; border-radius:2px; background:var(--thread); }
+  .life.cut { background:transparent; border-top:1px dashed var(--faint); opacity:.5; height:0; }
+  .thread-row { display:flex; flex-wrap:wrap; gap:12px; margin-top:14px;
+                padding-top:10px; border-top:2px solid var(--thread); }
+  .card { width:58px; height:78px; border:1px solid var(--line); border-radius:6px;
+          background:var(--bg); display:flex; align-items:center; justify-content:center; }
+  .card .num { font-family:'Shippori Mincho',serif; font-size:26px; }
+  .card.cut { border-color:var(--thread); opacity:.85; }
+  .card.cut .num { color:var(--thread); }
+  .card-label { color:var(--faint); font-size:12px; margin-top:4px; text-align:center; }
+  .secret { border:1px dashed rgba(217,185,108,.5); border-radius:8px; min-height:120px;
+            display:flex; align-items:center; justify-content:center; margin:14px 0;
+            padding:12px; text-align:center; user-select:none; cursor:pointer; }
+  .secret .big { font-family:'Shippori Mincho',serif; font-size:56px; }
+  .theme { font-family:'Shippori Mincho',serif; font-size:19px; line-height:1.45; margin:10px 0 0; }
+  .stack { display:grid; gap:10px; margin-top:20px; }
+  details summary { color:var(--gold); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:28px; color:var(--faint);
+           font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>ITO <span class="ji">糸</span></h1>
+    <div class="lives" id="lives"></div>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="app"><p class="faint center" style="margin-top:60px">Threading the needle…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  SETUP — paste your two Supabase values between the quotes.
+//  Settings → API: "Project URL" and the "anon / publishable" key.
+//  (These are designed to be public — NOT your database password.)
+// ════════════════════════════════════════════════════════════
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";      // e.g. https://abcd1234.supabase.co
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const ROOM = "ito";
+// ════════════════════════════════════════════════════════════
+
+const THEMES = [
+  "Deliciousness of foods (1 = gross, 100 = heavenly)",
+  "Scariness of animals (1 = harmless, 100 = terrifying)",
+  "Usefulness of superpowers (1 = useless, 100 = world-changing)",
+  "Popularity of songs (1 = obscure, 100 = everyone knows it)",
+  "How much you'd want it as a pet (1 = never, 100 = absolutely)",
+  "Strength of smells (1 = faint, 100 = overpowering)",
+  "Fun things to do on a rainy day (1 = boring, 100 = amazing)",
+  "How famous is this person (1 = unknown, 100 = world-famous)",
+  "Coldness of things (1 = warm, 100 = freezing)",
+  "How expensive is it (1 = pocket change, 100 = fortune)",
+  "Things you'd bring to a desert island (1 = useless, 100 = essential)",
+  "How early you'd wake up for it (1 = never, 100 = 4 AM gladly)",
+  "Spiciness of foods (1 = mild, 100 = volcanic)",
+  "How good it sounds at karaoke (1 = painful, 100 = showstopper)",
+  "Difficulty of school subjects (1 = easy, 100 = brutal)",
+  "How long you could talk about it (1 = seconds, 100 = hours)",
+  "Attractiveness of jobs (1 = no thanks, 100 = dream job)",
+  "How heavy it is (1 = feather, 100 = crushing)",
+  "Things that make you sleepy (1 = wide awake, 100 = instant nap)",
+  "How likely to survive a horror movie (1 = first to go, 100 = final survivor)",
+  "How good it smells (1 = awful, 100 = incredible)",
+  "Speed of things (1 = glacial, 100 = lightning)",
+  "How romantic is it (1 = not at all, 100 = swoon)",
+  "Snacks for a road trip (1 = terrible pick, 100 = perfect)",
+  "How annoying is the sound (1 = pleasant, 100 = unbearable)",
+  "Vacation destinations (1 = skip it, 100 = trip of a lifetime)"
+];
+const START_LIVES = 3;
+const FRESH = { phase:'setup', players:[], hands:{}, played:[], lives:START_LIVES,
+                round:1, cleared:0, theme:'', usedThemes:[] };
+
+let G = null;
+let me = null;      // this device's identity (local)
+let peek = false;   // local
+let stamp = 0;
+let pending = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setErr(m){ $('err').textContent = m || ''; }
+
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/games?id=eq.${ROOM}&select=state`, { headers: HDRS() });
+  if (!r.ok) throw new Error('load '+r.status);
+  const rows = await r.json();
+  return rows.length ? rows[0].state : null;
+}
+async function saveState(next){
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/games`, {
+    method:'POST',
+    headers:{ ...HDRS(), 'Prefer':'resolution=merge-duplicates' },
+    body: JSON.stringify([{ id: ROOM, state: next, updated_at: new Date().toISOString() }])
+  });
+  if (!r.ok) throw new Error('save '+r.status);
+}
+async function mutate(fn){
+  const next = fn(structuredClone(G));
+  G = next; render();
+  try { await saveState(next); setErr(''); }
+  catch { setErr("Couldn't sync — your move may not be visible to others yet. It will retry."); pending = next; }
+}
+async function poll(){
+  try {
+    if (pending){ await saveState(pending); pending = null; setErr(''); }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = s; stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch {
+    if (!G){ G = structuredClone(FRESH); render(); }
+  }
+}
+
+function drawNumbers(names){
+  const pool = Array.from({length:100},(_,i)=>i+1);
+  for (let i=pool.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [pool[i],pool[j]]=[pool[j],pool[i]];
+  }
+  const h={}; names.forEach((n,i)=>h[n]=pool[i]); return h;
+}
+function pickTheme(used){
+  const fresh = THEMES.filter(t=>!used.includes(t));
+  const from = fresh.length?fresh:THEMES;
+  return from[Math.floor(Math.random()*from.length)];
+}
+function unplayed(g){ return g.players.filter(p=>!g.played.some(c=>c.name===p)); }
+
+// ── actions ──
+function addPlayer(){
+  const el=$('nameInput'); const n=el.value.trim();
+  if (!n) return;
+  if (G.players.length>=10){ setErr('Ito plays with at most 10.'); return; }
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{ g.players.push(n); return g; });
+}
+function removePlayer(n){ mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; }); }
+function startRound(){
+  if (G.players.length<2){ setErr('You need 2–10 players.'); return; }
+  setErr(''); peek=false;
+  mutate(g=>{
+    g.phase='playing'; g.hands=drawNumbers(g.players); g.played=[];
+    g.theme=pickTheme(g.usedThemes); g.usedThemes=[...g.usedThemes,g.theme].slice(-12);
+    return g;
+  });
+}
+function rerollTheme(){
+  if (G.played.length>0) return;
+  mutate(g=>{ g.theme=pickTheme(g.usedThemes); g.usedThemes=[...g.usedThemes,g.theme].slice(-12); return g; });
+}
+function pickMe(n){ me=n; peek=false; render(); }
+function togglePeek(){ peek=!peek; render(); }
+function playCard(){
+  const who=me; if (!who) return;
+  peek=false;
+  mutate(g=>{
+    const myNum = g.hands[who];
+    if (myNum==null) return g;
+    const skipped = unplayed(g).filter(p=>p!==who && g.hands[p]<myNum)
+                               .sort((a,b)=>g.hands[a]-g.hands[b]);
+    skipped.forEach(p=>g.played.push({name:p, number:g.hands[p], auto:true}));
+    g.played.push({name:who, number:myNum, auto:false});
+    g.lives = Math.max(0, g.lives - skipped.length);
+    if (g.lives<=0) g.phase='gameover';
+    else if (g.played.length===g.players.length) g.phase='roundend';
+    return g;
+  });
+}
+function nextRound(){
+  peek=false;
+  mutate(g=>{
+    g.round++; g.cleared++;
+    g.phase='playing'; g.hands=drawNumbers(g.players); g.played=[];
+    g.theme=pickTheme(g.usedThemes); g.usedThemes=[...g.usedThemes,g.theme].slice(-12);
+    return g;
+  });
+}
+function restart(keepPlayers){
+  me=null; peek=false; setErr('');
+  mutate(g=>{
+    const players = keepPlayers ? g.players : [];
+    const used = g.usedThemes;
+    const n = structuredClone(FRESH);
+    n.players = players; n.usedThemes = used;
+    if (keepPlayers && players.length>=2){
+      n.phase='playing'; n.hands=drawNumbers(players);
+      n.theme=pickTheme(used); n.usedThemes=[...used,n.theme].slice(-12);
+    }
+    return n;
+  });
+}
+
+// ── render ──
+function livesHTML(){
+  let h='';
+  for (let i=0;i<START_LIVES;i++) h += `<div class="life ${i<(G?G.lives:START_LIVES)?'':'cut'}"></div>`;
+  return h;
+}
+function threadHTML(){
+  if (!G.played.length)
+    return '<p class="faint" style="font-style:italic;margin-top:10px">No cards played yet. Whoever believes they hold the lowest number plays first.</p>';
+  return `<div class="thread-row">${G.played.map(c=>`
+    <div class="center">
+      <div class="card ${c.auto?'cut':''}"><span class="num">${c.number}</span></div>
+      <div class="card-label">${esc(c.name)}${c.auto?' ✂':''}</div>
+    </div>`).join('')}</div>`;
+}
+function themePanel(){
+  return `<div class="panel">
+    <div class="eyebrow">Theme</div>
+    <p class="theme">${esc(G.theme)}</p>
+    ${G.phase==='playing'&&G.played.length===0
+      ? '<button class="btn-ghost" style="margin-top:12px" onclick="rerollTheme()">Different theme</button>':''}
+  </div>`;
+}
+
+function render(){
+  if (!configured()){
+    $('app').innerHTML = `<div class="panel">
+      <div class="eyebrow">One-time setup needed</div>
+      <p class="faint" style="line-height:1.6;margin-top:12px">Open this file in a text editor and paste your Supabase <b style="color:var(--ink)">Project URL</b> and <b style="color:var(--ink)">anon key</b> into the two marked lines near the top of the &lt;script&gt; section. Then re-upload/host the file.</p>
+    </div>`;
+    return;
+  }
+  $('crumb').textContent = 'Round '+G.round+' · '+G.cleared+' cleared';
+  $('lives').innerHTML = livesHTML();
+  const app = $('app');
+
+  if (G.phase==='setup'){
+    const had=$('nameInput'); const keep=had?had.value:'';
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Players (2–10)</div>
+        <div style="display:flex;gap:8px;margin:14px 0">
+          <input id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-red" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.players.length===0
+          ? '<p class="faint" style="font-style:italic">Add everyone playing. Each player gets a secret number from 1 to 100.</p>'
+          : G.players.map(p=>`<div class="row"><span style="font-size:18px">${esc(p)}</span>
+              <button class="btn-ghost" onclick="removePlayer('${esc(p)}')">Remove</button></div>`).join('')}
+        <button class="btn-red full" ${G.players.length<2?'disabled style="opacity:.4"':''}
+          onclick="startRound()">Deal the numbers</button>
+        <details style="margin-top:18px"><summary>How to play</summary>
+          <div class="faint" style="font-size:14px;line-height:1.6;margin-top:8px">
+            <p>Everyone gets a secret number from 1 to 100 and sees a theme.</p>
+            <p>Out loud, describe your number through the theme — if the theme is "scariness of animals" and you have 8, you might say "a goldfish." Never say the number.</p>
+            <p>Play cards one at a time, lowest first. On your own phone, tap your name, peek, and play when you think yours is the lowest still in hand.</p>
+            <p>If a play skips over lower cards, they're cut from the thread — one life lost each. Lose all ${START_LIVES} and the thread snaps.</p>
+          </div>
+        </details>
+      </div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase==='playing'){
+    let inner;
+    const iPlayed = me && G.played.some(c=>c.name===me);
+    if (!me){
+      inner = `<div class="eyebrow">Who are you?</div>
+        <div class="grid">${G.players.map(p=>{
+          const done = G.played.some(c=>c.name===p);
+          return `<button class="seat ${done?'done':''}" ${done?'disabled':''}
+            onclick="pickMe('${esc(p)}')">${esc(p)}${done?' · played':''}</button>`;
+        }).join('')}</div>`;
+    } else if (iPlayed){
+      inner = `<p class="faint">Your card is on the thread, ${esc(me)}. Cheer the others on.</p>
+        <button class="btn-ghost" onclick="me=null;render()">Switch player</button>`;
+    } else {
+      inner = `<div class="eyebrow">${esc(me)}'s secret number</div>
+        <div class="secret" onclick="togglePeek()" role="button">
+          ${peek ? `<span class="big">${G.hands[me]}</span>`
+                 : '<span class="faint" style="font-size:15px">Tap to peek — keep it hidden from the others</span>'}
+        </div>
+        <p class="faint" style="font-size:14px;line-height:1.5">Describe it through the theme — never say the number. Play it when you think yours is the lowest still in hand.</p>
+        <button class="btn-red full" onclick="playCard()">Play my card</button>
+        <button class="btn-ghost full" onclick="me=null;peek=false;render()">Not ${esc(me)}? Switch player</button>`;
+    }
+    app.innerHTML = themePanel() +
+      `<div class="panel"><div class="eyebrow">The thread — lowest first</div>${threadHTML()}</div>
+       <div class="panel">${inner}</div>`;
+    return;
+  }
+
+  if (G.phase==='roundend'){
+    app.innerHTML = themePanel() +
+      `<div class="panel"><div class="eyebrow">The thread — lowest first</div>${threadHTML()}</div>
+       <div class="panel center">
+        <div class="eyebrow">Round ${G.round} cleared</div>
+        <p style="font-size:18px;margin:12px 0 0">The thread holds. ${G.lives} ${G.lives===1?'life':'lives'} remaining.</p>
+        <div class="stack">
+          <button class="btn-red" onclick="nextRound()">Round ${G.round+1} · new numbers</button>
+          <button class="btn-ghost" onclick="restart(true)">Restart with full lives</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (G.phase==='gameover'){
+    const hidden = unplayed(G).sort((a,b)=>G.hands[a]-G.hands[b]);
+    app.innerHTML = themePanel() +
+      `<div class="panel"><div class="eyebrow">The thread — lowest first</div>${threadHTML()}</div>
+       <div class="panel center">
+        <div class="eyebrow">The thread snapped</div>
+        <p style="font-family:'Shippori Mincho',serif;font-size:34px;color:var(--thread);margin:12px 0 4px">Game over</p>
+        <p class="faint">You cleared ${G.cleared} ${G.cleared===1?'round':'rounds'} together.</p>
+        ${hidden.length?`<p class="faint" style="font-size:14px;margin-top:14px">Still in hand:</p>${
+          hidden.map(p=>`<p style="margin:4px 0">${esc(p)} — ${G.hands[p]}</p>`).join('')}`:''}
+        <div class="stack">
+          <button class="btn-red" onclick="restart(true)">Play again · same players</button>
+          <button class="btn-ghost" onclick="restart(false)">New group</button>
+        </div>
+      </div>`;
+  }
+}
+
+poll();
+setInterval(poll, 2500);
+</script>
+</body>
+</html>
