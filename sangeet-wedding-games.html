@@ -13,9 +13,9 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💍</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0C0F0E; --panel:#131816; --line:rgba(201,164,76,.28);
-           --gold:#C9A44C; --goldDim:#8a7340; --ink:#E8E0CE; --faint:#8B9089;
-           --crimson:#A32633; }
+  :root { --bg:#FFF6E9; --panel:#FFFFFF; --line:rgba(178,110,38,.26);
+           --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
+           --crimson:#C2185B; }
   * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
   body { margin:0; background:var(--bg); color:var(--ink); }
   .wrap { max-width:680px; margin:0 auto; padding:0 16px 48px; }
@@ -38,12 +38,12 @@
   .rule { height:1px; margin:26px 0; opacity:.5;
            background:linear-gradient(90deg,transparent,var(--gold),transparent); }
   .cta { display:block; background:var(--panel); border:1px solid var(--line);
-          border-left:3px solid var(--crimson); border-radius:4px; padding:18px 20px;
+          border-left:4px solid var(--crimson); border-radius:8px; padding:18px 20px;
           margin:16px 0; text-decoration:none; color:inherit; }
-  .cta:hover { border-color:var(--crimson); }
+  .cta:hover { border-color:var(--crimson); box-shadow:0 2px 6px rgba(43,18,32,.08); }
   .cta b { font-family:'Cinzel',serif; letter-spacing:.06em; font-size:18px; display:block; }
   .cta span { color:var(--faint); font-size:16px; }
-  .note { background:var(--panel); border:1px solid var(--line); border-radius:4px;
+  .note { background:#FFF0D6; border:1px solid var(--line); border-radius:8px;
            padding:16px 18px; margin:20px 0; }
   footer { text-align:center; padding-top:36px; color:var(--goldDim); font-size:13px; }
   footer a { color:var(--goldDim); }

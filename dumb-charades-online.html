@@ -96,6 +96,7 @@
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
 </div>
 
+<script src="feedback.js"></script>
 <script>
 const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
@@ -536,7 +537,7 @@ function render(){
           <button class="btn-pink" onclick="playAgain(true)">Play again · same teams</button>
           <button class="btn-ghost" onclick="playAgain(false)">New group</button>
         </div>
-      </div>`;
+      </div>` + vpFeedbackHTML('Dumb Charades');
     return;
   }
 }

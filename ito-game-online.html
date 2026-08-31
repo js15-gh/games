@@ -90,6 +90,7 @@
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
 </div>
 
+<script src="feedback.js"></script>
 <script>
 // ════════════════════════════════════════════════════════════
 //  SETUP — paste your two Supabase values between the quotes.
@@ -526,7 +527,7 @@ function render(){
           <button class="btn-red" onclick="restart(true)">Play again · same players</button>
           <button class="btn-ghost" onclick="restart(false)">New group</button>
         </div>
-      </div>`;
+      </div>` + vpFeedbackHTML('Ito');
   }
 }
 

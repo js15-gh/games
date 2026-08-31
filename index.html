@@ -15,15 +15,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#0C0F0E; --panel:#131816; --line:rgba(201,164,76,.28);
-    --gold:#C9A44C; --goldDim:#8a7340; --ink:#E8E0CE; --faint:#8B9089;
-    --crimson:#A32633; --thread:#D9483B; --charades:#E0457B; --tambola:#D4A050; --jeopardy:#F0C85A; --antak:#F5A642; --cards:#D4AF5A;
+    --bg:#FFF6E9; --panel:#FFFFFF; --line:rgba(178,110,38,.26);
+    --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
+    --magenta:#C2185B;
+    --crimson:#A32633; --thread:#C1362B; --charades:#C2185B;
+    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A;
   }
   * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
   body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
   .wrap { max-width:680px; margin:0 auto; padding:0 16px 48px; }
 
-  header { text-align:center; padding:56px 8px 8px; }
+  header { text-align:center; padding:46px 8px 8px; }
+  .banner { height:6px; border-radius:99px; margin:0 auto 26px; max-width:220px;
+            background:linear-gradient(90deg,var(--antak),var(--magenta),var(--tambola)); }
   .eyebrow { color:var(--gold); letter-spacing:.28em; font-size:12px;
              text-transform:uppercase; font-family:'Cinzel',serif; }
   h1 { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.06em;
@@ -61,7 +65,7 @@
   .steps b { color:var(--ink); font-weight:600; }
   .links { list-style:none; padding:0; margin:16px 0 0; }
   .links li { color:var(--faint); line-height:1.7; font-size:17px; padding:7px 0;
-              border-bottom:1px solid rgba(232,224,206,.07); }
+              border-bottom:1px solid rgba(43,18,32,.10); }
   .links a { color:var(--gold); }
 
   footer { text-align:center; padding-top:36px; color:var(--goldDim); font-size:13px; }
@@ -73,6 +77,7 @@
 <div class="wrap">
 
   <header>
+    <div class="banner"></div>
     <div class="eyebrow">Free · No app · No sign-up</div>
     <h1>DESI PARTY GAMES!</h1>
     <p class="lede">Games for a group in one room, each playing on their own phone.
@@ -195,6 +200,7 @@
       <li><a href="games-at-the-airport.html">Games at the airport</a> — delays, layovers, nothing to carry</li>
       <li><a href="antakshari-rules.html">Antakshari rules</a> — and how to settle the usual arguments</li>
       <li><a href="tambola-rules.html">Tambola rules</a> — tickets, prizes and false claims</li>
+      <li><a href="games-for-kids.html">Games for kids</a> — by age, and what each one actually asks of them</li>
       <li><a href="card-games-without-cards.html">Card games without a deck</a> — Kaali Tiri, poker and bridge next</li>
     </ul>
 
