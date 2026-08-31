@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antakshari — keeps the letter, the score and the song list</title>
+<meta name="description" content="Play Antakshari without the arguments. The phone holds the letter you have to sing from, catches songs already sung, runs the clock and keeps score. Free, no app, no sign-up.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#150E1F; --panel:#211630; --line:rgba(245,166,66,.24);
+    --gold:#F5A642; --pink:#E85D8A; --ink:#F3EDF7; --faint:#9A8FAE; --green:#4FB07E;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:600px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:30px 8px 4px; }
+  h1 { font-family:'Baloo 2',cursive,sans-serif; font-weight:700; letter-spacing:.02em;
+       font-size:clamp(32px,8vw,52px); margin:4px 0 0; line-height:1.1; }
+  h1 .n { color:var(--gold); }
+  .eyebrow { color:var(--gold); letter-spacing:.22em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:20px 18px; margin-top:16px; }
+  .row { display:flex; justify-content:space-between; align-items:center;
+         padding:9px 0; border-bottom:1px solid rgba(243,237,247,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(118px,1fr));
+          gap:9px; margin-top:12px; }
+  input { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+          color:var(--ink); padding:13px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:8px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  .btn-gold { background:var(--gold); color:#1b1226; border:none; padding:14px 20px;
+              font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .btn-pink { background:var(--pink); color:#fff; border:none; padding:14px 20px;
+              font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid rgba(154,143,174,.4);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:13px 10px; font-size:15px; }
+  .seat.on { background:var(--gold); border-color:var(--gold); color:#1b1226; font-weight:700; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--pink); text-align:center; font-size:14px; min-height:18px; }
+  .ok { color:var(--green); text-align:center; font-size:14px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:9px; margin-top:16px; }
+
+  .letterbig { font-family:'Baloo 2',cursive,sans-serif; font-weight:700;
+               font-size:clamp(72px,22vw,130px); line-height:1; color:var(--gold); }
+  .timer { font-family:'Baloo 2',cursive,sans-serif; font-size:34px; line-height:1; }
+  .timer.low { color:var(--pink); }
+  .letters { display:grid; grid-template-columns:repeat(auto-fill,minmax(46px,1fr));
+             gap:6px; margin-top:12px; }
+  .letters button { font-family:'Baloo 2',cursive,sans-serif; font-size:20px;
+                    padding:9px 0; background:transparent; color:var(--ink);
+                    border:1px solid var(--line); }
+  .letters button:hover { border-color:var(--gold); color:var(--gold); }
+  .scores { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:12px; }
+  .sc { text-align:center; border:1px solid var(--line); border-radius:10px;
+        padding:8px 16px; min-width:86px; }
+  .sc.up { border-color:var(--gold); }
+  .sc .n { font-family:'Baloo 2',cursive,sans-serif; font-size:26px; line-height:1.1; }
+  .sc .t { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  .sc.up .t { color:var(--gold); }
+  .song { display:flex; justify-content:space-between; gap:10px; padding:7px 0;
+          border-bottom:1px solid rgba(243,237,247,.07); font-size:15px; }
+  .song .who { color:var(--faint); font-size:13px; white-space:nowrap; }
+
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+             padding:13px 15px; margin-top:16px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Baloo 2',cursive,sans-serif; letter-spacing:.18em;
+              font-size:28px; color:var(--gold); }
+  .linkfield { font-size:13px; margin-top:9px; padding:9px 10px; color:var(--faint); }
+  .rb-actions { display:flex; gap:8px; margin-top:9px; }
+  .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:18px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover, .homelink:focus-visible { color:var(--gold); }
+  details summary { color:var(--gold); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:26px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>ANTAKSHARI<span class="n">!</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Tuning up…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "antakshari";
+
+// Starting aksharas people actually sing from. Not the full varnamala — the
+// ones with no songs behind them just stall the game.
+const LETTERS = {
+  hi: ["अ","आ","इ","ई","उ","ए","ओ","क","ख","ग","घ","च","छ","ज","झ","ट","ठ","ड",
+       "त","थ","द","ध","न","प","फ","ब","भ","म","य","र","ल","व","श","स","ह"],
+  en: ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","R","S",
+       "T","U","V","W","Y"]
+};
+const TEAM_NAMES = ['A','B','C','D'];
+
+const FRESH = { phase:'setup', players:[], teams:{A:[],B:[]}, order:['A','B'],
+                script:'hi', seconds:45, target:15, turn:0, letter:'', endsAt:null,
+                awaiting:null, songs:[], scores:{A:0,B:0} };
+
+let G = null;
+let me = null;
+let stamp = 0;
+let pending = null;
+let tick = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setErr(m){ $('err').textContent = m || ''; }
+
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() })
+  });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(),
+    body: JSON.stringify({ p_id: roomKey(), p_state: next })
+  });
+  if (!r.ok) throw new Error('save '+r.status);
+  try { return (await r.json()) === true; } catch { return true; }
+}
+async function commit(fn){
+  for (let attempt = 0; attempt < 4; attempt++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = fresh; stamp = Math.max(stamp, fresh._stamp || 0); render(); }
+  }
+  return false;
+}
+async function mutate(fn){
+  try { if (await commit(fn)){ setErr(''); return; } }
+  catch { /* offline — retry on the next poll */ }
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;
+}
+async function poll(){
+  if (!joined) return;
+  try {
+    if (pending){ const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn; }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = s; stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch { if (!G){ G = structuredClone(FRESH); render(); } }
+}
+
+// ── helpers ──
+const letters = () => LETTERS[G.script] || LETTERS.hi;
+const randLetter = (g) => { const L = LETTERS[g.script] || LETTERS.hi; return L[Math.floor(Math.random()*L.length)]; };
+const upTeam = () => G.order[G.turn];
+// loose match: case, spaces and punctuation ignored, so "Tum Hi Ho" == "tumhiho"
+const norm = (s) => String(s).toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+function alreadySung(g, title){
+  const n = norm(title);
+  return g.songs.find(s => norm(s.title) === n);
+}
+function remaining(){
+  if (!G || !G.endsAt) return 0;
+  return Math.max(0, Math.ceil((G.endsAt - Date.now())/1000));
+}
+
+// ── actions ──
+function addPlayer(){
+  const el = $('nameInput'); const n = el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{
+    g.players.push(n);
+    const smallest = g.order.reduce((a,b)=> g.teams[a].length <= g.teams[b].length ? a : b);
+    g.teams[smallest].push(n);
+    return g;
+  });
+}
+function removePlayer(n){
+  mutate(g=>{
+    g.players = g.players.filter(p=>p!==n);
+    for (const t of g.order) g.teams[t] = g.teams[t].filter(p=>p!==n);
+    return g;
+  });
+  if (me === n) me = null;
+}
+function moveTeam(n){
+  mutate(g=>{
+    const from = g.order.find(t=>g.teams[t].includes(n));
+    const to = g.order[(g.order.indexOf(from)+1) % g.order.length];
+    g.teams[from] = g.teams[from].filter(p=>p!==n);
+    g.teams[to].push(n);
+    return g;
+  });
+}
+function setTeamCount(k){
+  mutate(g=>{
+    const order = TEAM_NAMES.slice(0,k), teams={}, scores={};
+    order.forEach(t=>{ teams[t]=[]; scores[t]=0; });
+    g.players.forEach((p,i)=>teams[order[i%k]].push(p));
+    g.order=order; g.teams=teams; g.scores=scores;
+    return g;
+  });
+}
+function setScript(s){ mutate(g=>{ g.script = s; g.letter = randLetter(g); return g; }); }
+function setSeconds(s){ mutate(g=>{ g.seconds = s; return g; }); }
+function setTarget(t){ mutate(g=>{ g.target = t; return g; }); }
+
+function startGame(){
+  if (G.players.length < 2){ setErr('You need at least 2 singers.'); return; }
+  setErr('');
+  mutate(g=>{
+    g.phase='playing'; g.turn=0; g.songs=[]; g.awaiting=null;
+    g.order.forEach(t=>g.scores[t]=0);
+    g.letter = randLetter(g);
+    g.endsAt = g.seconds ? Date.now() + g.seconds*1000 : null;
+    return g;
+  });
+}
+function sang(){
+  const el = $('songInput'); if (!el) return;
+  const title = el.value.trim();
+  if (!title){ setErr('Type the song you sang.'); return; }
+  const dupe = alreadySung(G, title);
+  if (dupe){ setErr(`"${dupe.title}" was already sung by Team ${dupe.team}. Pick another.`); return; }
+  setErr(''); el.value = '';
+  mutate(g=>{
+    const t = g.order[g.turn];
+    g.songs.unshift({ team:t, title, letter:g.letter });
+    g.scores[t] = (g.scores[t]||0) + 1;
+    g.awaiting = 'letter';          // same team now says where their song ended
+    g.endsAt = null;
+    return g;
+  });
+}
+function nextLetter(L){
+  mutate(g=>{
+    g.letter = L;
+    g.awaiting = null;
+    g.turn = (g.turn + 1) % g.order.length;
+    g.endsAt = g.seconds ? Date.now() + g.seconds*1000 : null;
+    if (g.order.some(t => g.scores[t] >= g.target)) g.phase = 'done';
+    return g;
+  });
+}
+function giveUp(){
+  mutate(g=>{
+    g.songs.unshift({ team:g.order[g.turn], title:null, letter:g.letter });
+    g.turn = (g.turn + 1) % g.order.length;
+    g.letter = randLetter(g);
+    g.awaiting = null;
+    g.endsAt = g.seconds ? Date.now() + g.seconds*1000 : null;
+    return g;
+  });
+}
+function playAgain(keep){
+  me = keep ? me : null;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep){ n.players=g.players; n.teams=g.teams; n.order=g.order; n.script=g.script;
+               n.seconds=g.seconds; n.target=g.target; n.scores={};
+               g.order.forEach(t=>n.scores[t]=0); }
+    return n;
+  });
+}
+function backToSetup(){ mutate(g=>{ g.phase='setup'; g.awaiting=null; g.endsAt=null; return g; }); }
+
+// ── render ──
+function scoresHTML(){
+  const up = upTeam();
+  return `<div class="scores">${G.order.map(t=>`
+    <div class="sc ${t===up && G.phase==='playing' ? 'up':''}">
+      <div class="n">${G.scores[t]||0}</div><div class="t">Team ${t}</div>
+    </div>`).join('')}</div>`;
+}
+function historyHTML(){
+  if (!G.songs.length) return '';
+  return `<div class="panel">
+    <details><summary>Songs so far (${G.songs.filter(s=>s.title).length})</summary>
+      <div style="margin-top:10px">
+        ${G.songs.slice(0,40).map(s=> s.title
+          ? `<div class="song"><span>${esc(s.letter)} · ${esc(s.title)}</span>
+               <span class="who">Team ${esc(s.team)}</span></div>`
+          : `<div class="song"><span class="faint">${esc(s.letter)} · passed</span>
+               <span class="who">Team ${esc(s.team)}</span></div>`).join('')}
+      </div>
+    </details></div>`;
+}
+
+function render(){
+  if (!configured()){ $('app').innerHTML = '<div class="panel"><p class="faint">Supabase is not configured.</p></div>'; return; }
+  const app = $('app');
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
+    : G.phase==='done' ? 'Final scores'
+    : `First to ${G.target} · Team ${upTeam()} to sing`;
+
+  if (G.phase === 'setup'){
+    const had = $('nameInput'); const keep = had ? had.value : '';
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Who's singing?</div>
+        <p class="faint" style="font-size:14px;margin-top:6px">Players split between the teams; tap Move to shift someone.</p>
+        <div style="display:flex;gap:8px;margin:12px 0">
+          <input id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-gold" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.order.map(t=>`<div style="margin-top:10px"><span class="eyebrow">Team ${t}</span>
+          ${G.teams[t].length ? G.teams[t].map(p=>`<div class="row"><span>${esc(p)}</span>
+            <span style="display:flex;gap:6px">
+              <button class="btn-ghost" onclick="moveTeam('${esc(p)}')">Move</button>
+              <button class="btn-ghost" onclick="removePlayer('${esc(p)}')">Remove</button>
+            </span></div>`).join('') : '<p class="faint" style="font-size:14px;margin:6px 0 0">Nobody yet.</p>'}
+        </div>`).join('')}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Teams</div>
+        <div class="grid">${[2,3,4].map(k=>
+          `<button class="seat ${G.order.length===k?'on':''}" onclick="setTeamCount(${k})">${k} teams</button>`).join('')}</div>
+        <div class="eyebrow" style="margin-top:18px">Letters</div>
+        <div class="grid">
+          <button class="seat ${G.script==='hi'?'on':''}" onclick="setScript('hi')">हिंदी</button>
+          <button class="seat ${G.script==='en'?'on':''}" onclick="setScript('en')">English</button>
+        </div>
+        <div class="eyebrow" style="margin-top:18px">Seconds to start singing</div>
+        <div class="grid">
+          ${[30,45,60].map(s=>`<button class="seat ${G.seconds===s?'on':''}" onclick="setSeconds(${s})">${s}s</button>`).join('')}
+          <button class="seat ${G.seconds===0?'on':''}" onclick="setSeconds(0)">No clock</button>
+        </div>
+        <div class="eyebrow" style="margin-top:18px">Play to</div>
+        <div class="grid">${[10,15,20,25].map(t=>
+          `<button class="seat ${G.target===t?'on':''}" onclick="setTarget(${t})">${t} songs</button>`).join('')}</div>
+        <button class="btn-pink full" style="margin-top:18px" onclick="startGame()">Start singing</button>
+      </div>
+      <div class="panel">
+        <details><summary>How to play</summary>
+          <div class="faint" style="font-size:14px;line-height:1.6;margin-top:8px">
+            <p>Teams take turns. The big letter is what your song has to <b style="color:var(--ink)">start</b> with.</p>
+            <p>Sing it out loud, type the name in, and the phone checks nobody has already used that song —
+               which is what the arguing is usually about.</p>
+            <p>Then tap the letter your song <b style="color:var(--ink)">ended</b> on, and it passes to the next team.</p>
+            <p>Can't think of one before the clock runs out? Tap Pass. No point, new letter, next team.</p>
+          </div>
+        </details>
+      </div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase === 'playing'){
+    const t = upTeam();
+    if (G.awaiting === 'letter'){
+      app.innerHTML = scoresHTML() + `
+        <div class="panel center">
+          <div class="eyebrow">Team ${t} — which letter did it end on?</div>
+          <p class="faint" style="font-size:14px;margin:8px 0 0">Tap the last akshar of the song you just sang.</p>
+          <div class="letters">${letters().map(L=>
+            `<button onclick="nextLetter('${L}')">${L}</button>`).join('')}</div>
+        </div>` + historyHTML();
+      return;
+    }
+    const left = remaining();
+    app.innerHTML = scoresHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">Team ${t} — sing a song starting with</div>
+        <div class="letterbig">${esc(G.letter)}</div>
+        ${G.seconds ? `<div class="timer ${left<=10?'low':''}">${left}s</div>` : ''}
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <input id="songInput" placeholder="Song you sang" autocomplete="off">
+          <button class="btn-gold" onclick="sang()">Sung it</button>
+        </div>
+        <button class="btn-ghost full" onclick="giveUp()">Pass — can't think of one</button>
+      </div>
+      <div class="panel">
+        <button class="btn-ghost full" style="margin-top:0" onclick="backToSetup()">Change teams or settings</button>
+      </div>` + historyHTML();
+    const si = $('songInput');
+    if (si) si.addEventListener('keydown', e=>{ if(e.key==='Enter') sang(); });
+    return;
+  }
+
+  if (G.phase === 'done'){
+    const best = Math.max(...G.order.map(t=>G.scores[t]||0));
+    const win = G.order.filter(t=>(G.scores[t]||0)===best);
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">That's the last antara</div>
+        <p style="font-family:'Baloo 2',cursive;font-size:clamp(26px,7vw,42px);margin:8px 0 0">
+          ${win.length>1 ? "IT’S A TIE" : "TEAM " + win[0] + " WINS"}</p>
+        ${scoresHTML()}
+        <p class="faint" style="font-size:14px;margin-top:14px">${G.songs.filter(s=>s.title).length} songs sung.</p>
+        <div class="stack">
+          <button class="btn-pink" onclick="playAgain(true)">Play again · same teams</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New group</button>
+        </div>
+      </div>` + historyHTML();
+    return;
+  }
+}
+
+function startTick(){
+  if (tick) return;
+  tick = setInterval(()=>{ if (G && G.phase==='playing' && !G.awaiting && G.endsAt) render(); }, 1000);
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+function newCode(){
+  const r = new Uint32Array(4); crypto.getRandomValues(r);
+  let c = ''; for (let i=0;i<4;i++) c += CODE_ALPHABET[r[i] % CODE_ALPHABET.length];
+  return c;
+}
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false;
+let pollTimer = null;
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+
+function enterRoom(){
+  joined = true;
+  history.replaceState(null, '', inviteURL());
+  renderRoomBar(); render(); startTick();
+  if (!pollTimer) pollTimer = setInterval(poll, 2500);
+}
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  if (tick){ clearInterval(tick); tick = null; }
+  joined = false; ROOM = ''; G = null; me = null; pending = null;
+  history.replaceState(null, '', location.pathname);
+  $('roombar').innerHTML = ''; $('crumb').textContent = '';
+  setErr(''); renderLobby();
+}
+async function createRoom(){
+  setErr('');
+  const btn = $('createBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Creating…'; }
+  try {
+    for (let i=0;i<5;i++){
+      ROOM = newCode();
+      if (await loadState()) continue;
+      G = structuredClone(FRESH);
+      if (!(await saveState(G))) continue;
+      enterRoom(); return;
+    }
+    ROOM=''; setErr('Could not find a free code. Please try again.');
+  } catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); }
+  if ($('createBtn')){ $('createBtn').disabled=false; $('createBtn').textContent='Create a game'; }
+}
+async function joinRoom(raw){
+  setErr('');
+  const c = cleanCode(raw);
+  if (c.length < 4){ setErr('Enter the 4-character code.'); return; }
+  ROOM = c;
+  let s;
+  try { s = await loadState(); }
+  catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM=''; renderLobby('No game found with code '+c+'. Check the code, or start a new one.'); return; }
+  G = s; stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+function copyInvite(){
+  const url = inviteURL();
+  const done = () => { const b=$('copyBtn'); if(!b) return;
+    b.textContent='Link copied';
+    setTimeout(()=>{ if($('copyBtn')) $('copyBtn').textContent='Copy invite link'; },1600); };
+  const fallback = () => { const f=$('inviteField'); if(f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done, fallback);
+  } else fallback();
+}
+function renderRoomBar(){
+  $('roombar').innerHTML = `
+    <div class="roombar">
+      <div class="rb-top"><span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span></div>
+      <input id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div>
+    </div>`;
+}
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game, then send the link to
+        everyone singing. The phone keeps the letter, the score and the list of songs already used.</p>
+      <button class="btn-pink full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-gold" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(e.target.value); });
+}
+
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM);
+  else renderLobby();
+})();
+</script>
+</body>
+</html>
