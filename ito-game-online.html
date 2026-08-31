@@ -35,6 +35,7 @@
   .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
           padding:14px 10px; font-size:16px; }
   .seat.done { opacity:.35; }
+  .seat.on { background:var(--gold); border-color:var(--gold); color:var(--bg); font-weight:700; }
   .full { width:100%; margin-top:14px; }
   .faint { color:var(--faint); }
   .err { color:var(--thread); text-align:center; font-size:14px; min-height:18px; }
@@ -100,37 +101,131 @@ const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
 const GAME_ID = "ito";   // namespaces this game's rows; the room code is appended per game
 // ════════════════════════════════════════════════════════════
 
-const THEMES = [
-  "Deliciousness of foods (1 = gross, 100 = heavenly)",
-  "Scariness of animals (1 = harmless, 100 = terrifying)",
-  "Usefulness of superpowers (1 = useless, 100 = world-changing)",
-  "Popularity of songs (1 = obscure, 100 = everyone knows it)",
-  "How much you'd want it as a pet (1 = never, 100 = absolutely)",
-  "Strength of smells (1 = faint, 100 = overpowering)",
-  "Fun things to do on a rainy day (1 = boring, 100 = amazing)",
-  "How famous is this person (1 = unknown, 100 = world-famous)",
-  "Coldness of things (1 = warm, 100 = freezing)",
-  "How expensive is it (1 = pocket change, 100 = fortune)",
-  "Things you'd bring to a desert island (1 = useless, 100 = essential)",
-  "How early you'd wake up for it (1 = never, 100 = 4 AM gladly)",
-  "Spiciness of foods (1 = mild, 100 = volcanic)",
-  "How good it sounds at karaoke (1 = painful, 100 = showstopper)",
-  "Difficulty of school subjects (1 = easy, 100 = brutal)",
-  "How long you could talk about it (1 = seconds, 100 = hours)",
-  "Attractiveness of jobs (1 = no thanks, 100 = dream job)",
-  "How heavy it is (1 = feather, 100 = crushing)",
-  "Things that make you sleepy (1 = wide awake, 100 = instant nap)",
-  "How likely to survive a horror movie (1 = first to go, 100 = final survivor)",
-  "How good it smells (1 = awful, 100 = incredible)",
-  "Speed of things (1 = glacial, 100 = lightning)",
-  "How romantic is it (1 = not at all, 100 = swoon)",
-  "Snacks for a road trip (1 = terrible pick, 100 = perfect)",
-  "How annoying is the sound (1 = pleasant, 100 = unbearable)",
-  "Vacation destinations (1 = skip it, 100 = trip of a lifetime)"
-];
+const THEMES = {
+  food: { label:'Food & drink', list:[
+    "Deliciousness of foods (1 = gross, 100 = heavenly)",
+    "Spiciness of foods (1 = mild, 100 = volcanic)",
+    "Snacks for a road trip (1 = terrible pick, 100 = perfect)",
+    "How healthy is it (1 = pure junk, 100 = superfood)",
+    "Breakfast foods (1 = skip it, 100 = worth waking up for)",
+    "How messy is it to eat (1 = tidy, 100 = need a shower after)",
+    "Foods you'd eat cold (1 = never, 100 = better cold)",
+    "How filling is it (1 = still hungry, 100 = cannot move)",
+    "Drinks on a hot day (1 = pointless, 100 = life-saving)",
+    "How hard is it to cook (1 = anyone could, 100 = needs a chef)" ]},
+
+  animals: { label:'Animals', list:[
+    "Scariness of animals (1 = harmless, 100 = terrifying)",
+    "How much you'd want it as a pet (1 = never, 100 = absolutely)",
+    "How cute is the animal (1 = not at all, 100 = unbearably)",
+    "Animals you could win a fight with (1 = no chance, 100 = easy)",
+    "How clever is the animal (1 = no thoughts, 100 = genius)",
+    "How loud is the animal (1 = silent, 100 = deafening)",
+    "Animals you'd ride (1 = never, 100 = gladly)",
+    "How fast is the animal (1 = glacial, 100 = blink and it's gone)",
+    "How strange does it look (1 = ordinary, 100 = alien)",
+    "Finding one in your kitchen (1 = fine, 100 = move house)" ]},
+
+  sounds: { label:'Sounds', list:[
+    "How annoying is the sound (1 = pleasant, 100 = unbearable)",
+    "How soothing is the sound (1 = stressful, 100 = instant calm)",
+    "How loud is it (1 = a whisper, 100 = ears ringing)",
+    "Sounds that wake you up (1 = sleep through it, 100 = bolt upright)",
+    "How recognisable is the sound (1 = no idea, 100 = know it instantly)",
+    "Hearing it at 3 AM (1 = fine, 100 = terrifying)",
+    "How satisfying is the sound (1 = nothing, 100 = play it again)",
+    "Ringtones (1 = embarrassing, 100 = actually good)",
+    "How it sounds at karaoke (1 = painful, 100 = showstopper)",
+    "Making that sound in a library (1 = unnoticed, 100 = everyone turns)" ]},
+
+  actions: { label:'Actions', list:[
+    "How hard is it to do (1 = anyone could, 100 = years of practice)",
+    "How embarrassing is it in public (1 = normal, 100 = mortifying)",
+    "How dangerous is it (1 = totally safe, 100 = might not survive)",
+    "How satisfying is it to do (1 = nothing, 100 = pure bliss)",
+    "How tiring is it (1 = effortless, 100 = collapse afterwards)",
+    "Things you'd do for money (1 = never, 100 = name the price)",
+    "How rude is it (1 = polite, 100 = never speak to me again)",
+    "How long does it take (1 = seconds, 100 = all day)",
+    "Doing it at a party (1 = kills the mood, 100 = makes the night)",
+    "How much nerve does it take (1 = none, 100 = terrifying)" ]},
+
+  people: { label:'People & jobs', list:[
+    "How famous is this person (1 = unknown, 100 = world-famous)",
+    "How appealing is the job (1 = no thanks, 100 = dream job)",
+    "How much would you trust them (1 = not at all, 100 = with your life)",
+    "People you'd want on your team (1 = useless, 100 = carry us)",
+    "How likely to survive a horror film (1 = first to go, 100 = final survivor)",
+    "How busy is their life (1 = all free time, 100 = no sleep)",
+    "How hard is the job (1 = easy, 100 = brutal)",
+    "People you'd call at 3 AM (1 = never, 100 = always answers)",
+    "How stressful is the job (1 = calm, 100 = constant panic)",
+    "How much do people talk about them (1 = nobody, 100 = everywhere)" ]},
+
+  objects: { label:'Things', list:[
+    "How expensive is it (1 = pocket change, 100 = a fortune)",
+    "How heavy is it (1 = a feather, 100 = crushing)",
+    "How useful is it day to day (1 = never, 100 = can't live without)",
+    "How fragile is it (1 = indestructible, 100 = breathe on it wrong)",
+    "Things for a desert island (1 = useless, 100 = essential)",
+    "How often do you lose it (1 = never, 100 = constantly)",
+    "How old-fashioned is it (1 = cutting edge, 100 = museum piece)",
+    "Things in your bag (1 = never carry it, 100 = always there)",
+    "How good does it feel to throw away (1 = keep it, 100 = pure joy)",
+    "How much space does it take (1 = a pocket, 100 = a whole room)" ]},
+
+  places: { label:'Places', list:[
+    "Holiday destinations (1 = skip it, 100 = trip of a lifetime)",
+    "How crowded is it (1 = empty, 100 = cannot move)",
+    "Being there at midnight (1 = terrifying, 100 = perfect)",
+    "How far would you travel for it (1 = not next door, 100 = across the world)",
+    "How hot is it (1 = freezing, 100 = unbearable)",
+    "Places to work from (1 = impossible, 100 = ideal)",
+    "How expensive is the city (1 = cheap, 100 = ruinous)",
+    "Places to take your parents (1 = never, 100 = they'd love it)",
+    "How easy is it to get to (1 = an ordeal, 100 = right there)",
+    "Places for a first date (1 = disaster, 100 = perfect)" ]},
+
+  feelings: { label:'Feelings', list:[
+    "How romantic is it (1 = not at all, 100 = swoon)",
+    "How long could you talk about it (1 = seconds, 100 = hours)",
+    "How much does it stress you out (1 = calm, 100 = panic)",
+    "Things that make you sleepy (1 = wide awake, 100 = instant nap)",
+    "How guilty would you feel (1 = nothing, 100 = can't sleep)",
+    "How nostalgic is it (1 = nothing, 100 = instant childhood)",
+    "How overrated is it (1 = underrated, 100 = wildly overrated)",
+    "How much would it ruin your day (1 = a shrug, 100 = day over)",
+    "Things worth queueing for (1 = walk away, 100 = wait hours)",
+    "How awkward is it (1 = fine, 100 = want to disappear)" ]},
+
+  screen: { label:'Screen & music', list:[
+    "Popularity of songs (1 = obscure, 100 = everyone knows it)",
+    "How rewatchable is the film (1 = once was enough, 100 = endlessly)",
+    "How frightening is the film (1 = a comedy, 100 = lights stay on)",
+    "Films to watch with your family (1 = never, 100 = perfect)",
+    "How long is the film (1 = short, 100 = bring supplies)",
+    "Songs to dance to (1 = impossible, 100 = cannot sit still)",
+    "How good is the sequel (1 = ruined it, 100 = better than the first)",
+    "Shows to binge (1 = one episode, 100 = whole weekend gone)",
+    "How quotable is the dialogue (1 = forgotten, 100 = everyone says it)",
+    "Songs for a long drive (1 = skip, 100 = windows down)" ]},
+
+  desi: { label:'Desi life', list:[
+    "Spiciness of Indian dishes (1 = mild, 100 = tears)",
+    "How chaotic is the wedding ritual (1 = calm, 100 = total chaos)",
+    "Indian street foods (1 = skip it, 100 = worth the queue)",
+    "How much would your relatives approve (1 = never, 100 = delighted)",
+    "Festivals by how loud they are (1 = quiet, 100 = ears ringing)",
+    "Indian cities in May (1 = pleasant, 100 = unbearable)",
+    "Songs at a sangeet (1 = clears the floor, 100 = everyone dances)",
+    "How long is the wedding function (1 = quick, 100 = three days)",
+    "Things aunties ask about (1 = never, 100 = every single time)",
+    "How essential in an Indian kitchen (1 = never used, 100 = daily)" ]},
+};
+const CAT_KEYS = Object.keys(THEMES);
 const START_LIVES = 3;
 const FRESH = { phase:'setup', players:[], hands:{}, played:[], lives:START_LIVES,
-                round:1, cleared:0, theme:'', usedThemes:[] };
+                round:1, cleared:0, theme:'', usedThemes:[], cats:[] };
 
 let G = null;
 let me = null;      // this device's identity (local)
@@ -212,11 +307,26 @@ function drawNumbers(names){
   }
   const h={}; names.forEach((n,i)=>h[n]=pool[i]); return h;
 }
-function pickTheme(used){
-  const fresh = THEMES.filter(t=>!used.includes(t));
-  const from = fresh.length?fresh:THEMES;
+function themePool(g){
+  const keys = (g.cats && g.cats.length) ? g.cats.filter(k=>THEMES[k]) : CAT_KEYS;
+  const all = (keys.length ? keys : CAT_KEYS).reduce((a,k)=>a.concat(THEMES[k].list), []);
+  return all;
+}
+function pickTheme(g){
+  const all = themePool(g);
+  const used = g.usedThemes || [];
+  const fresh = all.filter(t=>!used.includes(t));
+  const from = fresh.length?fresh:all;
   return from[Math.floor(Math.random()*from.length)];
 }
+function toggleCat(k){
+  mutate(g=>{
+    const cur = g.cats || [];
+    g.cats = cur.includes(k) ? cur.filter(x=>x!==k) : [...cur, k];
+    return g;
+  });
+}
+function allCats(){ mutate(g=>{ g.cats = []; return g; }); }
 function unplayed(g){ return g.players.filter(p=>!g.played.some(c=>c.name===p)); }
 
 // ── actions ──
@@ -234,13 +344,13 @@ function startRound(){
   setErr(''); peek=false;
   mutate(g=>{
     g.phase='playing'; g.hands=drawNumbers(g.players); g.played=[];
-    g.theme=pickTheme(g.usedThemes); g.usedThemes=[...g.usedThemes,g.theme].slice(-12);
+    g.theme=pickTheme(g); g.usedThemes=[...g.usedThemes,g.theme].slice(-12);
     return g;
   });
 }
 function rerollTheme(){
   if (G.played.length>0) return;
-  mutate(g=>{ g.theme=pickTheme(g.usedThemes); g.usedThemes=[...g.usedThemes,g.theme].slice(-12); return g; });
+  mutate(g=>{ g.theme=pickTheme(g); g.usedThemes=[...g.usedThemes,g.theme].slice(-12); return g; });
 }
 function pickMe(n){ me=n; peek=false; render(); }
 function togglePeek(){ peek=!peek; render(); }
@@ -265,7 +375,7 @@ function nextRound(){
   mutate(g=>{
     g.round++; g.cleared++;
     g.phase='playing'; g.hands=drawNumbers(g.players); g.played=[];
-    g.theme=pickTheme(g.usedThemes); g.usedThemes=[...g.usedThemes,g.theme].slice(-12);
+    g.theme=pickTheme(g); g.usedThemes=[...g.usedThemes,g.theme].slice(-12);
     return g;
   });
 }
@@ -275,10 +385,10 @@ function restart(keepPlayers){
     const players = keepPlayers ? g.players : [];
     const used = g.usedThemes;
     const n = structuredClone(FRESH);
-    n.players = players; n.usedThemes = used;
+    n.players = players; n.usedThemes = used; n.cats = g.cats || [];
     if (keepPlayers && players.length>=2){
       n.phase='playing'; n.hands=drawNumbers(players);
-      n.theme=pickTheme(used); n.usedThemes=[...used,n.theme].slice(-12);
+      n.theme=pickTheme(n); n.usedThemes=[...used,n.theme].slice(-12);
     }
     return n;
   });
@@ -333,6 +443,17 @@ function render(){
           ? '<p class="faint" style="font-style:italic">Add everyone playing. Each player gets a secret number from 1 to 100.</p>'
           : G.players.map(p=>`<div class="row"><span style="font-size:18px">${esc(p)}</span>
               <button class="btn-ghost" onclick="removePlayer('${esc(p)}')">Remove</button></div>`).join('')}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Theme categories</div>
+        <p class="faint" style="font-size:14px;margin-top:6px">Pick the ones your group will enjoy,
+          or leave it on Everything.</p>
+        <div class="grid">
+          <button class="seat ${!(G.cats||[]).length?'on':''}" onclick="allCats()">Everything</button>
+          ${CAT_KEYS.map(k=>`<button class="seat ${(G.cats||[]).includes(k)?'on':''}"
+            onclick="toggleCat('${k}')">${THEMES[k].label}</button>`).join('')}
+        </div>
+        <p class="faint center" style="font-size:13px;margin-top:12px">${themePool(G).length} themes in play</p>
         <button class="btn-red full" ${G.players.length<2?'disabled style="opacity:.4"':''}
           onclick="startRound()">Deal the numbers</button>
         <details style="margin-top:18px"><summary>How to play</summary>
