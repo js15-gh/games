@@ -129,7 +129,7 @@ const DIFFS = ['easy','medium','hard'];
 
 const START_SECONDS = 90;
 const FRESH = { phase:'setup', players:[], teams:{A:[],B:[]}, turn:'A', actorIdx:{A:0,B:0},
-                film:null, level:'mixed', seconds:START_SECONDS, endsAt:null,
+                film:null, picker:'team', level:'mixed', seconds:START_SECONDS, endsAt:null,
                 scores:{A:0,B:0}, used:[], round:1, rounds:8, last:null, revealed:false };
 
 let G = null;
@@ -262,6 +262,23 @@ function swapTeam(n){
   });
 }
 function setLevel(l){ mutate(g=>{ g.level = l; return g; }); }
+function setPicker(p){ mutate(g=>{ g.picker = p; g.film = null; return g; }); }
+
+// The opposing team's choice. Typed by them, never shown to the acting team.
+function setTeamFilm(){
+  const el = $('filmInput'); if (!el) return;
+  const v = el.value.trim();
+  if (!v){ setErr('Type a film, or tap Suggest one.'); return; }
+  if (v.length > 80){ setErr('That is a long title — keep it under 80 characters.'); return; }
+  setErr('');
+  mutate(g=>{ g.film = v; g.used = [...g.used, v].slice(-60); return g; });
+}
+function suggestFilm(){
+  const el = $('filmInput'); if (!el) return;
+  el.value = pickFilm(G);   // tap again for another
+  el.focus();
+}
+function clearTeamFilm(){ setErr(''); mutate(g=>{ g.film = null; return g; }); }
 function setSeconds(s){ mutate(g=>{ g.seconds = s; return g; }); }
 function setRounds(r){ mutate(g=>{ g.rounds = r; return g; }); }
 
@@ -277,8 +294,10 @@ function startGame(){
 }
 function beginTurn(){
   mutate(g=>{
-    const f = pickFilm(g);
-    g.film = f; g.used = [...g.used, f].slice(-60);
+    if (!g.film){                      // app mode, or the team hasn't chosen yet
+      const f = pickFilm(g);
+      g.film = f; g.used = [...g.used, f].slice(-60);
+    }
     g.endsAt = Date.now() + g.seconds*1000;
     g.phase = 'acting'; g.revealed = false;
     return g;
@@ -315,7 +334,7 @@ function playAgain(keep){
   me = keep ? me : null;
   mutate(g=>{
     const n = structuredClone(FRESH);
-    if (keep){ n.players=g.players; n.teams=g.teams; n.level=g.level; n.seconds=g.seconds; n.rounds=g.rounds; }
+    if (keep){ n.players=g.players; n.teams=g.teams; n.level=g.level; n.seconds=g.seconds; n.rounds=g.rounds; n.picker=g.picker; }
     return n;
   });
 }
@@ -365,11 +384,19 @@ function render(){
         ${rosterHTML()}
       </div>
       <div class="panel">
-        <div class="eyebrow">Difficulty</div>
+        <div class="eyebrow">Who picks the film?</div>
+        <p class="faint" style="font-size:14px;margin-top:6px">The traditional way is for the other
+          team to choose — they can still cycle the app's suggestions for help.</p>
+        <div class="grid">
+          <button class="seat ${G.picker==='team'?'on':''}" onclick="setPicker('team')">Other team</button>
+          <button class="seat ${G.picker==='app'?'on':''}" onclick="setPicker('app')">The app</button>
+        </div>
+        ${G.picker==='app' ? `
+        <div class="eyebrow" style="margin-top:20px">Difficulty</div>
         <div class="grid">
           ${['easy','medium','hard','mixed'].map(l=>
             `<button class="seat ${G.level===l?'on':''}" onclick="setLevel('${l}')">${l}</button>`).join('')}
-        </div>
+        </div>` : ''}
         <div class="eyebrow" style="margin-top:20px">Seconds per turn</div>
         <div class="grid">
           ${[60,90,120].map(s=>
@@ -399,16 +426,45 @@ function render(){
 
   if (G.phase === 'ready'){
     const actor = currentActor();
+    const iAmActor = me === actor;
+    const iChoose  = G.picker === 'team' && me && teamOf(G, me) === other(G.turn);
+    let panel;
+
+    if (G.picker === 'team' && !G.film){
+      if (iChoose){
+        panel = `<div class="eyebrow">Choose a film for ${esc(actor||'')}</div>
+          <p class="faint" style="font-size:14px;margin:6px 0 0">Type anything, or tap Suggest one to
+             cycle the app's list. They won't see it until they start acting.</p>
+          <input id="filmInput" placeholder="Film name" autocomplete="off" spellcheck="false"
+                 style="margin-top:12px">
+          <div class="rb-actions" style="margin-top:10px">
+            <button class="btn-ghost" onclick="suggestFilm()">Suggest one</button>
+            <button class="btn-gold" onclick="setTeamFilm()">Set the film</button>
+          </div>`;
+      } else {
+        panel = `<p class="faint" style="font-size:15px">Team ${other(G.turn)} is choosing
+           ${iAmActor ? 'your' : esc(actor||'the actor')+"'s"} film. Sit tight.</p>`;
+      }
+    } else {
+      panel = iAmActor
+        ? `<button class="btn-gold full" onclick="beginTurn()">I'm ${esc(actor)} — show me the film</button>`
+        : `<p class="faint" style="font-size:14px;margin-top:16px">Waiting for ${esc(actor||'the actor')} to start.</p>
+           <button class="btn-ghost full" onclick="beginTurn()">Start anyway</button>`;
+      if (iChoose && G.film){
+        panel = `<p class="faint" style="font-size:15px">You chose
+            <b style="color:var(--ink)">${esc(G.film)}</b>.</p>
+          <button class="btn-ghost" style="margin-bottom:6px" onclick="clearTeamFilm()">Change it</button>`
+          + panel;
+      }
+    }
+
     app.innerHTML = scoreHTML() + `
       <div class="panel center">
         <span class="teamtag ${G.turn}">Team ${G.turn}</span>
         <p class="movie">${esc(actor || '—')}</p>
-        <p class="faint" style="font-size:15px">is acting this turn. Hand them the phone — the film
-           shows only on their screen.</p>
-        ${me === actor
-          ? `<button class="btn-gold full" onclick="beginTurn()">I'm ${esc(actor)} — show me the film</button>`
-          : `<p class="faint" style="font-size:14px;margin-top:16px">Waiting for ${esc(actor||'the actor')} to start.</p>
-             <button class="btn-ghost full" onclick="beginTurn()">Start anyway</button>`}
+        <p class="faint" style="font-size:15px">is acting this turn. The film shows only on their
+           screen${G.picker==='team' ? ' and on Team '+other(G.turn)+"'s" : ''}.</p>
+        ${panel}
       </div>` + whoAmIHTML() + `
       <div class="panel">
         <button class="btn-ghost full" style="margin-top:0" onclick="editTeams()">Change teams or settings</button>
@@ -421,6 +477,7 @@ function render(){
     const left = remaining();
     const pct = G.seconds ? Math.max(0, Math.min(100, (left / G.seconds) * 100)) : 0;
     const iAmActor = me === actor;
+    const iChose = G.picker === 'team' && me && teamOf(G, me) === other(G.turn);
     app.innerHTML = `
       <div class="panel center">
         <div class="timer ${left<=10?'low':''}">${left}</div>
@@ -436,7 +493,12 @@ function render(){
                ${G.revealed ? `<span class="movie">${esc(G.film||'')}</span>`
                             : '<span class="faint">Tap to see the film</span>'}
              </div>
-             <button class="btn-ghost full" onclick="skipFilm()">Different film</button>`
+             ${G.picker==='app' ? '<button class="btn-ghost full" onclick="skipFilm()">Different film</button>' : ''}`
+          : iChose
+          ? `<div class="eyebrow">You chose this one</div>
+             <p class="movie" style="margin:8px 0 0">${esc(G.film||'')}</p>
+             <p class="faint" style="font-size:14px;margin-top:8px">Judge the guesses — and keep a
+                straight face.</p>`
           : `<div class="eyebrow">Shout your guesses</div>
              <p class="faint" style="font-size:15px;margin-top:10px">Only ${esc(actor||'the actor')}
                 can see the film. No talking from them — acting only.</p>`}
