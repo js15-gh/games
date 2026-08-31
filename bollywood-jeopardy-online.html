@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bollywood Jeopardy — pick a decade and play in teams</title>
+<meta name="description" content="Bollywood quiz in teams, played on your phones. Pick a decade, take turns choosing clues from the board. Every question is generated from film records, so the answers are right.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎞️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0B1026; --panel:#141B3D; --line:rgba(240,200,90,.24);
+    --gold:#F0C85A; --ink:#EFF1FA; --faint:#8C93B8; --green:#4FB07E; --red:#D9534F;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:680px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:30px 8px 4px; }
+  h1 { font-family:'Anton',Impact,sans-serif; font-weight:400; letter-spacing:.04em;
+       font-size:clamp(30px,7.5vw,50px); margin:6px 0 0; line-height:1; }
+  h1 .b { color:var(--gold); }
+  .eyebrow { color:var(--gold); letter-spacing:.22em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+           padding:20px 18px; margin-top:16px; }
+  .row { display:flex; justify-content:space-between; align-items:center;
+         padding:9px 0; border-bottom:1px solid rgba(239,241,250,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+          gap:9px; margin-top:12px; }
+  input { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:6px;
+          color:var(--ink); padding:12px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:6px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  .btn-gold { background:var(--gold); color:#14183a; border:none; padding:14px 20px;
+              font-size:15px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .btn-green { background:var(--green); color:#0b1a14; border:none; padding:13px 18px;
+               font-size:14px; font-weight:700; }
+  .btn-ghost { background:transparent; border:1px solid rgba(140,147,184,.4);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:13px 10px; font-size:15px; }
+  .seat.on { background:var(--gold); border-color:var(--gold); color:#14183a; font-weight:700; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:9px; margin-top:16px; }
+
+  /* the board */
+  .board { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; margin-top:14px; }
+  .cat { font-family:'Anton',sans-serif; font-size:clamp(9px,2.1vw,12px); line-height:1.15;
+         text-align:center; padding:8px 2px; color:var(--gold); text-transform:uppercase;
+         border-bottom:2px solid var(--gold); min-height:44px;
+         display:flex; align-items:center; justify-content:center; }
+  .clue { font-family:'Anton',sans-serif; font-size:clamp(13px,3.4vw,20px);
+          aspect-ratio:1/.82; border:1px solid var(--line); border-radius:5px;
+          background:rgba(240,200,90,.07); color:var(--gold);
+          display:flex; align-items:center; justify-content:center; padding:0; }
+  .clue.gone { background:transparent; border-color:rgba(239,241,250,.06); color:transparent; }
+  .clue.gone.hit { color:var(--green); font-size:11px; font-family:'Karla',sans-serif; }
+
+  .scores { display:flex; flex-wrap:wrap; justify-content:center; gap:14px; margin-top:12px; }
+  .sc { text-align:center; border:1px solid var(--line); border-radius:8px;
+        padding:8px 14px; min-width:88px; }
+  .sc.up { border-color:var(--gold); }
+  .sc .n { font-family:'Anton',sans-serif; font-size:26px; line-height:1.1; }
+  .sc .t { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  .sc.up .t { color:var(--gold); }
+
+  .clueprompt { font-size:clamp(18px,4.6vw,26px); line-height:1.35; margin:12px 0 0; }
+  .answer { font-family:'Anton',sans-serif; font-size:clamp(20px,5vw,32px);
+            color:var(--green); line-height:1.2; margin:10px 0 0; }
+
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:8px;
+             padding:13px 15px; margin-top:16px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Anton',sans-serif; letter-spacing:.2em; font-size:26px; color:var(--gold); }
+  .linkfield { font-size:13px; margin-top:9px; padding:9px 10px; color:var(--faint); }
+  .rb-actions { display:flex; gap:8px; margin-top:9px; }
+  .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:18px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover, .homelink:focus-visible { color:var(--gold); }
+  details summary { color:var(--gold); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:26px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>BOLLYWOOD <span class="b">JEOPARDY</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Loading the board…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "jeopardy";
+
+const VALUES = [200, 400, 600, 800, 1000];
+const DECADES = [1970, 1980, 1990, 2000, 2010, 2020];
+const TEAM_NAMES = ['A','B','C','D'];
+
+// The bank ships as a separate file so the page stays small. Loaded once.
+let BANK = null;
+
+const FRESH = { phase:'setup', players:[], teams:{A:[],B:[]}, order:['A','B'],
+                decade:'mixed', turn:0, clues:[], current:null, revealed:false,
+                scores:{A:0,B:0}, log:[] };
+
+let G = null;
+let me = null;
+let stamp = 0;
+let pending = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setErr(m){ $('err').textContent = m || ''; }
+
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() })
+  });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(),
+    body: JSON.stringify({ p_id: roomKey(), p_state: next })
+  });
+  if (!r.ok) throw new Error('save '+r.status);
+  try { return (await r.json()) === true; } catch { return true; }
+}
+async function commit(fn){
+  for (let attempt = 0; attempt < 4; attempt++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = fresh; stamp = Math.max(stamp, fresh._stamp || 0); render(); }
+  }
+  return false;
+}
+async function mutate(fn){
+  try {
+    if (await commit(fn)){ setErr(''); return; }
+  } catch { /* offline — retry on the next poll */ }
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;
+}
+async function poll(){
+  if (!joined) return;
+  try {
+    if (pending){
+      const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn;
+    }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = s; stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch {
+    if (!G){ G = structuredClone(FRESH); render(); }
+  }
+}
+
+// ── board assembly ───────────────────────────────────────────────────────
+// Category is what's being asked; the dollar value is how obscure the film is
+// within that category, so every column is its own easy-to-hard ladder. No film
+// appears twice on a board, or the whole $200 row comes out as the same
+// famous film.
+function buildBoard(decade){
+  const rows = BANK.q
+    .map((r, i) => ({ i, kind:r[0], decade:r[1], fame:r[2], prompt:r[3], answers:r[4], film:r[5] }))
+    .filter(q => decade === 'mixed' || q.decade === decade);
+  const usedFilms = new Set();
+  const cols = [];
+  const kinds = [0,1,2,3,4].sort((a,b) =>
+    rows.filter(q=>q.kind===a).length - rows.filter(q=>q.kind===b).length);
+  for (const k of kinds){
+    const pool = rows.filter(q => q.kind === k).sort((a,b) => b.fame - a.fame);
+    if (pool.length < 5) continue;
+    const band = Math.max(1, Math.floor(pool.length / 5));
+    const picks = [];
+    for (let slot = 0; slot < 5; slot++){
+      const lo = slot*band, hi = Math.min(pool.length, (slot+1)*band);
+      let cand = pool.slice(lo, hi).filter(q => !usedFilms.has(q.film));
+      if (!cand.length) cand = pool.filter(q => !usedFilms.has(q.film));
+      if (!cand.length) break;
+      const q = cand[Math.floor(Math.random() * Math.max(1, Math.ceil(cand.length/3)))];
+      usedFilms.add(q.film);
+      picks.push({ i:q.i, k, v:VALUES[slot], p:q.prompt, a:q.answers,
+                   film:q.film, fame:q.fame, taken:false, by:null });
+    }
+    if (picks.length === 5) cols.push(picks);
+    if (cols.length === 5) break;
+  }
+  return cols.flat();
+}
+
+// ── actions ──
+function addPlayer(){
+  const el = $('nameInput'); const n = el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{
+    g.players.push(n);
+    const smallest = g.order.reduce((a,b)=> g.teams[a].length <= g.teams[b].length ? a : b);
+    g.teams[smallest].push(n);
+    return g;
+  });
+}
+function removePlayer(n){
+  mutate(g=>{
+    g.players = g.players.filter(p=>p!==n);
+    for (const t of g.order) g.teams[t] = g.teams[t].filter(p=>p!==n);
+    return g;
+  });
+  if (me === n) me = null;
+}
+function moveTeam(n){
+  mutate(g=>{
+    const from = g.order.find(t => g.teams[t].includes(n));
+    const to = g.order[(g.order.indexOf(from)+1) % g.order.length];
+    g.teams[from] = g.teams[from].filter(p=>p!==n);
+    g.teams[to].push(n);
+    return g;
+  });
+}
+function setTeamCount(k){
+  mutate(g=>{
+    const order = TEAM_NAMES.slice(0,k);
+    const teams = {}, scores = {};
+    order.forEach(t => { teams[t] = []; scores[t] = 0; });
+    g.players.forEach((p,i) => teams[order[i % k]].push(p));
+    g.order = order; g.teams = teams; g.scores = scores;
+    return g;
+  });
+}
+function setDecade(d){ mutate(g=>{ g.decade = d; return g; }); }
+
+function startGame(){
+  if (G.players.length < 2){ setErr('You need at least 2 players.'); return; }
+  if (!BANK){ setErr('The question bank is still loading. One moment.'); return; }
+  const clues = buildBoard(G.decade);
+  if (clues.length < 25){ setErr('Not enough questions for that decade. Try Mixed.'); return; }
+  setErr('');
+  mutate(g=>{
+    g.clues = clues; g.phase='playing'; g.turn=0; g.current=null; g.revealed=false; g.log=[];
+    g.order.forEach(t => g.scores[t] = 0);
+    return g;
+  });
+}
+function pickClue(i){
+  if (G.current !== null) return;
+  mutate(g=>{ if (g.clues[i] && !g.clues[i].taken){ g.current = i; g.revealed = false; } return g; });
+}
+function revealAnswer(){ mutate(g=>{ g.revealed = true; return g; }); }
+function award(team){
+  mutate(g=>{
+    const c = g.clues[g.current];
+    if (!c || c.taken) return g;
+    if (team){ g.scores[team] = (g.scores[team]||0) + c.v; c.by = team; }
+    c.taken = true;
+    g.log.push({ i:c.i, v:c.v, correct: !!team });
+    g.current = null; g.revealed = false;
+    g.turn = (g.turn + 1) % g.order.length;
+    if (g.clues.every(x => x.taken)) g.phase = 'done';
+    return g;
+  });
+}
+function closeClue(){ mutate(g=>{ g.current = null; g.revealed = false; return g; }); }
+function playAgain(keep){
+  me = keep ? me : null;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep){ n.players=g.players; n.teams=g.teams; n.order=g.order; n.decade=g.decade;
+               n.scores={}; g.order.forEach(t=>n.scores[t]=0); }
+    return n;
+  });
+}
+function backToSetup(){ mutate(g=>{ g.phase='setup'; g.current=null; return g; }); }
+
+// ── render ──
+function scoresHTML(){
+  const up = G.order[G.turn];
+  return `<div class="scores">${G.order.map(t=>`
+    <div class="sc ${t===up && G.phase==='playing' ? 'up':''}">
+      <div class="n">${G.scores[t]||0}</div><div class="t">Team ${t}</div>
+    </div>`).join('')}</div>`;
+}
+function boardHTML(){
+  const cats = [];
+  for (let c=0;c<5;c++) cats.push(G.clues[c*5]);
+  let h = '<div class="board">';
+  for (const c of cats) h += `<div class="cat">${esc(BANK ? BANK.labels[c.k] : '')}</div>`;
+  for (let row=0; row<5; row++){
+    for (let col=0; col<5; col++){
+      const idx = col*5 + row, c = G.clues[idx];
+      if (!c) { h += '<div class="clue gone"></div>'; continue; }
+      h += c.taken
+        ? `<div class="clue gone ${c.by?'hit':''}">${c.by ? esc(c.by) : ''}</div>`
+        : `<button class="clue" onclick="pickClue(${idx})">${c.v}</button>`;
+    }
+  }
+  return h + '</div>';
+}
+
+function render(){
+  if (!configured()){ $('app').innerHTML = '<div class="panel"><p class="faint">Supabase is not configured.</p></div>'; return; }
+  const app = $('app');
+  const left = G.clues.filter(c=>!c.taken).length;
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
+    : G.phase==='done' ? 'Final scores'
+    : `${left} clue${left===1?'':'s'} left · Team ${G.order[G.turn]} to pick`;
+
+  if (G.phase === 'setup'){
+    const had = $('nameInput'); const keep = had ? had.value : '';
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Who's playing?</div>
+        <p class="faint" style="font-size:14px;margin-top:6px">Players are split between the teams;
+          tap a name to move it along.</p>
+        <div style="display:flex;gap:8px;margin:12px 0">
+          <input id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-gold" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.order.map(t=>`
+          <div style="margin-top:10px"><span class="eyebrow">Team ${t}</span>
+          ${G.teams[t].length ? G.teams[t].map(p=>`<div class="row"><span>${esc(p)}</span>
+            <span style="display:flex;gap:6px">
+              <button class="btn-ghost" onclick="moveTeam('${esc(p)}')">Move</button>
+              <button class="btn-ghost" onclick="removePlayer('${esc(p)}')">Remove</button>
+            </span></div>`).join('')
+            : '<p class="faint" style="font-size:14px;margin:6px 0 0">Nobody yet.</p>'}
+          </div>`).join('')}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Teams</div>
+        <div class="grid">${[2,3,4].map(k=>
+          `<button class="seat ${G.order.length===k?'on':''}" onclick="setTeamCount(${k})">${k} teams</button>`).join('')}</div>
+        <div class="eyebrow" style="margin-top:18px">Decade</div>
+        <div class="grid">
+          ${DECADES.map(d=>`<button class="seat ${G.decade===d?'on':''}" onclick="setDecade(${d})">${d}s</button>`).join('')}
+          <button class="seat ${G.decade==='mixed'?'on':''}" onclick="setDecade('mixed')">Mixed</button>
+        </div>
+        <button class="btn-gold full" style="margin-top:18px" onclick="startGame()">Build the board</button>
+      </div>
+      <div class="panel">
+        <details><summary>How to play</summary>
+          <div class="faint" style="font-size:14px;line-height:1.6;margin-top:8px">
+            <p>Teams take turns picking a clue from the board. There's no buzzer race —
+               the team whose turn it is answers first, out loud.</p>
+            <p>Tap <b style="color:var(--ink)">Show the answer</b> when you're ready, then say who
+               got it. Any team can be credited, so a steal just works.</p>
+            <p>Every question comes from film records rather than anyone's memory, so the
+               answers are right. Several answers may be acceptable — you judge.</p>
+          </div>
+        </details>
+      </div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase === 'playing'){
+    if (G.current !== null){
+      const c = G.clues[G.current];
+      app.innerHTML = scoresHTML() + `
+        <div class="panel center">
+          <div class="eyebrow">${esc(BANK ? BANK.labels[c.k] : '')} · $${c.v}</div>
+          <p class="clueprompt">${esc(c.p)}</p>
+          ${G.revealed
+            ? `<p class="answer">${c.a.map(esc).join(' / ')}</p>
+               <p class="faint" style="font-size:13px;margin-top:6px">${esc(c.film)}</p>
+               <div class="eyebrow" style="margin-top:18px">Who got it?</div>
+               <div class="grid">${G.order.map(t=>
+                 `<button class="btn-green" onclick="award('${t}')">Team ${t}</button>`).join('')}</div>
+               <button class="btn-ghost full" onclick="award(null)">Nobody</button>`
+            : `<p class="faint" style="font-size:14px;margin-top:14px">Team ${G.order[G.turn]}
+                 answers first, out loud.</p>
+               <button class="btn-gold full" onclick="revealAnswer()">Show the answer</button>
+               <button class="btn-ghost full" onclick="closeClue()">Put it back</button>`}
+        </div>`;
+      return;
+    }
+    app.innerHTML = scoresHTML() + `<div class="panel">${boardHTML()}</div>
+      <div class="panel">
+        <p class="faint center" style="font-size:14px;margin:0">Team ${G.order[G.turn]} picks the next clue.</p>
+        <button class="btn-ghost full" onclick="backToSetup()">Change players or decade</button>
+      </div>`;
+    return;
+  }
+
+  if (G.phase === 'done'){
+    const best = Math.max(...G.order.map(t=>G.scores[t]||0));
+    const winners = G.order.filter(t=>(G.scores[t]||0) === best);
+    const right = G.log.filter(l=>l.correct).length;
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">That's the board</div>
+        <p style="font-family:'Anton',sans-serif;font-size:clamp(24px,7vw,40px);margin:10px 0 0">
+          ${winners.length>1 ? "IT’S A TIE" : "TEAM " + winners[0] + " WINS"}</p>
+        ${scoresHTML()}
+        <p class="faint" style="font-size:14px;margin-top:16px">${right} of ${G.log.length} clues answered.</p>
+        <div class="stack">
+          <button class="btn-gold" onclick="playAgain(true)">New board · same teams</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New group</button>
+        </div>
+      </div>`;
+    return;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+
+function newCode(){
+  const r = new Uint32Array(4);
+  crypto.getRandomValues(r);
+  let c = '';
+  for (let i = 0; i < 4; i++) c += CODE_ALPHABET[r[i] % CODE_ALPHABET.length];
+  return c;
+}
+
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false;
+let pollTimer = null;
+
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+
+function enterRoom(){
+  joined = true;
+  history.replaceState(null, '', inviteURL());
+  renderRoomBar();
+  render();
+  if (!pollTimer) pollTimer = setInterval(poll, 2500);
+}
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  joined = false; ROOM = ''; G = null; me = null; pending = null;
+  history.replaceState(null, '', location.pathname);
+  $('roombar').innerHTML = ''; $('crumb').textContent = '';
+  setErr(''); renderLobby();
+}
+async function createRoom(){
+  setErr('');
+  const btn = $('createBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Creating…'; }
+  try {
+    for (let i = 0; i < 5; i++){
+      ROOM = newCode();
+      if (await loadState()) continue;
+      G = structuredClone(FRESH);
+      if (!(await saveState(G))) continue;
+      enterRoom();
+      return;
+    }
+    ROOM = ''; setErr('Could not find a free code. Please try again.');
+  } catch {
+    ROOM = ''; setErr("Couldn't reach the game service. Check your connection and try again.");
+  }
+  if ($('createBtn')){ $('createBtn').disabled = false; $('createBtn').textContent = 'Create a game'; }
+}
+async function joinRoom(raw){
+  setErr('');
+  const c = cleanCode(raw);
+  if (c.length < 4){ setErr('Enter the 4-character code.'); return; }
+  ROOM = c;
+  let s;
+  try { s = await loadState(); }
+  catch { ROOM = ''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM = ''; renderLobby('No game found with code ' + c + '. Check the code, or start a new one.'); return; }
+  G = s; stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+function copyInvite(){
+  const url = inviteURL();
+  const done = () => { const b = $('copyBtn'); if (!b) return;
+    b.textContent = 'Link copied';
+    setTimeout(()=>{ if ($('copyBtn')) $('copyBtn').textContent = 'Copy invite link'; }, 1600); };
+  const fallback = () => { const f = $('inviteField'); if (f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done, fallback);
+  } else fallback();
+}
+function renderRoomBar(){
+  $('roombar').innerHTML = `
+    <div class="roombar">
+      <div class="rb-top"><span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span></div>
+      <input id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div>
+    </div>`;
+}
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game, then send the link to
+        everyone playing. Pick a decade and the board builds itself.</p>
+      <button class="btn-gold full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-gold" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(e.target.value); });
+}
+
+(async function boot(){
+  if (!configured()){ render(); return; }
+  try { BANK = await (await fetch('jeopardy-bank.json')).json(); }
+  catch { setErr("Couldn't load the question bank. Reload the page."); }
+  if (ROOM) await joinRoom(ROOM);
+  else renderLobby();
+})();
+</script>
+</body>
+</html>
