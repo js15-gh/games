@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Request a Game — tell us what your family plays and we'll build it</title>
+<meta name="description" content="Every game here started as somebody's family game. Describe how yours is played and we will build it. Free, no account, no charge.">
+<link rel="canonical" href="https://velaparties.com/request-a-game.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Request a Game — tell us what your family plays and we'll build it">
+<meta property="og:description" content="Every game here started as somebody's family game. Describe how yours is played and we will build it. Free, no account, no charge.">
+<meta property="og:url" content="https://velaparties.com/request-a-game.html">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✉️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#FFF6E9; --panel:#FFFFFF; --line:rgba(178,110,38,.26);
+           --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
+           --crimson:#C2185B; }
+  * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); }
+  .wrap { max-width:680px; margin:0 auto; padding:0 16px 48px; }
+  .homelink { display:inline-block; margin-top:20px; color:var(--faint); text-decoration:none;
+               font-family:'Cinzel',serif; font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover { color:var(--gold); }
+  header { padding:34px 0 6px; }
+  .eyebrow { color:var(--gold); letter-spacing:.24em; font-size:12px;
+              text-transform:uppercase; font-family:'Cinzel',serif; }
+  h1 { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.03em;
+        font-size:clamp(28px,6vw,44px); margin:10px 0 0; line-height:1.15; }
+  h2 { font-family:'Cinzel',serif; letter-spacing:.1em; font-size:19px;
+        color:var(--gold); margin:34px 0 8px; font-weight:600; }
+  h3 { font-family:'Cinzel',serif; font-size:16px; margin:22px 0 4px; letter-spacing:.04em; }
+  p, li { color:var(--faint); line-height:1.75; font-size:17px; }
+  b, strong { color:var(--ink); font-weight:600; }
+  ul, ol { padding-left:22px; }
+  a { color:var(--gold); }
+  .lede { font-size:19px; color:var(--ink); line-height:1.7; }
+  .rule { height:1px; margin:26px 0; opacity:.5;
+           background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+  .cta { display:block; background:var(--panel); border:1px solid var(--line);
+          border-left:4px solid var(--crimson); border-radius:8px; padding:18px 20px;
+          margin:16px 0; text-decoration:none; color:inherit; }
+  .cta:hover { border-color:var(--crimson); box-shadow:0 2px 6px rgba(43,18,32,.08); }
+  .cta b { font-family:'Cinzel',serif; letter-spacing:.06em; font-size:18px; display:block; }
+  .cta span { color:var(--faint); font-size:16px; }
+  .note { background:#FFF0D6; border:1px solid var(--line); border-radius:8px;
+           padding:16px 18px; margin:20px 0; }
+  footer { text-align:center; padding-top:36px; color:var(--goldDim); font-size:13px; }
+  footer a { color:var(--goldDim); }
+
+  form { margin-top:14px; }
+  label { display:block; color:var(--ink); font-size:16px; margin:16px 0 6px; font-weight:600; }
+  input, textarea { width:100%; background:#FFFDF8; border:1px solid var(--line); border-radius:8px;
+                    color:var(--ink); padding:12px 14px; font-size:17px;
+                    font-family:'EB Garamond',Georgia,serif; }
+  input:focus-visible, textarea:focus-visible { outline:2px solid var(--gold); outline-offset:1px; }
+  textarea { resize:vertical; line-height:1.55; }
+  .submit { margin-top:18px; background:var(--crimson); color:#fff; border:none; border-radius:8px;
+            padding:14px 22px; font-size:15px; font-weight:600; letter-spacing:.08em;
+            text-transform:uppercase; cursor:pointer; font-family:'Cinzel',serif; }
+  .submit:hover { filter:brightness(1.08); }
+  .msg { min-height:20px; color:var(--faint); font-size:15px; margin-top:10px; }
+  .msg.ok { color:#1B7F5A; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← Omni Games</a>
+  <header>
+    <div class="eyebrow">Built on demand</div>
+    <h1>Request a Game</h1>
+  </header>
+  <div class="rule"></div>
+
+  <div class="note">
+    <p style="margin:0"><b>Every game on this site started as somebody's family game.</b>
+       If yours isn't here, describe it and we'll build it. There's no charge and no account —
+       we just need enough detail to get the rules right.</p>
+  </div>
+
+  <h2>Request a game</h2>
+  <form id="reqForm" onsubmit="sendRequest(event)">
+    <label for="rname">What's the game called?</label>
+    <input id="rname" name="name" required placeholder="Judgement, Lagori, Name–Place–Animal–Thing…">
+
+    <label for="rrules">How is it played at your table?</label>
+    <textarea id="rrules" name="rules" rows="7" required
+      placeholder="The more specific the better — how many players, what beats what, how points are scored, and any house rules. Rules vary hugely between families, and we would rather build yours than an approximation."></textarea>
+
+    <label for="rwhy">Where would you play it?</label>
+    <input id="rwhy" name="why" placeholder="Diwali, long car journeys, with the kids, at the airport…">
+
+    <label for="remail">Email, if you'd like to know when it's ready</label>
+    <input id="remail" name="email" type="email" inputmode="email" placeholder="you@example.com">
+
+    <button type="submit" class="submit">Send the request</button>
+    <p id="reqMsg" class="msg"></p>
+  </form>
+
+  <h2>What makes a request easy to build</h2>
+  <p>The thing that stalls a game is almost never the code — it's the rules. Card games in
+     particular vary from family to family, and an approximation is worse than nothing, because a
+     game with the wrong rules just causes the arguments it was meant to end.</p>
+  <ul>
+    <li><b>Exact values.</b> If cards or tiles carry points, list every one and what the total
+        should come to. That total is how we check we've understood.</li>
+    <li><b>Who wins a round</b>, and what happens on a tie.</li>
+    <li><b>How the game ends</b> — a target score, a fixed number of rounds, or last player standing.</li>
+    <li><b>Anything secret.</b> If some information is hidden from some players, say who sees what
+        and when it's revealed. That's usually the part a phone helps most with.</li>
+  </ul>
+
+  <h2>What we're already thinking about</h2>
+  <p>Mahjong for four players, and better tools for people who play with the same group regularly —
+     planning a party's games in advance, and carrying a scoreboard from one night to the next.
+     If either would be useful to you, say so in the form; it moves things up the list.</p>
+
+<script src="feedback.js"></script>
+<script>
+function sendRequest(e){
+  e.preventDefault();
+  const v = id => (document.getElementById(id)||{}).value || '';
+  const msg = document.getElementById('reqMsg');
+  const say = (t, ok) => { msg.textContent = t; msg.className = 'msg' + (ok ? ' ok' : ''); };
+  const email = v('remail').trim();
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ say('That email looks incomplete.'); return; }
+  const payload = { kind:'game-request', name:v('rname').trim(), rules:v('rrules').trim(),
+                    why:v('rwhy').trim(), email, at:new Date().toISOString() };
+  if (window.VP_FEEDBACK_ENDPOINT){
+    say('Sending…');
+    fetch(window.VP_FEEDBACK_ENDPOINT, { method:'POST',
+      headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify(payload) })
+      .then(r => { if (!r.ok) throw 0;
+        document.getElementById('reqForm').innerHTML =
+          `<p class="msg ok" style="font-size:17px">Thank you — that’s exactly what we need.
+           If you left an email we’ll tell you when it’s playable.</p>`; })
+      .catch(() => say("Couldn't send that. Please try again in a moment."));
+    return;
+  }
+  if (window.VP_FEEDBACK_EMAIL){
+    const body = ['Game: '+payload.name, '', 'How it is played:', payload.rules, '',
+                  'Where they would play it: '+(payload.why||'—'), '',
+                  'Reply to: '+(email||'—')].join(String.fromCharCode(10));
+    location.href = 'mailto:'+window.VP_FEEDBACK_EMAIL+'?subject='+
+      encodeURIComponent('Game request: '+payload.name)+'&body='+encodeURIComponent(body);
+    say('Opening your email app…', true);
+    return;
+  }
+  say('The request form is not connected yet — please check back shortly.');
+}
+</script>
+
+  <div class="rule"></div>
+  <p class="faint" style="font-size:15px">Every game here is free, runs in a browser, and needs no
+     app or sign-up. One person creates a game, shares the link, everyone plays on their own phone.</p>
+  <footer>
+    <p><a href="./">All games</a> · <a href="privacy.html">Privacy</a></p>
+  </footer>
+</div>
+</body>
+</html>

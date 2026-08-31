@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Desi Party Games! — free browser games for a group in one room</title>
-<meta name="description" content="Free desi party games for a group in one room, each on your own phone. Antakshari, Tambola, Judgement, Bollywood charades and more. No app, no sign-up.">
+<title>Omni Games — Play Anywhere | free browser games for any group</title>
+<meta name="description" content="Free browser games for any group — Antakshari, Tambola, Judgement, Kaali Tiri, Bollywood charades and more. Nothing to install. Request a game and we will build it.">
 <link rel="canonical" href="https://velaparties.com/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Desi Party Games! — free browser games for a group in one room">
-<meta property="og:description" content="Free desi party games for a group in one room, each on your own phone. No app, no sign-up.">
+<meta property="og:title" content="Omni Games — Play Anywhere">
+<meta property="og:description" content="Free browser games for any group, played on the phones you already have. Request a game and we will build it.">
 <meta property="og:url" content="https://velaparties.com/">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
@@ -34,6 +34,17 @@
        font-size:clamp(30px,6.5vw,52px); margin:10px 0 0; }
   .lede { color:var(--faint); font-size:clamp(17px,2.2vw,19px); line-height:1.6;
           max-width:520px; margin:14px auto 0; }
+  .tagline { font-family:'Cinzel',serif; letter-spacing:.34em; text-transform:uppercase;
+             font-size:clamp(11px,2vw,14px); color:var(--magenta); margin-top:8px; }
+  .benefits { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+              gap:12px; margin-top:22px; text-align:left; }
+  .ben { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+         padding:14px 16px; box-shadow:0 1px 2px rgba(43,18,32,.05); }
+  .ben b { display:block; font-family:'Cinzel',serif; font-size:14px; letter-spacing:.06em;
+           color:var(--ink); margin-bottom:5px; }
+  .ben span { color:var(--faint); font-size:15px; line-height:1.55; }
+  .ben .soon { color:var(--magenta); font-size:11px; letter-spacing:.16em;
+               text-transform:uppercase; font-family:'Cinzel',serif; }
   .rule { height:1px; margin:26px 0; opacity:.55;
           background:linear-gradient(90deg,transparent,var(--gold),transparent); }
   h2 { font-family:'Cinzel',serif; letter-spacing:.16em; text-transform:uppercase;
@@ -106,13 +117,25 @@
 
   <header>
     <div class="banner"></div>
-    <div class="eyebrow">Free · No app · No sign-up</div>
-    <h1>DESI PARTY GAMES!</h1>
-    <p class="lede">Games for a group in one room, each playing on their own phone.
-       Create a game, share the link, and everyone joins the same table.</p>
+    <div class="eyebrow">Free · No app · Nothing to install</div>
+    <h1>OMNI GAMES</h1>
+    <div class="tagline">Play Anywhere</div>
+    <p class="lede">Games galore, built on demand by users.
+       <a href="request-a-game.html">Request yours here</a>.</p>
   </header>
 
   <main>
+    <div class="benefits">
+      <div class="ben"><b>Just play</b><span>Open a game, share the link, everyone joins on their
+        own phone. No install, no account, no waiting.</span></div>
+      <div class="ben"><b>Ask for a game</b><span>If your family plays something we don't have,
+        <a href="request-a-game.html">tell us</a> and we'll build it.</span></div>
+      <div class="ben"><b>Plan a party ahead <span class="soon">Coming</span></b>
+        <span>Pick your games and players in advance and share one link with the whole group.</span></div>
+      <div class="ben"><b>Keep a scoreboard <span class="soon">Coming</span></b>
+        <span>Play with the same friends often? Carry the standings from one night to the next.</span></div>
+    </div>
+
     <div class="finder">
       <div class="search">
         <input id="q" type="search" placeholder="Search games — try “cards”, “singing”, “Diwali”…"
