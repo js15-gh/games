@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Desi Party Games! — free browser games for a group in one room</title>
-<meta name="description" content="Free desi party games for a group in one room, each on your own phone. Antakshari, Tambola, Bollywood charades and more. No app, no sign-up.">
+<meta name="description" content="Free desi party games for a group in one room, each on your own phone. Antakshari, Tambola, Judgement, Bollywood charades and more. No app, no sign-up.">
 <link rel="canonical" href="https://velaparties.com/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Desi Party Games! — free browser games for a group in one room">
@@ -23,54 +23,82 @@
   }
   * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
   body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
-  .wrap { max-width:680px; margin:0 auto; padding:0 16px 48px; }
+  .wrap { max-width:960px; margin:0 auto; padding:0 16px 48px; }
 
-  header { text-align:center; padding:46px 8px 8px; }
-  .banner { height:6px; border-radius:99px; margin:0 auto 26px; max-width:220px;
+  header { text-align:center; padding:44px 8px 6px; }
+  .banner { height:6px; border-radius:99px; margin:0 auto 24px; max-width:220px;
             background:linear-gradient(90deg,var(--antak),var(--magenta),var(--tambola)); }
-  .eyebrow { color:var(--gold); letter-spacing:.28em; font-size:12px;
+  .eyebrow { color:var(--gold); letter-spacing:.26em; font-size:12px;
              text-transform:uppercase; font-family:'Cinzel',serif; }
-  h1 { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.06em;
-       font-size:clamp(32px,7vw,54px); margin:10px 0 0; }
-  .lede { color:var(--faint); font-size:clamp(17px,2.4vw,19px); line-height:1.6;
-          max-width:460px; margin:16px auto 0; }
-  .rule { height:1px; margin:26px 0; opacity:.5;
+  h1 { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.05em;
+       font-size:clamp(30px,6.5vw,52px); margin:10px 0 0; }
+  .lede { color:var(--faint); font-size:clamp(17px,2.2vw,19px); line-height:1.6;
+          max-width:520px; margin:14px auto 0; }
+  .rule { height:1px; margin:26px 0; opacity:.55;
           background:linear-gradient(90deg,transparent,var(--gold),transparent); }
+  h2 { font-family:'Cinzel',serif; letter-spacing:.16em; text-transform:uppercase;
+       font-size:13px; color:var(--gold); margin:32px 0 4px; font-weight:600; }
 
-  h2 { font-family:'Cinzel',serif; letter-spacing:.2em; text-transform:uppercase;
-       font-size:13px; color:var(--gold); text-align:center; margin:36px 0 0; font-weight:600; }
+  /* ── finder ── */
+  .finder { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+            padding:16px 16px 12px; box-shadow:0 1px 2px rgba(43,18,32,.05); margin-top:14px; }
+  .search { display:flex; gap:8px; align-items:center; }
+  .search input { flex:1; border:1px solid var(--line); border-radius:8px; background:var(--bg);
+                  color:var(--ink); padding:12px 14px; font-size:17px; width:100%;
+                  font-family:'EB Garamond',Georgia,serif; }
+  .search input:focus-visible { outline:2px solid var(--gold); outline-offset:1px; }
+  .filters { margin-top:12px; }
+  .filters .grouplabel { font-family:'Cinzel',serif; font-size:11px; letter-spacing:.16em;
+                         text-transform:uppercase; color:var(--goldDim); margin:10px 0 6px; }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; }
+  .chip { border:1px solid var(--line); background:transparent; color:var(--faint);
+          border-radius:99px; padding:6px 13px; font-size:15px; cursor:pointer;
+          font-family:'EB Garamond',Georgia,serif; }
+  .chip:hover { border-color:var(--gold); color:var(--gold); }
+  .chip.on { background:var(--gold); border-color:var(--gold); color:#FFF6E9; font-weight:600; }
+  .chip:focus-visible { outline:2px solid var(--magenta); outline-offset:2px; }
+  .count { text-align:center; color:var(--faint); font-size:15px; margin:14px 0 0; }
 
-  .card { display:block; text-decoration:none; color:inherit;
-          background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent);
-          border-radius:4px; padding:24px 22px; margin-top:18px;
-          transition:border-color .15s, transform .15s; }
-  .card:hover, .card:focus-visible { border-color:var(--accent); transform:translateY(-2px); outline:none; }
-  .card h3 { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.08em;
-             font-size:clamp(22px,4.5vw,28px); margin:6px 0 0; }
-  .card .ji { color:var(--accent); }
-  .card p { color:var(--faint); line-height:1.6; font-size:17px; margin:12px 0 0; }
-  .meta { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
-  .tag { border:1px solid var(--line); border-radius:99px; padding:4px 12px;
-         font-size:13px; color:var(--faint); letter-spacing:.04em; }
-  .cta { display:inline-block; margin-top:18px; color:var(--accent);
-         font-family:'Cinzel',serif; font-size:14px; letter-spacing:.14em; text-transform:uppercase; }
+  /* ── tiles ── */
+  .tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(255px,1fr));
+           gap:14px; margin-top:14px; align-items:stretch; }
+  .tile { display:flex; flex-direction:column; text-decoration:none; color:inherit;
+          background:var(--panel); border:1px solid var(--line);
+          border-top:4px solid var(--accent); border-radius:10px; padding:18px 18px 16px;
+          box-shadow:0 1px 2px rgba(43,18,32,.05); transition:transform .14s, box-shadow .14s; }
+  .tile:hover, .tile:focus-visible { transform:translateY(-3px); outline:none;
+          box-shadow:0 6px 16px rgba(43,18,32,.10); }
+  .tile .top { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+  .tile h3 { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.05em;
+             font-size:20px; margin:0; line-height:1.2; }
+  .tile .emoji { font-size:22px; line-height:1; }
+  .tile .who { color:var(--gold); font-size:13px; letter-spacing:.1em; text-transform:uppercase;
+               font-family:'Cinzel',serif; margin-top:8px; }
+  .tile p { color:var(--faint); line-height:1.55; font-size:16px; margin:10px 0 0; flex:1; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+  .tag { border:1px solid var(--line); border-radius:99px; padding:3px 10px;
+         font-size:13px; color:var(--faint); }
+  .play { display:inline-block; margin-top:14px; color:var(--accent);
+          font-family:'Cinzel',serif; font-size:13px; letter-spacing:.14em; text-transform:uppercase; }
+  .empty { text-align:center; color:var(--faint); padding:30px 10px; font-size:17px; }
 
-  .steps { counter-reset:s; list-style:none; padding:0; margin:18px 0 0; }
-  .steps li { counter-increment:s; position:relative; padding:10px 0 10px 44px;
+  .steps { counter-reset:s; list-style:none; padding:0; margin:14px 0 0; }
+  .steps li { counter-increment:s; position:relative; padding:9px 0 9px 44px;
               color:var(--faint); line-height:1.6; font-size:17px; }
-  .steps li::before { content:counter(s); position:absolute; left:0; top:9px;
+  .steps li::before { content:counter(s); position:absolute; left:0; top:8px;
               width:28px; height:28px; border:1px solid var(--line); border-radius:50%;
               display:flex; align-items:center; justify-content:center;
               font-family:'Cinzel',serif; font-size:13px; color:var(--gold); }
   .steps b { color:var(--ink); font-weight:600; }
-  .links { list-style:none; padding:0; margin:16px 0 0; }
-  .links li { color:var(--faint); line-height:1.7; font-size:17px; padding:7px 0;
-              border-bottom:1px solid rgba(43,18,32,.10); }
+  .links { list-style:none; padding:0; margin:14px 0 0;
+           columns:2; column-gap:26px; }
+  .links li { color:var(--faint); line-height:1.6; font-size:16px; padding:6px 0;
+              break-inside:avoid; }
   .links a { color:var(--gold); }
-
+  @media (max-width:560px){ .links { columns:1; } }
   footer { text-align:center; padding-top:36px; color:var(--goldDim); font-size:13px; }
   footer a { color:var(--goldDim); }
-  @media (prefers-reduced-motion: reduce) { .card { transition:none; } .card:hover { transform:none; } }
+  @media (prefers-reduced-motion: reduce) { .tile { transition:none; } .tile:hover { transform:none; } }
 </style>
 </head>
 <body>
@@ -82,108 +110,18 @@
     <h1>DESI PARTY GAMES!</h1>
     <p class="lede">Games for a group in one room, each playing on their own phone.
        Create a game, share the link, and everyone joins the same table.</p>
-    <div class="rule"></div>
   </header>
 
   <main>
-    <h2>Choose a game</h2>
-
-    <a class="card" style="--accent:var(--crimson)" href="traitors-vote-online.html">
-      <div class="eyebrow">3–20 players</div>
-      <h3>THE ROUND TABLE</h3>
-      <p>A live voting table for Traitors-style games. Everyone casts a secret vote from their
-         own phone, then the table reveals together and banishes the accused. Keeps score across
-         rounds and games.</p>
-      <div class="meta">
-        <span class="tag">Social deduction</span>
-        <span class="tag">10–30 min</span>
-        <span class="tag">Best with 6+</span>
+    <div class="finder">
+      <div class="search">
+        <input id="q" type="search" placeholder="Search games — try “cards”, “singing”, “Diwali”…"
+               autocomplete="off" aria-label="Search games">
       </div>
-      <span class="cta">Play →</span>
-    </a>
-
-    <a class="card" style="--accent:var(--thread)" href="ito-game-online.html">
-      <div class="eyebrow">2–10 players</div>
-      <h3>ITO <span class="ji">糸</span></h3>
-      <p>Everyone holds a secret number from 1 to 100. Describe it through a theme — "scariness of
-         animals", "how expensive is it" — without ever saying the number, then play your cards in
-         order. Miss the order and the thread snaps.</p>
-      <div class="meta">
-        <span class="tag">Co-operative</span>
-        <span class="tag">15–30 min</span>
-        <span class="tag">100 themes</span>
-      </div>
-      <span class="cta">Play →</span>
-    </a>
-
-    <a class="card" style="--accent:var(--tambola)" href="tambola-housie-online.html">
-      <div class="eyebrow">2–30 players</div>
-      <h3>TAMBOLA</h3>
-      <p>Housie, without the paper. Everyone gets a real three-by-nine ticket on their own phone,
-         one person calls the numbers, and every claim is checked against the ticket and the numbers
-         actually called — so a wrong claim just gets told no.</p>
-      <div class="meta">
-        <span class="tag">Family favourite</span>
-        <span class="tag">20–40 min</span>
-        <span class="tag">Six prizes</span>
-      </div>
-      <span class="cta">Play →</span>
-    </a>
-
-    <a class="card" style="--accent:var(--charades)" href="dumb-charades-online.html">
-      <div class="eyebrow">4–20 players</div>
-      <h3>DUMB CHARADES</h3>
-      <p>Bollywood charades in two teams. The film appears only on the acting player's phone, so
-         nobody has to whisper a title or walk out of the room. Timer and scores keep themselves.</p>
-      <div class="meta">
-        <span class="tag">Teams</span>
-        <span class="tag">20–40 min</span>
-        <span class="tag">127 films</span>
-      </div>
-      <span class="cta">Play →</span>
-    </a>
-
-    <a class="card" style="--accent:var(--jeopardy)" href="bollywood-jeopardy-online.html">
-      <div class="eyebrow">2–20 players, in teams</div>
-      <h3>BOLLYWOOD JEOPARDY</h3>
-      <p>Pick a decade and the board builds itself — five categories, twenty-five clues. Teams
-         take turns choosing, no buzzer race. Every question is generated from film records rather
-         than anyone's memory, so the answers are right.</p>
-      <div class="meta">
-        <span class="tag">Quiz</span>
-        <span class="tag">30–45 min</span>
-        <span class="tag">4,111 questions</span>
-      </div>
-      <span class="cta">Play →</span>
-    </a>
-
-    <a class="card" style="--accent:var(--antak)" href="antakshari-online.html">
-      <div class="eyebrow">2–4 teams</div>
-      <h3>ANTAKSHARI</h3>
-      <p>The singing game, with the bookkeeping taken off your hands. The phone holds the letter you
-         have to sing from, catches songs already used — which is what the arguing is always about —
-         runs the clock and keeps score. Hindi or English letters.</p>
-      <div class="meta">
-        <span class="tag">Singing</span>
-        <span class="tag">Any length</span>
-        <span class="tag">No repeats, ever</span>
-      </div>
-      <span class="cta">Play →</span>
-    </a>
-
-    <a class="card" style="--accent:var(--cards)" href="judgement-card-game-online.html">
-      <div class="eyebrow">3–7 players · no deck needed</div>
-      <h3>JUDGEMENT</h3>
-      <p>Kachuful, played on the phones in your pockets. Bid exactly how many tricks you'll take, then
-         try to hit it — over is as bad as under. Only legal cards can be tapped and it says why, so
-         someone new can learn mid-game without slowing the table down.</p>
-      <div class="meta">
-        <span class="tag">Card game</span>
-        <span class="tag">30–50 min</span>
-        <span class="tag">Learn as you play</span>
-      </div>
-      <span class="cta">Play →</span>
-    </a>
+      <div class="filters" id="filters"></div>
+    </div>
+    <p class="count" id="count"></p>
+    <div class="tiles" id="tiles"></div>
 
     <h2>How it works</h2>
     <ol class="steps">
@@ -194,14 +132,14 @@
 
     <h2>Ideas for the occasion</h2>
     <ul class="links">
-      <li><a href="diwali-party-games.html">Diwali party games</a> — what works with a full house</li>
-      <li><a href="sangeet-wedding-games.html">Sangeet &amp; wedding games</a> — for a big, distracted crowd</li>
-      <li><a href="kitty-party-games.html">Kitty party games</a> — keeping it fresh month to month</li>
-      <li><a href="games-at-the-airport.html">Games at the airport</a> — delays, layovers, nothing to carry</li>
-      <li><a href="antakshari-rules.html">Antakshari rules</a> — and how to settle the usual arguments</li>
-      <li><a href="tambola-rules.html">Tambola rules</a> — tickets, prizes and false claims</li>
-      <li><a href="games-for-kids.html">Games for kids</a> — by age, and what each one actually asks of them</li>
-      <li><a href="card-games-without-cards.html">Card games without a deck</a> — Kaali Tiri, poker and bridge next</li>
+      <li><a href="diwali-party-games.html">Diwali party games</a></li>
+      <li><a href="sangeet-wedding-games.html">Sangeet &amp; wedding games</a></li>
+      <li><a href="kitty-party-games.html">Kitty party games</a></li>
+      <li><a href="games-at-the-airport.html">Games at the airport</a></li>
+      <li><a href="games-for-kids.html">Games for kids, by age</a></li>
+      <li><a href="antakshari-rules.html">Antakshari rules</a></li>
+      <li><a href="tambola-rules.html">Tambola rules</a></li>
+      <li><a href="card-games-without-cards.html">Card games without a deck</a></li>
     </ul>
 
     <div class="rule"></div>
@@ -214,5 +152,125 @@
   </footer>
 
 </div>
+
+<script>
+// One list drives the tiles, the search and every filter, so adding a game is
+// a single entry rather than an edit in four places.
+const GAMES = [
+  { slug:'antakshari-online.html', name:'Antakshari', emoji:'🎤', accent:'--antak',
+    who:'2–4 teams', time:'Any length', age:6, type:'singing',
+    occasions:['diwali','wedding','kitty','travel','kids'],
+    blurb:"The singing game with the bookkeeping taken off your hands. Holds the letter you must sing "
+        + "from, catches songs already used, keeps score. Hindi or English letters.",
+    tags:['Singing','No repeats, ever'] },
+
+  { slug:'tambola-housie-online.html', name:'Tambola', emoji:'🎯', accent:'--tambola',
+    who:'2–30 players', time:'20–40 min', age:6, type:'party',
+    occasions:['diwali','kitty','wedding','kids'],
+    blurb:"Housie without the paper. A real three-by-nine ticket on every phone, one caller, and every "
+        + "claim checked against the numbers actually called.",
+    tags:['Family favourite','Six prizes'] },
+
+  { slug:'ito-game-online.html', name:'Ito', emoji:'🧵', accent:'--thread',
+    who:'2–10 players', time:'15–30 min', age:9, type:'numbers',
+    occasions:['travel','kitty','kids'],
+    blurb:"Everyone holds a secret number from 1 to 100. Describe it through a theme without saying it, "
+        + "then play in order. Miss the order and the thread snaps.",
+    tags:['Co-operative','100 themes'] },
+
+  { slug:'dumb-charades-online.html', name:'Dumb Charades', emoji:'🎬', accent:'--charades',
+    who:'4–20 players', time:'20–40 min', age:8, type:'party',
+    occasions:['diwali','wedding','kids'],
+    blurb:"Bollywood charades in two teams. The other team types your film and it shows only on your "
+        + "phone — no whispering, nobody sent out of the room.",
+    tags:['Teams','127 films'] },
+
+  { slug:'bollywood-jeopardy-online.html', name:'Bollywood Jeopardy', emoji:'🎞️', accent:'--jeopardy',
+    who:'2–20 in teams', time:'30–45 min', age:12, type:'quiz',
+    occasions:['diwali','wedding','travel','kids'],
+    blurb:"Pick a decade and the board builds itself. Turn-based, no buzzer race. Questions come from "
+        + "film records rather than memory, so the answers are right.",
+    tags:['Quiz','4,111 questions'] },
+
+  { slug:'judgement-card-game-online.html', name:'Judgement', emoji:'🂡', accent:'--cards',
+    who:'3–7 players', time:'30–50 min', age:12, type:'card',
+    occasions:['travel','kitty','kids'],
+    blurb:"Kachuful, with no deck needed. Bid exactly how many tricks you'll take. Only legal cards can "
+        + "be tapped and it says why, so someone new can learn mid-game.",
+    tags:['Card game','Learn as you play'] },
+
+  { slug:'traitors-vote-online.html', name:'The Round Table', emoji:'🗡️', accent:'--crimson',
+    who:'3–20 players', time:'10–30 min', age:10, type:'party',
+    occasions:['diwali','wedding'],
+    blurb:"A live voting table for Traitors-style games. Everyone votes secretly from their own phone, "
+        + "then the table reveals together and banishes the accused.",
+    tags:['Social deduction','Best with 6+'] },
+];
+
+const FILTERS = [
+  { key:'type', label:'Kind of game', opts:[
+      ['party','Party'], ['card','Cards'], ['quiz','Quiz'],
+      ['singing','Singing'], ['numbers','Numbers'] ] },
+  { key:'age', label:'Age', opts:[ ['6','6+'], ['9','9+'], ['12','12+'] ] },
+  { key:'occasions', label:'Occasion', opts:[
+      ['diwali','Diwali'], ['wedding','Wedding'], ['kitty','Kitty party'],
+      ['travel','Travelling'], ['kids','With kids'] ] },
+];
+
+const state = { q:'', type:null, age:null, occasions:null };
+const esc = s => String(s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function matches(g){
+  if (state.type && g.type !== state.type) return false;
+  // an age filter means "suitable for a child this age", so keep anything at or below it
+  if (state.age && g.age > +state.age) return false;
+  if (state.occasions && !g.occasions.includes(state.occasions)) return false;
+  const q = state.q.trim().toLowerCase();
+  if (!q) return true;
+  const hay = [g.name, g.blurb, g.type, g.who, g.time, ...g.tags, ...g.occasions]
+              .join(' ').toLowerCase();
+  return q.split(/\s+/).every(w => hay.includes(w));
+}
+
+function renderFilters(){
+  document.getElementById('filters').innerHTML = FILTERS.map(f => `
+    <div class="grouplabel">${f.label}</div>
+    <div class="chips">
+      ${f.opts.map(([v,label]) => `<button class="chip ${state[f.key]===v?'on':''}"
+         onclick="toggle('${f.key}','${v}')">${label}</button>`).join('')}
+    </div>`).join('');
+}
+function renderTiles(){
+  const list = GAMES.filter(matches);
+  document.getElementById('count').textContent =
+    list.length === GAMES.length ? `All ${GAMES.length} games`
+    : list.length ? `${list.length} of ${GAMES.length} games`
+    : '';
+  document.getElementById('tiles').innerHTML = list.length ? list.map(g => `
+    <a class="tile" style="--accent:var(${g.accent})" href="${g.slug}">
+      <div class="top"><h3>${esc(g.name)}</h3><span class="emoji">${g.emoji}</span></div>
+      <div class="who">${esc(g.who)} · ${esc(g.time)}</div>
+      <p>${esc(g.blurb)}</p>
+      <div class="meta">${g.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}
+        <span class="tag">${g.age}+</span></div>
+      <span class="play">Play →</span>
+    </a>`).join('')
+    : `<p class="empty">Nothing matches that. <button class="chip" onclick="clearAll()">Clear filters</button></p>`;
+}
+function toggle(key, val){
+  state[key] = state[key] === val ? null : val;
+  renderFilters(); renderTiles();
+}
+function clearAll(){
+  state.q=''; state.type=null; state.age=null; state.occasions=null;
+  document.getElementById('q').value='';
+  renderFilters(); renderTiles();
+}
+document.getElementById('q').addEventListener('input', e => {
+  state.q = e.target.value; renderTiles();
+});
+renderFilters(); renderTiles();
+</script>
 </body>
 </html>
