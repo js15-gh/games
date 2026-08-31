@@ -130,20 +130,41 @@ async function saveState(next){
     body: JSON.stringify({ p_id: roomKey(), p_state: next })
   });
   if (!r.ok) throw new Error('save '+r.status);
+  // game_save returns false when another device wrote first. An older
+  // void-returning version of the function sends no body; treat that as success.
+  try { return (await r.json()) === true; } catch { return true; }
+}
+
+// Apply fn to the newest state we have and save it. If someone else got there
+// first the save is refused, so take their state and re-apply fn on top of it
+// instead of overwriting their change.
+async function commit(fn){
+  for (let attempt = 0; attempt < 4; attempt++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = fresh; stamp = Math.max(stamp, fresh._stamp || 0); render(); }
+  }
+  return false;
 }
 
 async function mutate(fn){
-  const next = fn(structuredClone(G));
-  G = next; render();
-  try { await saveState(next); setErr(''); }
-  catch { setErr("Couldn't sync — your move may not be visible to others yet. It will retry."); pending = next; }
+  try {
+    if (await commit(fn)){ setErr(''); return; }
+  } catch { /* offline or server error — fall through and retry on the next poll */ }
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;   // the change itself, not the state, so the retry re-applies it
 }
 let pending = null;
 
 async function poll(){
   if (!joined) return;
   try {
-    if (pending){ await saveState(pending); pending = null; setErr(''); }
+    if (pending){
+      const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn;
+    }
     const s = await loadState();
     if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
       const changed = JSON.stringify(s) !== JSON.stringify(G);
@@ -399,7 +420,7 @@ async function createRoom(){
       ROOM = newCode();
       if (await loadState()) continue;   // code already in use — draw another
       G = structuredClone(FRESH);
-      await saveState(G);
+      if (!(await saveState(G))) continue;   // another device just took this code
       enterRoom();
       return;
     }
