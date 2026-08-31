@@ -19,7 +19,7 @@
     --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
     --magenta:#C2185B;
     --crimson:#A32633; --thread:#C1362B; --charades:#C2185B;
-    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A;
+    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C;
   }
   * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
   body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
@@ -198,6 +198,13 @@ const GAMES = [
     blurb:"Kachuful, with no deck needed. Bid exactly how many tricks you'll take. Only legal cards can "
         + "be tapped and it says why, so someone new can learn mid-game.",
     tags:['Card game','Learn as you play'] },
+
+  { slug:'kaali-tiri-online.html', name:'Kaali Tiri', emoji:'♠️', accent:'--kaali',
+    who:'4–10 players', time:'40–60 min', age:12, type:'card',
+    occasions:['travel','kitty','diwali'],
+    blurb:"Black Three, with no deck and no table. Bid for points, call a partner card — and nobody "
+        + "learns who your partner is until they play it. If you weren't watching, that's your problem.",
+    tags:['Card game','Hidden partners'] },
 
   { slug:'traitors-vote-online.html', name:'The Round Table', emoji:'🗡️', accent:'--crimson',
     who:'3–20 players', time:'10–30 min', age:10, type:'party',

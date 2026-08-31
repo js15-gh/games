@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaali Tiri (3 of Spades) — play with no deck, learn as you go</title>
+<meta name="description" content="Play Kaali Tiri / Black Three with no cards. Each phone holds your hand, partners stay hidden until their card is played, and only legal cards can be tapped. Free, no app.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♠️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#141824; --panel:#1E2333; --line:rgba(201,162,39,.26);
+    --gold:#C9A227; --red:#D6455B; --ink:#ECEDF2; --faint:#8D93A8; --green:#4FB07E;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:640px; margin:0 auto; padding:0 12px 40px; }
+  header { text-align:center; padding:28px 8px 2px; }
+  h1 { font-family:'Bitter',Georgia,serif; font-weight:700; font-size:clamp(28px,7vw,44px); margin:4px 0 0; }
+  h1 .s { color:var(--gold); }
+  .eyebrow { color:var(--gold); letter-spacing:.22em; font-size:12px; text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:18px 16px; margin-top:14px; }
+  .row { display:flex; justify-content:space-between; align-items:center;
+         padding:9px 0; border-bottom:1px solid rgba(236,237,242,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:9px; margin-top:12px; }
+  input { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+          color:var(--ink); padding:13px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:8px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  .btn-gold { background:var(--gold); color:#141824; border:none; padding:13px 18px;
+              font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid rgba(141,147,168,.4);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:12px 8px; font-size:15px; }
+  .seat.on { background:var(--gold); border-color:var(--gold); color:#141824; font-weight:700; }
+  .full { width:100%; margin-top:10px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:9px; margin-top:14px; }
+
+  .hand { display:flex; flex-wrap:wrap; gap:5px; justify-content:center; margin-top:12px; }
+  .card { width:48px; height:66px; border-radius:7px; border:1px solid var(--line);
+          background:#F6F4EC; color:#141824; display:flex; flex-direction:column;
+          align-items:center; justify-content:center; padding:0; line-height:1.05;
+          font-family:'Bitter',serif; font-weight:700; position:relative; }
+  .card .r { font-size:19px; } .card .s { font-size:17px; }
+  .card.red { color:#B3272D; }
+  .card.dead { opacity:.26; cursor:not-allowed; filter:grayscale(.6); }
+  .card.play { box-shadow:0 0 0 2px var(--gold); }
+  .card.pts::after { content:attr(data-p); position:absolute; top:1px; right:3px;
+                     font-size:9px; color:var(--gold); font-family:'Karla',sans-serif; }
+  .card.sm { width:40px; height:55px; } .card.sm .r{font-size:15px;} .card.sm .s{font-size:13px;}
+  .trick { display:flex; flex-wrap:wrap; gap:9px; justify-content:center; margin-top:12px; }
+  .tw { text-align:center; } .tw .who { font-size:12px; color:var(--faint); margin-top:3px; }
+  .trumpbar { display:flex; justify-content:center; align-items:center; gap:10px;
+              font-family:'Bitter',serif; font-size:18px; margin-top:6px; }
+  .trumpbar .suit { font-size:25px; }
+  .tbl { width:100%; border-collapse:collapse; margin-top:10px; font-size:15px; }
+  .tbl th { text-align:left; color:var(--gold); font-size:11px; letter-spacing:.14em;
+            text-transform:uppercase; font-weight:700; padding:6px 4px; }
+  .tbl td { padding:7px 4px; border-top:1px solid rgba(236,237,242,.08); }
+  .tbl td.n { text-align:center; width:56px; }
+  .tbl tr.up td { color:var(--gold); font-weight:700; }
+  .coach { background:rgba(201,162,39,.09); border:1px solid rgba(201,162,39,.3);
+           border-radius:8px; padding:11px 13px; margin-top:12px; font-size:15px;
+           line-height:1.55; }
+  .coach b { color:var(--gold); }
+  .bar { height:8px; background:rgba(255,255,255,.07); border-radius:99px; overflow:hidden; margin-top:8px; }
+  .bar > i { display:block; height:100%; background:var(--gold); }
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+             padding:13px 15px; margin-top:14px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Bitter',serif; letter-spacing:.18em; font-size:26px; color:var(--gold); }
+  .linkfield { font-size:13px; margin-top:9px; padding:9px 10px; color:var(--faint); }
+  .rb-actions { display:flex; gap:8px; margin-top:9px; } .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:18px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover { color:var(--gold); }
+  details summary { color:var(--gold); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>KAALI TIRI <span class="s">♠</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Shuffling…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script src="feedback.js"></script>
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "kaalitiri";
+
+const SUITS = ['S','H','D','C'];
+const SUIT_CH = { S:'♠', H:'♥', D:'♦', C:'♣' };
+const SUIT_NAME = { S:'spades', H:'hearts', D:'diamonds', C:'clubs' };
+const RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+const RANK_LABEL = { T:'10' };
+
+// 3♠ 30 + four 5s (20) + twelve J/Q/K (120) + four aces (40) + four tens (40)
+// = 250 a deck, which is the total Jimi quoted.
+function cardPoints(c){
+  if (face(c) === '3S') return 30;
+  const r = c[0];
+  if (r === '5') return 5;
+  if (r === 'T' || r === 'J' || r === 'Q' || r === 'K' || r === 'A') return 10;
+  return 0;
+}
+// two decks means duplicate cards, so ids carry a copy suffix: "AH#2"
+const face   = (c) => c.split('#')[0];
+const suitOf = (c) => face(c)[1];
+const rankOf = (c) => face(c)[0];
+const rankVal = (c) => RANKS.indexOf(rankOf(c)) + 2;
+const isKaali = (c) => face(c) === '3S';
+
+const FRESH = { phase:'setup', players:[], decks:1, minBid:130, partnersWanted:1,
+                handsToPlay:4, threeTop:true, hand:0, dealer:0, removed:[], hands:{},
+                bids:{}, passed:[], turn:0, highBid:0, highBidder:null, trump:'',
+                partnerCards:[], revealed:[], trick:[], led:'', captured:{},
+                scores:{}, lastTrick:null, handResult:null };
+
+let G = null, me = null, stamp = 0, pending = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setErr(m){ $('err').textContent = m || ''; }
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() }) });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey(), p_state: next }) });
+  if (!r.ok) throw new Error('save '+r.status);
+  try { return (await r.json()) === true; } catch { return true; }
+}
+async function commit(fn){
+  for (let a=0; a<4; a++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = fresh; stamp = Math.max(stamp, fresh._stamp||0); render(); }
+  }
+  return false;
+}
+async function mutate(fn){
+  try { if (await commit(fn)){ setErr(''); return; } } catch {}
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;
+}
+async function poll(){
+  if (!joined) return;
+  try {
+    if (pending){ const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn; }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = s; stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch { if (!G){ G = structuredClone(FRESH); render(); } }
+}
+
+// ── deck ────────────────────────────────────────────────────
+function newDeck(decks){
+  const d = [];
+  for (let k=1;k<=decks;k++) for (const s of SUITS) for (const r of RANKS)
+    d.push(decks>1 ? r+s+'#'+k : r+s);
+  for (let i=d.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+  return d;
+}
+// Hands must come out even, so drop worthless cards — 2s and 3s, never the 3♠.
+function trimDeck(deck, players){
+  const extra = deck.length % players;
+  if (!extra) return { deck, removed:[] };
+  const removed = [];
+  const spare = deck.filter(c => cardPoints(c) === 0 && (rankOf(c)==='2' || rankOf(c)==='3') && !isKaali(c));
+  const rest  = deck.filter(c => cardPoints(c) === 0 && !isKaali(c) && !spare.includes(c));
+  const pool = spare.concat(rest);
+  for (let i=0;i<extra && i<pool.length;i++) removed.push(pool[i]);
+  return { deck: deck.filter(c=>!removed.includes(c)), removed };
+}
+const sortHand = (h, trump) => [...h].sort((a,b)=>{
+  const order = [trump, ...SUITS.filter(s=>s!==trump)].filter(Boolean);
+  const sa = order.indexOf(suitOf(a)), sb = order.indexOf(suitOf(b));
+  return (sa<0?9:sa) - (sb<0?9:sb) || rankVal(b) - rankVal(a);
+});
+function legalCards(hand, led){
+  if (!led) return [...hand];
+  const has = hand.filter(c => suitOf(c) === led);
+  return has.length ? has : [...hand];
+}
+// With the house rule on, the 3♠ is the top trump whatever the trump suit is.
+function beats(a, b, led, trump, threeTop){
+  const ta = threeTop && isKaali(a), tb = threeTop && isKaali(b);
+  if (ta && !tb) return true;
+  if (tb && !ta) return false;
+  const sa = suitOf(a), sb = suitOf(b);
+  if (sa === trump && sb !== trump) return true;
+  if (sb === trump && sa !== trump) return false;
+  if (sa !== sb) return false;              // off-suit discard cannot win
+  return rankVal(a) > rankVal(b);
+}
+function trickWinner(trick, led, trump, threeTop){
+  let best = trick[0];
+  for (const p of trick) if (p !== best && beats(p.card, best.card, led, trump, threeTop)) best = p;
+  return best.name;
+}
+const trickPoints = (trick) => trick.reduce((s,p)=>s+cardPoints(p.card), 0);
+
+// ── teams (hidden until a partner card appears) ─────────────
+function partnerHolders(g){
+  const out = [];
+  for (const p of g.players){
+    const all = (g.hands[p]||[]).concat((g.captured[p]||[]).map(x=>x));
+    if (g.partnerCards.some(pc => (g.dealtTo||{})[pc] === p)) out.push(p);
+  }
+  return out;
+}
+function biddingTeam(g){
+  const t = new Set([g.highBidder]);
+  for (const pc of g.partnerCards){ const who = (g.dealtTo||{})[pc]; if (who) t.add(who); }
+  return [...t];
+}
+const onBidTeam = (g,p) => biddingTeam(g).includes(p);
+
+// ── actions ──
+function addPlayer(){
+  const el=$('nameInput'); const n=el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if (G.players.length>=10){ setErr('Ten is plenty.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{ g.players.push(n); g.scores[n]=0; return g; });
+}
+function removePlayer(n){
+  mutate(g=>{ g.players=g.players.filter(p=>p!==n); delete g.scores[n]; return g; });
+  if (me===n) me=null;
+}
+function setDecks(d){ mutate(g=>{ g.decks=d; g.minBid = 130*d; return g; }); }
+function setMinBid(b){ mutate(g=>{ g.minBid=b; return g; }); }
+function setPartners(n){ mutate(g=>{ g.partnersWanted=n; return g; }); }
+function setHands(n){ mutate(g=>{ g.handsToPlay=n; return g; }); }
+function toggleThreeTop(){ mutate(g=>{ g.threeTop=!g.threeTop; return g; }); }
+
+function startGame(){
+  if (G.players.length < 4){ setErr('Kaali Tiri wants at least 4 players.'); return; }
+  setErr('');
+  mutate(g=>{ g.hand=0; g.dealer=0; g.players.forEach(p=>g.scores[p]=0); dealHand(g); return g; });
+}
+function dealHand(g){
+  const { deck, removed } = trimDeck(newDeck(g.decks), g.players.length);
+  const per = deck.length / g.players.length;
+  g.hands = {}; g.dealtTo = {}; g.captured = {}; g.bids = {}; g.passed = [];
+  g.players.forEach((p,i)=>{
+    g.hands[p] = deck.slice(i*per, (i+1)*per);
+    g.hands[p].forEach(c => g.dealtTo[c] = p);
+    g.captured[p] = [];
+  });
+  g.removed = removed;
+  g.highBid = 0; g.highBidder = null; g.trump = ''; g.partnerCards = []; g.revealed = [];
+  g.trick = []; g.led = ''; g.lastTrick = null; g.handResult = null;
+  g.turn = (g.dealer + 1) % g.players.length;
+  g.phase = 'bidding';
+  return g;
+}
+function bid(n){
+  mutate(g=>{
+    const p = g.players[g.turn];
+    if (g.passed.includes(p)) return g;
+    g.bids[p] = n; g.highBid = n; g.highBidder = p;
+    advanceBidding(g);
+    return g;
+  });
+}
+function passBid(){
+  mutate(g=>{
+    const p = g.players[g.turn];
+    if (!g.passed.includes(p)) g.passed.push(p);
+    advanceBidding(g);
+    return g;
+  });
+}
+function advanceBidding(g){
+  const live = g.players.filter(p=>!g.passed.includes(p));
+  if (live.length <= 1 && g.highBidder){
+    g.phase = 'naming';
+    g.turn = g.players.indexOf(g.highBidder);
+    return g;
+  }
+  if (!live.length){ dealHand(g); return g; }        // everyone passed — redeal
+  let i = g.turn;
+  do { i = (i+1) % g.players.length; } while (g.passed.includes(g.players[i]));
+  g.turn = i;
+  return g;
+}
+function chooseTrump(s){ mutate(g=>{ g.trump = s; return g; }); }
+function namePartner(card){
+  mutate(g=>{
+    if (g.partnerCards.includes(card)) { g.partnerCards = g.partnerCards.filter(c=>c!==card); return g; }
+    if (g.partnerCards.length >= g.partnersWanted) return g;
+    g.partnerCards.push(card);
+    return g;
+  });
+}
+function confirmNaming(){
+  if (!G.trump){ setErr('Pick a trump suit first.'); return; }
+  if (G.partnerCards.length !== G.partnersWanted){
+    setErr(`Name ${G.partnersWanted} partner card${G.partnersWanted===1?'':'s'}.`); return;
+  }
+  const mine = G.hands[G.highBidder] || [];
+  if (G.partnerCards.some(pc => mine.some(c => face(c) === pc))){
+    setErr("You can't call a card you're holding yourself."); return;
+  }
+  setErr('');
+  mutate(g=>{ g.phase='playing'; g.turn = g.players.indexOf(g.highBidder); return g; });
+}
+function playCard(card){
+  mutate(g=>{
+    const p = g.players[g.turn];
+    const hand = g.hands[p] || [];
+    if (!hand.includes(card) || !legalCards(hand, g.led).includes(card)) return g;
+    g.hands[p] = hand.filter(c=>c!==card);
+    if (!g.trick.length) g.led = suitOf(card);
+    g.trick.push({ name:p, card });
+    // a partner is revealed the moment their called card hits the table
+    if (g.partnerCards.includes(face(card)) && !g.revealed.includes(p)) g.revealed.push(p);
+    if (g.trick.length === g.players.length){
+      const w = trickWinner(g.trick, g.led, g.trump, g.threeTop);
+      g.captured[w] = (g.captured[w]||[]).concat(g.trick.map(x=>x.card));
+      g.lastTrick = { cards:[...g.trick], winner:w, pts:trickPoints(g.trick) };
+      g.phase = 'trickend';
+    } else g.turn = (g.turn+1) % g.players.length;
+    return g;
+  });
+}
+function nextTrick(){
+  mutate(g=>{
+    const w = g.lastTrick.winner;
+    g.trick = []; g.led = '';
+    g.turn = g.players.indexOf(w);
+    if (g.players.every(p => (g.hands[p]||[]).length === 0)) scoreHand(g);
+    else g.phase = 'playing';
+    return g;
+  });
+}
+function scoreHand(g){
+  const team = biddingTeam(g);
+  const got = team.reduce((s,p)=> s + (g.captured[p]||[]).reduce((x,c)=>x+cardPoints(c),0), 0);
+  const made = got >= g.highBid;
+  const award = made ? g.highBid : 100 * g.decks;
+  const winners = made ? team : g.players.filter(p=>!team.includes(p));
+  winners.forEach(p => g.scores[p] = (g.scores[p]||0) + award);
+  g.handResult = { team, got, bid:g.highBid, made, award, winners,
+                   partnerCards:[...g.partnerCards], trump:g.trump };
+  g.phase = 'handend';
+  return g;
+}
+function nextHand(){
+  mutate(g=>{
+    if (g.hand + 1 >= g.handsToPlay){ g.phase='done'; return g; }
+    g.hand += 1; g.dealer = (g.dealer+1) % g.players.length;
+    dealHand(g);
+    return g;
+  });
+}
+function playAgain(keep){
+  me = keep ? me : null;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep){ n.players=g.players; n.decks=g.decks; n.minBid=g.minBid;
+               n.partnersWanted=g.partnersWanted; n.handsToPlay=g.handsToPlay;
+               n.threeTop=g.threeTop; g.players.forEach(p=>n.scores[p]=0); }
+    return n;
+  });
+}
+function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+
+// ── render ──
+function cardHTML(c, o){
+  o = o||{};
+  const red = suitOf(c)==='H' || suitOf(c)==='D';
+  const pts = cardPoints(c);
+  const cls = ['card', red?'red':'', o.small?'sm':'', o.dead?'dead':'', o.play?'play':'',
+               pts?'pts':''].filter(Boolean).join(' ');
+  const inner = `<span class="r">${RANK_LABEL[rankOf(c)]||rankOf(c)}</span><span class="s">${SUIT_CH[suitOf(c)]}</span>`;
+  const dp = pts ? ` data-p="${pts}"` : '';
+  return o.onclick ? `<button class="${cls}"${dp} onclick="${o.onclick}">${inner}</button>`
+                   : `<div class="${cls}"${dp}>${inner}</div>`;
+}
+function scoreTable(){
+  return `<table class="tbl">
+    <tr><th>Player</th><th style="text-align:center">Points taken</th><th style="text-align:center">Score</th></tr>
+    ${G.players.map((p,i)=>{
+      const cap = (G.captured[p]||[]).reduce((s,c)=>s+cardPoints(c),0);
+      const shown = G.revealed.includes(p) || p===G.highBidder;
+      return `<tr class="${i===G.turn && (G.phase==='bidding'||G.phase==='playing')?'up':''}">
+        <td>${esc(p)}${p===G.highBidder?' <span class="faint" style="font-size:12px">(bidder)</span>'
+          : shown?' <span style="font-size:12px;color:var(--green)">(partner)</span>':''}</td>
+        <td class="n">${cap}</td><td class="n">${G.scores[p]||0}</td></tr>`;
+    }).join('')}</table>`;
+}
+function progress(){
+  if (!G.highBid) return '';
+  const team = biddingTeam(G);
+  const got = team.reduce((s,p)=>s+(G.captured[p]||[]).reduce((x,c)=>x+cardPoints(c),0),0);
+  const pct = Math.min(100, Math.round(got/G.highBid*100));
+  return `<p class="faint center" style="font-size:14px;margin-top:10px">
+      Bid <b style="color:var(--ink)">${G.highBid}</b> · bidding side has
+      <b style="color:var(--ink)">${got}</b></p>
+    <div class="bar"><i style="width:${pct}%"></i></div>`;
+}
+function whoAmIHTML(){
+  if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
+      You are <b style="color:var(--ink)">${esc(me)}</b> ·
+      <a href="#" onclick="me=null;render();return false" style="color:var(--gold)">not you?</a></p></div>`;
+  return `<div class="panel"><div class="eyebrow">Which seat is yours?</div>
+      <p class="faint" style="font-size:14px;margin-top:6px">Your cards show only on your own phone.</p>
+      <div class="grid">${G.players.map(p=>
+        `<button class="seat" onclick="me='${esc(p)}';render()">${esc(p)}</button>`).join('')}</div></div>`;
+}
+
+function render(){
+  if (!configured()){ $('app').innerHTML='<div class="panel"><p class="faint">Supabase is not configured.</p></div>'; return; }
+  const app = $('app');
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
+    : G.phase==='done' ? 'Final scores'
+    : `Hand ${G.hand+1} of ${G.handsToPlay}${G.trump?' · trump '+SUIT_CH[G.trump]:''}`;
+
+  if (G.phase === 'setup'){
+    const had=$('nameInput'); const keep=had?had.value:'';
+    const bids = [];
+    for (let b=100*G.decks; b<=200*G.decks; b+=10) bids.push(b);
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Players (4–10)</div>
+        <div style="display:flex;gap:8px;margin:12px 0">
+          <input id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-gold" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.players.length ? G.players.map(p=>`<div class="row"><span>${esc(p)}</span>
+          <button class="btn-ghost" onclick="removePlayer('${esc(p)}')">Remove</button></div>`).join('')
+          : '<p class="faint" style="font-style:italic">Nobody yet.</p>'}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Decks</div>
+        <div class="grid">${[1,2].map(d=>
+          `<button class="seat ${G.decks===d?'on':''}" onclick="setDecks(${d})">${d} deck${d>1?'s':''}</button>`).join('')}</div>
+        <p class="faint" style="font-size:14px;margin-top:8px">${250*G.decks} points in play.
+          ${G.players.length ? (() => { const ex=(52*G.decks)%G.players.length;
+            return ex ? `With ${G.players.length} players, ${ex} worthless card${ex===1?'':'s'} will be removed so hands come out even.`
+                      : `${52*G.decks} cards divide evenly between ${G.players.length}.`; })() : ''}</p>
+
+        <div class="eyebrow" style="margin-top:18px">Minimum bid</div>
+        <div class="grid">${bids.map(b=>
+          `<button class="seat ${G.minBid===b?'on':''}" onclick="setMinBid(${b})">${b}</button>`).join('')}</div>
+
+        <div class="eyebrow" style="margin-top:18px">Partners called</div>
+        <div class="grid">${[1,2,3].map(n=>
+          `<button class="seat ${G.partnersWanted===n?'on':''}" onclick="setPartners(${n})">${n}</button>`).join('')}</div>
+
+        <div class="eyebrow" style="margin-top:18px">Hands to play</div>
+        <div class="grid">${[2,4,6,8].map(n=>
+          `<button class="seat ${G.handsToPlay===n?'on':''}" onclick="setHands(${n})">${n}</button>`).join('')}</div>
+
+        <div class="eyebrow" style="margin-top:18px">3♠ beats every trump</div>
+        <p class="faint" style="font-size:14px;margin-top:6px">Some tables play the kaali tiri as the
+          highest card in the game, not just the most valuable. Your table's call.</p>
+        <div class="grid">
+          <button class="seat ${G.threeTop?'on':''}" onclick="toggleThreeTop()">${G.threeTop?'Yes':'No'}</button>
+        </div>
+        <button class="btn-gold full" style="margin-top:18px" onclick="startGame()">Deal the first hand</button>
+      </div>
+      <div class="panel"><details><summary>How to play</summary>
+        <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
+          <p>Points live in the cards: <b style="color:var(--ink)">3♠ is 30</b>, every 10, J, Q, K and
+             A is 10, and every 5 is 5 — ${250*G.decks} in all.</p>
+          <p>Bid how many points you think you can take. The highest bidder picks trump and calls a
+             card; whoever holds it is secretly on their side.</p>
+          <p><b style="color:var(--ink)">Partners are only revealed when they play the called card.</b>
+             Nobody announces it — if you weren't paying attention, that's your problem.</p>
+          <p>Make the bid and everyone on the bidding side scores the bid. Fall short and everyone on
+             the other side scores ${100*G.decks} each.</p>
+        </div></details></div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  const up = G.players[G.turn];
+  const mine = me ? sortHand(G.hands[me]||[], G.trump) : [];
+
+  if (G.phase === 'bidding'){
+    const myTurn = me === up;
+    const next = Math.max(G.minBid, G.highBid + 10);
+    const opts = []; for (let b=next; b<=Math.min(250*G.decks, next+90); b+=10) opts.push(b);
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">${myTurn ? 'Your bid' : esc(up)+' is bidding'}</div>
+        <p class="faint" style="font-size:15px;margin-top:8px">
+          ${G.highBidder ? `<b style="color:var(--ink)">${esc(G.highBidder)}</b> leads on
+             <b style="color:var(--ink)">${G.highBid}</b>` : `No bids yet — minimum is ${G.minBid}`}</p>
+        ${me ? `<div class="hand">${mine.map(c=>cardHTML(c,{small:mine.length>8})).join('')}</div>
+          <p class="faint" style="font-size:13px">Your hand holds
+            <b style="color:var(--ink)">${mine.reduce((s,c)=>s+cardPoints(c),0)}</b> points.</p>`
+          : '<p class="faint" style="font-size:14px;margin-top:10px">Pick your seat to see your cards.</p>'}
+        ${myTurn ? `<div class="grid">${opts.map(b=>
+            `<button class="seat" onclick="bid(${b})">${b}</button>`).join('')}</div>
+          <button class="btn-ghost full" onclick="passBid()">Pass</button>`
+          : `<p class="faint" style="font-size:14px;margin-top:12px">Waiting for ${esc(up)}…</p>`}
+        ${G.passed.length ? `<p class="faint" style="font-size:13px;margin-top:10px">Passed: ${G.passed.map(esc).join(', ')}</p>`:''}
+      </div>
+      ${G.removed.length ? `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
+        Removed to even the hands: ${G.removed.map(c=>RANK_LABEL[rankOf(c)]||rankOf(c))
+          .map((r,i)=>r+SUIT_CH[suitOf(G.removed[i])]).join(', ')}</p></div>`:''}
+      ` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase === 'naming'){
+    const isBidder = me === G.highBidder;
+    const held = new Set((G.hands[G.highBidder]||[]).map(face));
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">${esc(G.highBidder)} won the bidding at ${G.highBid}</div>
+        ${isBidder ? `
+          <p class="faint" style="font-size:15px;margin-top:8px">Pick trump, then call
+            ${G.partnersWanted} card${G.partnersWanted===1?'':'s'}. Whoever holds one is on your side —
+            and nobody will know until they play it.</p>
+          <div class="grid">${SUITS.map(s=>
+            `<button class="seat ${G.trump===s?'on':''}" onclick="chooseTrump('${s}')"
+              style="${s==='H'||s==='D'?'color:var(--red)':''}">${SUIT_CH[s]} ${SUIT_NAME[s]}</button>`).join('')}</div>
+          <div class="eyebrow" style="margin-top:16px">Call ${G.partnersWanted} card${G.partnersWanted===1?'':'s'}
+            (${G.partnerCards.length} chosen)</div>
+          <p class="faint" style="font-size:13px;margin-top:4px">Cards you're holding are greyed out.</p>
+          <div class="hand">${SUITS.flatMap(s=>['A','K','Q','J','T'].map(r=>{
+            const c = r+s; const own = held.has(c);
+            return cardHTML(c, { small:true, dead:own, play:G.partnerCards.includes(c),
+              onclick: own ? '' : `namePartner('${c}')` });
+          })).join('')}</div>
+          <button class="btn-gold full" onclick="confirmNaming()">Start the hand</button>`
+        : `<p class="faint" style="font-size:15px;margin-top:10px">Waiting while
+             ${esc(G.highBidder)} picks trump and calls their partner.</p>`}
+      </div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase === 'playing' || G.phase === 'trickend'){
+    const ended = G.phase === 'trickend';
+    const t = ended ? G.lastTrick : { cards:G.trick };
+    const legal = me ? legalCards(G.hands[me]||[], G.led) : [];
+    const myTurn = !ended && me === up;
+    let coach = '';
+    if (myTurn && G.led && legal.length < (G.hands[me]||[]).length){
+      coach = `<div class="coach"><b>${SUIT_CH[G.led]} was led and you have ${SUIT_NAME[G.led]}</b>,
+        so you must follow suit. Only those cards can be tapped.</div>`;
+    } else if (myTurn && G.led){
+      coach = `<div class="coach">You have no ${SUIT_NAME[G.led]}, so you can play anything — a trump
+        ${SUIT_CH[G.trump]} to take it, or throw away a card worth nothing.</div>`;
+    }
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="trumpbar"><span class="faint" style="font-size:13px">TRUMP</span>
+          <span class="suit" style="color:${G.trump==='H'||G.trump==='D'?'var(--red)':'var(--ink)'}">${SUIT_CH[G.trump]}</span>
+          ${G.threeTop?'<span class="faint" style="font-size:13px">· 3♠ beats all</span>':''}</div>
+        <div class="eyebrow" style="margin-top:8px">${ended ? 'Trick complete'
+          : (myTurn ? 'Your turn' : esc(up)+' to play')}${G.led&&!ended?` · ${SUIT_CH[G.led]} led`:''}</div>
+        <div class="trick">${(t.cards||[]).map(x=>
+          `<div class="tw">${cardHTML(x.card,{small:true})}<div class="who">${esc(x.name)}</div></div>`).join('')
+          || '<p class="faint" style="font-size:14px">No cards played yet.</p>'}</div>
+        ${ended ? `<p style="font-size:16px;margin-top:10px"><b>${esc(G.lastTrick.winner)}</b> takes it
+            ${G.lastTrick.pts?`— <b style="color:var(--gold)">${G.lastTrick.pts} points</b>`:'— nothing in it'}</p>
+          <button class="btn-gold full" onclick="nextTrick()">Next trick</button>`:''}
+        ${progress()}
+      </div>
+      ${me ? `<div class="panel center">
+        <div class="eyebrow">Your hand</div>${coach}
+        <div class="hand">${mine.map(c=>cardHTML(c,{ small:mine.length>8,
+          dead: myTurn && !legal.includes(c), play: myTurn && legal.includes(c),
+          onclick: myTurn && legal.includes(c) ? `playCard('${c}')` : '' })).join('')}</div>
+        ${!myTurn && !ended ? `<p class="faint" style="font-size:14px;margin-top:10px">Waiting for ${esc(up)}…</p>`:''}
+      </div>`:''}
+      <div class="panel">${scoreTable()}</div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase === 'handend'){
+    const r = G.handResult;
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Hand ${G.hand+1} — ${r.made ? 'bid made' : 'bid missed'}</div>
+        <p style="font-family:'Bitter',serif;font-size:clamp(22px,6vw,34px);margin:8px 0 0;
+           color:${r.made?'var(--green)':'var(--red)'}">${r.got} / ${r.bid}</p>
+        <p class="faint" style="font-size:15px;margin-top:6px">The bidding side was
+          <b style="color:var(--ink)">${r.team.map(esc).join(' + ')}</b>
+          — called ${r.partnerCards.map(c=>(RANK_LABEL[c[0]]||c[0])+SUIT_CH[c[1]]).join(', ')}</p>
+        <p style="font-size:16px;margin-top:10px">${r.made
+          ? `Each of them scores <b style="color:var(--gold)">${r.award}</b>.`
+          : `Everyone else scores <b style="color:var(--gold)">${r.award}</b> each.`}</p>
+        ${scoreTable()}
+        <button class="btn-gold full" style="margin-top:14px" onclick="nextHand()">
+          ${G.hand+1 >= G.handsToPlay ? 'See the final scores' : 'Deal hand '+(G.hand+2)}</button>
+      </div>`;
+    return;
+  }
+
+  if (G.phase === 'done'){
+    const best = Math.max(...G.players.map(p=>G.scores[p]||0));
+    const win = G.players.filter(p=>(G.scores[p]||0)===best);
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">That's the last hand</div>
+        <p style="font-family:'Bitter',serif;font-size:clamp(22px,6vw,36px);margin:8px 0 0">
+          ${win.length>1 ? "IT’S A TIE" : esc(win[0]) + " WINS"}</p>
+        <table class="tbl" style="margin-top:12px">
+          <tr><th>Player</th><th style="text-align:center">Score</th></tr>
+          ${[...G.players].sort((a,b)=>(G.scores[b]||0)-(G.scores[a]||0)).map(p=>
+            `<tr><td>${esc(p)}</td><td class="n">${G.scores[p]||0}</td></tr>`).join('')}
+        </table>
+        <div class="stack">
+          <button class="btn-gold" onclick="playAgain(true)">Play again · same players</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New group</button>
+        </div>
+      </div>` + vpFeedbackHTML('Kaali Tiri');
+    return;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+function newCode(){ const r=new Uint32Array(4); crypto.getRandomValues(r);
+  let c=''; for(let i=0;i<4;i++) c+=CODE_ALPHABET[r[i]%CODE_ALPHABET.length]; return c; }
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false, pollTimer = null, curRate = 0;
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+function pollRate(){ return (G && (G.phase==='playing'||G.phase==='bidding'||G.phase==='naming')) ? 1200 : 2500; }
+function schedulePoll(){
+  const want = pollRate(); if (want===curRate) return;
+  curRate = want; if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{ await poll(); schedulePoll(); }, want);
+}
+function enterRoom(){ joined=true; history.replaceState(null,'',inviteURL());
+  renderRoomBar(); render(); schedulePoll(); }
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } curRate=0;
+  joined=false; ROOM=''; G=null; me=null; pending=null;
+  history.replaceState(null,'',location.pathname);
+  $('roombar').innerHTML=''; $('crumb').textContent=''; setErr(''); renderLobby();
+}
+async function createRoom(){
+  setErr('');
+  const btn=$('createBtn'); if(btn){ btn.disabled=true; btn.textContent='Creating…'; }
+  try {
+    for (let i=0;i<5;i++){
+      ROOM=newCode();
+      if (await loadState()) continue;
+      G=structuredClone(FRESH);
+      if (!(await saveState(G))) continue;
+      enterRoom(); return;
+    }
+    ROOM=''; setErr('Could not find a free code. Please try again.');
+  } catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); }
+  if ($('createBtn')){ $('createBtn').disabled=false; $('createBtn').textContent='Create a game'; }
+}
+async function joinRoom(raw){
+  setErr('');
+  const c=cleanCode(raw);
+  if (c.length<4){ setErr('Enter the 4-character code.'); return; }
+  ROOM=c;
+  let s; try { s=await loadState(); }
+  catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM=''; renderLobby('No game found with code '+c+'. Check the code, or start a new one.'); return; }
+  G=s; stamp=Math.max(stamp,s._stamp||0); enterRoom();
+}
+function copyInvite(){
+  const url=inviteURL();
+  const done=()=>{ const b=$('copyBtn'); if(!b)return; b.textContent='Link copied';
+    setTimeout(()=>{ if($('copyBtn')) $('copyBtn').textContent='Copy invite link'; },1600); };
+  const fb=()=>{ const f=$('inviteField'); if(f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done,fb);
+  else fb();
+}
+function renderRoomBar(){
+  $('roombar').innerHTML = `<div class="roombar">
+      <div class="rb-top"><span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span></div>
+      <input id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div></div>`;
+}
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">No deck needed — each phone holds its
+        own hand. Create a game and send the link to everyone playing.</p>
+      <button class="btn-gold full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-gold" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') joinRoom(e.target.value); });
+}
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM); else renderLobby();
+})();
+</script>
+</body>
+</html>
