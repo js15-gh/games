@@ -19,7 +19,7 @@
     --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
     --magenta:#C2185B;
     --crimson:#A32633; --thread:#C1362B; --charades:#C2185B;
-    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E; --oneword:#C4573B; --dial:#2E6FA8; --cipher:#1E7A4C; --clover:#4B8C3A; --facedown:#A83E86; --fibbers:#8A6B1E; --daily:#B5246B; --mostlikely:#1F7A73; --thisorthat:#6A4FB0; --twotruths:#9C7A1E; --maths:#1D6FA8; --ladder:#7A5A18; --sudoku:#4A4E8C; --wordsearch:#2E7D4F; --nummatch:#A8571D; --wolf:#6B4FA8;
+    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E; --oneword:#C4573B; --dial:#2E6FA8; --cipher:#1E7A4C; --clover:#4B8C3A; --facedown:#A83E86; --fibbers:#8A6B1E; --daily:#B5246B; --mostlikely:#1F7A73; --thisorthat:#6A4FB0; --twotruths:#9C7A1E; --maths:#1D6FA8; --ladder:#7A5A18; --sudoku:#4A4E8C; --wordsearch:#2E7D4F; --nummatch:#A8571D; --wolf:#6B4FA8; --p2048:#B06A12; --equals:#1C6E86;
   }
   * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
   body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
@@ -349,6 +349,20 @@
 // One list drives the tiles, the search and every filter, so adding a game is
 // a single entry rather than an edit in four places.
 const GAMES = [
+  { slug:'equals.html', name:'Equals', emoji:'➕', accent:'--equals',
+    who:'On your own', time:'3–5 min', age:9, type:'solo',
+    occasions:['travel','kids'],
+    blurb:"Guess the hidden sum in six tries. Green means the right thing in the right place, "
+        + "amber means it belongs somewhere else. A new equation for everyone every day.",
+    tags:['New every day','Solo'] },
+
+  { slug:'2048.html', name:'2048', emoji:'🟧', accent:'--p2048',
+    who:'On your own', time:'5–20 min', age:8, type:'solo',
+    occasions:['travel','kids'],
+    blurb:"Swipe, matching numbers join, and you keep doubling until the board fills. Three board "
+        + "sizes, an undo, and it remembers your best score.",
+    tags:['Three sizes','Solo'] },
+
   { slug:'number-match.html', name:'Number Match', emoji:'🔟', accent:'--nummatch',
     who:'On your own', time:'5–20 min', age:7, type:'solo',
     occasions:['travel','kids'],

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>2048 — slide the tiles, double the numbers</title>
+<meta name="description" content="Swipe to slide every tile at once; two matching numbers become one that is twice as big. Get to 2048. Free, no sign-up, no adverts, and it remembers your best score on your own phone.">
+<link rel="canonical" href="https://velaparties.com/2048.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="2048">
+<meta property="og:description" content="Swipe to slide every tile at once; two matching numbers become one twice as big. Get to 2048. Free, no sign-up, no adverts.">
+<meta property="og:url" content="https://velaparties.com/2048.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="2048">
+<meta name="twitter:description" content="Slide the tiles, double the numbers, get to 2048.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Game", "name": "2048", "url": "https://velaparties.com/2048.html",
+      "description": "A sliding tile puzzle: swipe to move every tile at once and matching numbers merge into one twice as big.",
+      "genre": "Number puzzle", "inLanguage": "en", "isAccessibleForFree": true,
+      "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 1 },
+      "publisher": { "@type": "Organization", "name": "Vela Parties", "url": "https://velaparties.com/" } },
+    { "@type": "BreadcrumbList", "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Vela Parties", "item": "https://velaparties.com/" },
+      { "@type": "ListItem", "position": 2, "name": "2048", "item": "https://velaparties.com/2048.html" } ] }
+  ]
+}
+</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80'>🔢</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#736451;
+          --marigold:#E08A1E; --magenta:#B5246B; --green:#2E7D4F; --red:#C0392B;
+          --board:#E8DBC6; --empty:#F4EBDB; }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh;
+         overscroll-behavior:none; }
+  .wrap { max-width:480px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:22px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.1em;
+       font-size:clamp(28px,8vw,44px); margin:4px 0 0; color:var(--magenta); }
+  .eyebrow { color:var(--marigold); letter-spacing:.2em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:16px; margin-top:14px; }
+  .faint { color:var(--faint); }
+  .center { text-align:center; }
+  button { cursor:pointer; border-radius:10px; font-family:'Karla',system-ui,sans-serif; }
+  button:focus-visible { outline:2px solid var(--magenta); outline-offset:2px; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:12px 16px;
+         font-size:14px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .btn[disabled] { opacity:.35; cursor:default; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+               padding:11px 13px; font-size:13px; }
+  .full { width:100%; margin-top:10px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; margin-top:12px; }
+  .lvl { background:#F6EFE3; border:1px solid var(--line); border-radius:10px; padding:11px 8px;
+         font-size:13.5px; text-align:center; color:var(--ink); }
+  .lvl.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .lvl small { display:block; color:var(--faint); font-size:11px; margin-top:2px; }
+  .lvl.on small { color:#D9CEBF; }
+
+  .scores { display:flex; gap:8px; margin-top:12px; }
+  .sc { flex:1; background:#F6EFE3; border:1px solid var(--line); border-radius:10px;
+        padding:9px 6px; text-align:center; }
+  .sc span { display:block; font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+             color:var(--faint); }
+  .sc b { font-family:'Space Grotesk',sans-serif; font-size:22px; }
+
+  /* touch-action stops the browser treating a swipe as a scroll, which is what
+     makes most phone versions of this unplayable */
+  .board { background:var(--board); border-radius:12px; padding:8px; margin-top:14px;
+           display:grid; gap:8px; touch-action:none; user-select:none; -webkit-user-select:none;
+           aspect-ratio:1; }
+  .tile { border-radius:8px; display:flex; align-items:center; justify-content:center;
+          font-family:'Space Grotesk',sans-serif; font-weight:700; background:var(--empty);
+          color:#6B5D4C; transition:transform .09s ease-out; }
+  .tile.new { animation:pop .16s ease-out; }
+  .tile.merged { animation:bump .16s ease-out; }
+  @keyframes pop { from { transform:scale(.4); opacity:0 } to { transform:none; opacity:1 } }
+  @keyframes bump { 0% { transform:scale(1) } 45% { transform:scale(1.14) } 100% { transform:scale(1) } }
+  .v2    { background:#F0E4CE; } .v4    { background:#EDDCB6; }
+  .v8    { background:#F0B072; color:#fff; } .v16  { background:#EC9159; color:#fff; }
+  .v32   { background:#EE7B5B; color:#fff; } .v64  { background:#E85B37; color:#fff; }
+  .v128  { background:#E8C158; color:#fff; } .v256 { background:#E6BB44; color:#fff; }
+  .v512  { background:#E4B32C; color:#fff; } .v1024{ background:#DFA80E; color:#fff; }
+  .v2048 { background:#B5246B; color:#fff; } .vbig { background:#2A2118; color:#fff; }
+
+  .arrows { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:12px;
+            max-width:240px; margin-left:auto; margin-right:auto; }
+  .arrows button { background:#F6EFE3; border:1px solid var(--line); padding:13px 0;
+                   font-size:19px; color:var(--ink); }
+  .arrows .sp { visibility:hidden; }
+  .tools { display:flex; gap:7px; margin-top:10px; } .tools button { flex:1; }
+  .flash { min-height:20px; font-weight:700; font-size:14px; margin-top:8px; text-align:center; }
+  .flash.good { color:var(--green); } .flash.bad { color:var(--red); }
+  .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(30px,10vw,50px); line-height:1;
+         color:var(--magenta); }
+  .homelink { display:inline-block; margin-top:16px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  .homelink:hover { color:var(--magenta); }
+  footer { text-align:center; padding-top:22px; color:var(--faint); font-size:12px; }
+  footer a { color:var(--faint); }
+
+  .howto { max-width:100%; margin-top:28px; }
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .eg code { font-family:'Space Grotesk',sans-serif; font-size:15px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>2048</h1>
+  </header>
+  <div id="app"><p class="faint center" style="margin-top:50px">Dealing the tiles…</p></div>
+
+  <section class="howto">
+    <h2>How to play 2048</h2>
+    <ol>
+      <li><b>Swipe</b> — up, down, left or right. Every tile on the board slides that way at once, as far as it can go.</li>
+      <li>When two tiles carrying <b>the same number</b> run into each other they merge into one tile worth double. That is the whole game.</li>
+      <li>A new <b>2</b> (or occasionally a 4) appears after every move, so the board is always filling up. Reach the <b>2048</b> tile to win — and you can carry on afterwards.</li>
+      <li>It ends when the board is full and nothing can merge. Keeping your biggest tile in one corner is the advice everybody gives, and it is right.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">A row reads <code>2 · 2 · 4 · —</code> and you swipe
+      <b>left</b>. The two 2s meet and become a <b>4</b>, the old 4 slides up behind it, and you
+      get <code>4 · 4 · — · —</code> and 4 points. Swipe left again and those two make an
+      <b>8</b>. Note what did <i>not</i> happen on the first swipe: the new 4 did not immediately
+      merge with the old one. <b>A tile made this move cannot merge again until the next
+      move</b> — otherwise a row of four 2s would collapse straight to an 8.</p></div>
+    <p class="facts">On your own · 5–20 minutes · suggested from age 8 · free, no sign-up, no adverts, plays in any browser.</p>
+  </section>
+  <footer>On your own, any time · <a href="./">Vela Parties</a></footer>
+</div>
+
+<script>
+/* 2048. The mechanic is Gabriele Cirulli's, released openly; this is a fresh
+ * implementation of it.
+ *
+ * Two things carry the whole game and are easy to get subtly wrong:
+ *
+ *  1. A TILE MADE BY A MERGE CANNOT MERGE AGAIN ON THE SAME MOVE. Without that
+ *     rule a row of 2 2 2 2 collapses to a single 8 instead of two 4s, and the
+ *     game becomes trivially easy — you can no longer build anything, because
+ *     everything you build immediately eats itself.
+ *
+ *  2. THE SWIPE MUST NOT SCROLL THE PAGE. touch-action:none on the board plus
+ *     preventDefault on the move is the difference between playable and
+ *     infuriating on a phone.
+ */
+const STORE = 'vp:2048:';
+const $ = (id) => document.getElementById(id);
+
+const SIZES = [
+  { n:4, name:'4 × 4',  hint:'The classic', target:2048 },
+  { n:5, name:'5 × 5',  hint:'Roomier, kinder', target:2048 },
+  { n:3, name:'3 × 3',  hint:'Brutally tight', target:512 },
+];
+const sizeOf = (n) => SIZES.find(s => s.n === n) || SIZES[0];
+
+/* Slide one line towards index 0 and merge. Returns the new line, the points
+   gained, and which slots hold a tile that was just made — the caller needs
+   that both to animate and to enforce rule 1 above. */
+function slideLine(line){
+  const n = line.length;
+  const kept = line.filter(v => v);
+  const out = [];
+  const madeAt = [];
+  let gained = 0;
+  for (let i = 0; i < kept.length; i++){
+    if (i + 1 < kept.length && kept[i] === kept[i+1]){
+      const v = kept[i] * 2;
+      out.push(v);
+      madeAt.push(out.length - 1);   // this slot cannot merge again this move
+      gained += v;
+      i++;                            // the partner is consumed
+    } else {
+      out.push(kept[i]);
+    }
+  }
+  while (out.length < n) out.push(0);
+  return { line: out, gained, madeAt };
+}
+
+/* Pull the four directions apart into lines, slide each, put them back. Doing
+   it this way means slideLine is the only place the rules live. */
+function readLine(grid, n, dir, i){
+  const out = [];
+  for (let k = 0; k < n; k++){
+    if (dir === 'left')  out.push(grid[i*n + k]);
+    if (dir === 'right') out.push(grid[i*n + (n-1-k)]);
+    if (dir === 'up')    out.push(grid[k*n + i]);
+    if (dir === 'down')  out.push(grid[(n-1-k)*n + i]);
+  }
+  return out;
+}
+function writeLine(grid, n, dir, i, line){
+  for (let k = 0; k < n; k++){
+    if (dir === 'left')  grid[i*n + k] = line[k];
+    if (dir === 'right') grid[i*n + (n-1-k)] = line[k];
+    if (dir === 'up')    grid[k*n + i] = line[k];
+    if (dir === 'down')  grid[(n-1-k)*n + i] = line[k];
+  }
+}
+function indexOfSlot(n, dir, i, k){
+  if (dir === 'left')  return i*n + k;
+  if (dir === 'right') return i*n + (n-1-k);
+  if (dir === 'up')    return k*n + i;
+  return (n-1-k)*n + i;
+}
+function move(grid, n, dir){
+  const next = grid.slice();
+  let gained = 0, moved = false;
+  const merged = [];
+  for (let i = 0; i < n; i++){
+    const before = readLine(next, n, dir, i);
+    const { line, gained: g, madeAt } = slideLine(before);
+    if (line.some((v,k) => v !== before[k])) moved = true;
+    gained += g;
+    writeLine(next, n, dir, i, line);
+    for (const k of madeAt) merged.push(indexOfSlot(n, dir, i, k));
+  }
+  return { grid: next, gained, moved, merged };
+}
+const emptyCells = (grid) => grid.map((v,i)=>v?-1:i).filter(i=>i>=0);
+function addTile(grid, rand){
+  const spots = emptyCells(grid);
+  if (!spots.length) return null;
+  const at = spots[Math.floor((rand ? rand() : Math.random()) * spots.length)];
+  grid[at] = (rand ? rand() : Math.random()) < 0.9 ? 2 : 4;
+  return at;
+}
+function canMove(grid, n){
+  if (emptyCells(grid).length) return true;
+  for (const dir of ['left','right','up','down'])
+    if (move(grid, n, dir).moved) return true;
+  return false;
+}
+
+// ── state ──
+let size = 4, grid = [], score = 0, best = 0, over = false, won = false, keptGoing = false;
+let newAt = -1, mergedAt = [], history = null;
+
+function readBest(){ try { return JSON.parse(localStorage.getItem(STORE+'best') || '{}'); } catch { return {}; } }
+function saveBest(n, v){
+  try { const b = readBest(); if (!(b[n] > v)){ b[n] = v; localStorage.setItem(STORE+'best', JSON.stringify(b)); } }
+  catch {}
+}
+
+function newGame(){
+  const n = size;
+  grid = new Array(n*n).fill(0);
+  addTile(grid); newAt = addTile(grid);
+  score = 0; over = false; won = false; keptGoing = false; mergedAt = []; history = null;
+  best = readBest()[n] || 0;
+  render();
+}
+function setSize(n){ size = n; newGame(); }
+
+function go(dir){
+  if (over) return;
+  const before = { grid: grid.slice(), score };
+  const r = move(grid, size, dir);
+  if (!r.moved){ flash('bad', 'Nothing shifts that way.'); return; }
+  history = before;
+  grid = r.grid; score += r.gained; mergedAt = r.merged;
+  newAt = addTile(grid);
+  const target = sizeOf(size).target;
+  if (!won && grid.some(v => v >= target)){ won = true; }
+  if (!canMove(grid, size)){ over = true; saveBest(size, score); }
+  if (score > best){ best = score; saveBest(size, score); }
+  render();
+  if (r.gained >= 64) flash('good', '+' + r.gained);
+}
+function undo(){
+  if (!history) return;
+  grid = history.grid; score = history.score;
+  history = null; over = false; newAt = -1; mergedAt = [];
+  render();
+}
+function keepGoing(){ keptGoing = true; render(); }
+let ft = null;
+function flash(kind, text){
+  const f = $('flash'); if (!f) return;
+  f.className = 'flash ' + kind; f.textContent = text;
+  if (ft) clearTimeout(ft);
+  ft = setTimeout(()=>{ const g = $('flash'); if (g){ g.textContent=''; g.className='flash'; } }, 900);
+}
+
+document.addEventListener('keydown', e => {
+  const map = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down',
+                a:'left', d:'right', w:'up', s:'down' };
+  const dir = map[e.key];
+  if (dir){ e.preventDefault(); go(dir); }
+});
+/* A swipe has to beat the browser's own scrolling. touch-action:none on the
+   board does most of it; preventDefault on the move does the rest. */
+let tx = 0, ty = 0, tracking = false;
+function onStart(e){
+  const t = e.touches ? e.touches[0] : e;
+  tx = t.clientX; ty = t.clientY; tracking = true;
+}
+function onMove(e){ if (tracking && e.cancelable) e.preventDefault(); }
+function onEnd(e){
+  if (!tracking) return;
+  tracking = false;
+  const t = (e.changedTouches ? e.changedTouches[0] : e);
+  const dx = t.clientX - tx, dy = t.clientY - ty;
+  if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;    // a tap, not a swipe
+  go(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+}
+function wire(){
+  const b = $('board'); if (!b) return;
+  b.addEventListener('touchstart', onStart, { passive:true });
+  b.addEventListener('touchmove', onMove, { passive:false });
+  b.addEventListener('touchend', onEnd, { passive:true });
+  b.addEventListener('mousedown', onStart);
+  b.addEventListener('mouseup', onEnd);
+}
+
+// ── render ──
+function cls(v){
+  if (!v) return '';
+  return v > 2048 ? 'vbig' : 'v' + v;
+}
+function fontFor(v, n){
+  const base = n === 3 ? 13 : n === 4 ? 11 : 9;
+  const digits = String(v).length;
+  return 'clamp(' + (base) + 'px, ' + (base + 3 - digits) + 'vw, ' + (44 - digits*5) + 'px)';
+}
+function render(){
+  const S = sizeOf(size);
+  $('crumb').textContent = S.name + (won ? ' · ' + S.target + ' reached' : '');
+  const showWin = won && !keptGoing && !over;
+  $('app').innerHTML = `
+    ${over ? `<div class="panel center">
+        <div class="eyebrow">No moves left</div>
+        <p class="big">${score}</p>
+        <p class="faint">Best on ${S.name}: ${Math.max(best, score)}.</p>
+        <button class="btn full" onclick="newGame()">Again</button>
+      </div>` : ''}
+    ${showWin ? `<div class="panel center">
+        <div class="eyebrow">You got there</div>
+        <p class="big">${S.target}</p>
+        <div class="tools">
+          <button class="btn" onclick="keepGoing()">Keep going</button>
+          <button class="btn-ghost" onclick="newGame()">Start again</button>
+        </div>
+      </div>` : ''}
+    <div class="panel">
+      <div class="scores">
+        <div class="sc"><span>Score</span><b>${score}</b></div>
+        <div class="sc"><span>Best</span><b>${Math.max(best, score)}</b></div>
+      </div>
+      <div class="board" id="board" style="grid-template-columns:repeat(${size},1fr)">
+        ${grid.map((v,i)=>`<div class="tile ${cls(v)} ${i===newAt?'new':''} ${mergedAt.includes(i)?'merged':''}"
+            style="font-size:${fontFor(v||2, size)}">${v || ''}</div>`).join('')}
+      </div>
+      <div class="flash" id="flash"></div>
+      <div class="arrows">
+        <div class="sp"></div><button onclick="go('up')" aria-label="Up">▲</button><div class="sp"></div>
+        <button onclick="go('left')" aria-label="Left">◀</button>
+        <button onclick="go('down')" aria-label="Down">▼</button>
+        <button onclick="go('right')" aria-label="Right">▶</button>
+      </div>
+      <p class="faint center" style="font-size:13px;margin-top:8px">Swipe the board, use the arrows,
+        or the arrow keys.</p>
+      <div class="tools">
+        <button class="btn-ghost" onclick="undo()" ${history?'':'disabled'}>Undo one move</button>
+        <button class="btn-ghost" onclick="newGame()">New game</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Board</div>
+      <div class="grid">${SIZES.map(s=>
+        `<button class="lvl ${size===s.n?'on':''}" onclick="setSize(${s.n})">${s.name}<small>${s.hint}</small></button>`).join('')}</div>
+    </div>`;
+  wire();
+}
+newGame();
+</script>
+<script src="vp-report.js"></script>
+</body>
+</html>

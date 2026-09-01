@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equals — guess the hidden equation, six tries, one a day</title>
+<meta name="description" content="A daily number puzzle: find the hidden sum in six guesses. Green means right digit, right place. Everyone gets the same one. Free, no sign-up, plays on any phone.">
+<link rel="canonical" href="https://velaparties.com/equals.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Equals">
+<meta property="og:description" content="A daily number puzzle: find the hidden sum in six guesses. Green means right digit, right place. Everyone gets the same one.">
+<meta property="og:url" content="https://velaparties.com/equals.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Equals">
+<meta name="twitter:description" content="Guess the hidden equation in six tries. A new one every day.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Game", "name": "Equals", "url": "https://velaparties.com/equals.html",
+      "description": "A daily equation-guessing puzzle: find the hidden sum in six guesses, with green and amber clues.",
+      "genre": "Number puzzle", "inLanguage": "en", "isAccessibleForFree": true,
+      "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 1 },
+      "publisher": { "@type": "Organization", "name": "Vela Parties", "url": "https://velaparties.com/" } },
+    { "@type": "BreadcrumbList", "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Vela Parties", "item": "https://velaparties.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Equals", "item": "https://velaparties.com/equals.html" } ] }
+  ]
+}
+</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='80'>🟰</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#736451;
+          --marigold:#E08A1E; --magenta:#B5246B; --green:#2E7D4F; --red:#C0392B;
+          --hit:#2E7D4F; --near:#D79A21; --miss:#9C907E; }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:22px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.14em;
+       font-size:clamp(26px,7vw,40px); margin:4px 0 0; color:var(--magenta); }
+  .eyebrow { color:var(--marigold); letter-spacing:.2em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:16px; margin-top:14px; }
+  .faint { color:var(--faint); }
+  .center { text-align:center; }
+  button { cursor:pointer; border-radius:9px; font-family:'Karla',system-ui,sans-serif; }
+  button:focus-visible { outline:2px solid var(--magenta); outline-offset:2px; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:12px 16px;
+         font-size:14px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+               padding:11px 13px; font-size:13px; }
+  .full { width:100%; margin-top:10px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; margin-top:12px; }
+  .lvl { background:#F6EFE3; border:1px solid var(--line); border-radius:10px; padding:11px 8px;
+         font-size:13.5px; text-align:center; color:var(--ink); }
+  .lvl.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .lvl small { display:block; color:var(--faint); font-size:11px; margin-top:2px; }
+  .lvl.on small { color:#D9CEBF; }
+
+  .rows { display:grid; gap:6px; margin-top:12px; }
+  .row { display:grid; gap:5px; }
+  .sq { aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+        border:1.5px solid var(--line); border-radius:7px; background:#FDF9F1;
+        font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--ink);
+        font-size:clamp(14px,4.6vw,24px); }
+  .sq.filled { border-color:#C8B79B; }
+  .sq.hit  { background:var(--hit);  border-color:var(--hit);  color:#fff; }
+  .sq.near { background:var(--near); border-color:var(--near); color:#fff; }
+  .sq.miss { background:var(--miss); border-color:var(--miss); color:#fff; }
+
+  .keys { display:grid; gap:5px; margin-top:14px; }
+  .keys .r { display:grid; gap:5px; }
+  .k { border:1px solid var(--line); border-radius:8px; background:#F6EFE3; padding:13px 0;
+       font-family:'Space Grotesk',sans-serif; font-size:18px; color:var(--ink); }
+  .k.hit { background:var(--hit); border-color:var(--hit); color:#fff; }
+  .k.near { background:var(--near); border-color:var(--near); color:#fff; }
+  .k.miss { background:var(--miss); border-color:var(--miss); color:#fff; opacity:.65; }
+  .k.wide { font-size:13px; font-weight:700; }
+
+  .flash { min-height:22px; font-weight:700; font-size:14px; margin-top:9px; text-align:center; }
+  .flash.bad { color:var(--red); } .flash.good { color:var(--green); }
+  .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(28px,9vw,46px); line-height:1;
+         color:var(--magenta); }
+  .share { font-family:ui-monospace,monospace; font-size:19px; line-height:1.3;
+           letter-spacing:.05em; margin:10px 0; }
+  .streak { font-family:'Space Grotesk',sans-serif; font-size:28px; color:var(--marigold); }
+  .homelink { display:inline-block; margin-top:16px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  .homelink:hover { color:var(--magenta); }
+  footer { text-align:center; padding-top:22px; color:var(--faint); font-size:12px; }
+  footer a { color:var(--faint); }
+
+  .howto { max-width:100%; margin-top:28px; }
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .eg code { font-family:'Space Grotesk',sans-serif; font-size:16px; letter-spacing:.08em; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>EQUALS</h1>
+  </header>
+  <div id="app"><p class="faint center" style="margin-top:50px">Working one out…</p></div>
+
+  <section class="howto">
+    <h2>How to play Equals</h2>
+    <ol>
+      <li>There is a hidden sum — something like <b>12+34=46</b>. You have six goes to find it.</li>
+      <li>Every guess has to be a sum that is <b>actually true</b>. The game will not let you enter one that isn't, which means a wrong guess still costs you nothing but a turn.</li>
+      <li>After each guess every square is coloured: <b>green</b> for the right character in the right place, <b>amber</b> for a character that is in the sum but somewhere else, <b>grey</b> for one that is not there at all.</li>
+      <li><b>×</b> and <b>÷</b> happen before <b>+</b> and <b>−</b>, as usual. No number starts with a zero, and division always comes out exact.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg">
+      <p style="margin:0">The answer is <code>12+34=46</code> and you guess
+      <code>25+31=56</code>. Square by square:</p>
+      <p style="margin:8px 0 0">
+        <b>2</b> → amber, it is in the answer but not first ·
+        <b>5</b> → grey, there is no 5 ·
+        <b>+</b> → green ·
+        <b>3</b> → green, it really was fourth ·
+        <b>1</b> → amber, it is in there, just not there ·
+        <b>=</b> → green ·
+        <b>5</b> → grey ·
+        <b>6</b> → green.</p>
+      <p style="margin:8px 0 0">So after one guess you know the shape is
+      <code>? ? + 3 ? = ? ? 6</code> and that a 1 and a 2 are in it somewhere else. That is
+      usually enough to finish in three.</p>
+      <p style="margin:8px 0 0"><b>Amber counts, it does not just mark.</b> If the answer holds one
+      <b>5</b> and you guess two of them, only one lights up — the other goes grey. That is what
+      tells you how many of a digit there are, and it is the most useful clue in the game.</p>
+    </div>
+    <p class="facts">On your own · 3–8 minutes · suggested from age 10 · free, no sign-up, and everybody gets the same puzzle each day.</p>
+  </section>
+  <footer>A new one every day · <a href="./">Vela Parties</a></footer>
+</div>
+
+<script>
+/* Equals — a daily equation to guess, in the shape Nerdle popularised.
+ *
+ * Two things carry it:
+ *
+ *  1. NO eval(). Guesses are arithmetic typed by a stranger, and the whole
+ *     point of the game is that a guess must be a TRUE sum — which means
+ *     parsing it properly, honouring precedence, and refusing anything that is
+ *     malformed, divides by zero, divides unevenly, or has a number starting
+ *     with a zero.
+ *
+ *  2. AMBER COUNTS. If the answer holds one 4 and you guess two, exactly one
+ *     lights up. Marking greens first and then drawing ambers from what is left
+ *     over is the only way that comes out right, and getting it wrong is the
+ *     classic bug in every game of this shape.
+ */
+const STORE = 'vp:equals:';
+const $ = (id) => document.getElementById(id);
+const OPS = ['+','-','*','/'];
+const SYMS = ['0','1','2','3','4','5','6','7','8','9','+','-','*','/','='];
+
+function todayKey(d){
+  d = d || new Date();
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
+function seedFrom(str){
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function rng(seed){
+  let a = seed >>> 0;
+  return function(){
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* A small parser, because eval() on a stranger's arithmetic is not something
+   to ship. Returns null for anything malformed rather than throwing, since
+   "that isn't a sum" is a normal thing for a player to type. */
+function tokenize(s){
+  const out = [];
+  let i = 0;
+  while (i < s.length){
+    const c = s[i];
+    if (c >= '0' && c <= '9'){
+      let j = i;
+      while (j < s.length && s[j] >= '0' && s[j] <= '9') j++;
+      const lit = s.slice(i, j);
+      if (lit.length > 1 && lit[0] === '0') return null;   // no leading zeros
+      out.push({ num: parseInt(lit, 10) });
+      i = j;
+    } else if (OPS.includes(c)){
+      out.push({ op: c });
+      i++;
+    } else return null;
+  }
+  return out;
+}
+function evalSide(s){
+  if (!s) return null;
+  const toks = tokenize(s);
+  if (!toks || !toks.length) return null;
+  // must alternate number, op, number, …
+  for (let k = 0; k < toks.length; k++){
+    const wantNum = k % 2 === 0;
+    if (wantNum && toks[k].num === undefined) return null;
+    if (!wantNum && toks[k].op === undefined) return null;
+  }
+  if (toks.length % 2 === 0) return null;                  // ends on an operator
+  // × and ÷ first
+  const flat = [];
+  let acc = toks[0].num;
+  for (let k = 1; k < toks.length; k += 2){
+    const op = toks[k].op, rhs = toks[k+1].num;
+    if (op === '*') acc = acc * rhs;
+    else if (op === '/'){
+      if (rhs === 0) return null;
+      if (acc % rhs !== 0) return null;                    // exact division only
+      acc = acc / rhs;
+    } else { flat.push(acc); flat.push(op); acc = rhs; }
+  }
+  flat.push(acc);
+  // then + and −
+  let total = flat[0];
+  for (let k = 1; k < flat.length; k += 2){
+    if (flat[k] === '+') total += flat[k+1]; else total -= flat[k+1];
+  }
+  return total;
+}
+/* A guess is legal only if it is a true sum of the right length. Being strict
+   here is a kindness: a wrong guess then costs a turn and nothing else. */
+function checkEquation(s, len){
+  if (typeof s !== 'string' || s.length !== len) return 'It needs to be ' + len + ' characters.';
+  if ([...s].some(c => !SYMS.includes(c))) return 'Only digits and + − × ÷ =.';
+  const parts = s.split('=');
+  if (parts.length !== 2) return 'It needs exactly one =.';
+  const left = evalSide(parts[0]), right = evalSide(parts[1]);
+  if (left === null) return "The left-hand side isn't a sum.";
+  if (right === null) return "The right-hand side isn't a number.";
+  if (left !== right) return 'That does not add up — ' + parts[0] + ' is ' + left + '.';
+  if (left < 0) return 'Keep it to zero and above.';
+  return null;
+}
+
+/* Green first, then amber from whatever is left over. Doing it in one pass
+   would light up two 4s when the answer holds one. */
+function mark(guess, answer){
+  const n = answer.length;
+  const out = new Array(n).fill('miss');
+  const left = {};
+  for (let i = 0; i < n; i++){
+    if (guess[i] === answer[i]) out[i] = 'hit';
+    else left[answer[i]] = (left[answer[i]] || 0) + 1;
+  }
+  for (let i = 0; i < n; i++){
+    if (out[i] === 'hit') continue;
+    const c = guess[i];
+    if (left[c] > 0){ out[i] = 'near'; left[c]--; }
+  }
+  return out;
+}
+
+const LENGTHS = [
+  { len:6, name:'6 wide', hint:'Gentler · e.g. 4+5=9' },
+  { len:8, name:'8 wide', hint:'The usual' },
+  { len:10, name:'10 wide', hint:'Room for three numbers' },
+];
+const lenOf = (l) => LENGTHS.find(x => x.len === l) || LENGTHS[1];
+
+/* Built by trying real sums until one is the right width, rather than by
+   pattern-filling — so whatever comes out has already been checked by the same
+   function that judges the player's guesses. */
+function generate(len, rand){
+  const pick = (a) => a[Math.floor(rand() * a.length)];
+  for (let attempt = 0; attempt < 8000; attempt++){
+    const threeTerm = len >= 9 || (len >= 8 && rand() < 0.35);
+    let expr;
+    if (threeTerm){
+      const a = 1 + Math.floor(rand()*20), b = 1 + Math.floor(rand()*20), c = 1 + Math.floor(rand()*20);
+      expr = '' + a + pick(OPS) + b + pick(OPS) + c;
+    } else {
+      const a = 1 + Math.floor(rand()*99), b = 1 + Math.floor(rand()*99);
+      expr = '' + a + pick(OPS) + b;
+    }
+    const v = evalSide(expr);
+    if (v === null || v < 0) continue;
+    const eq = expr + '=' + v;
+    if (eq.length !== len) continue;
+    if (checkEquation(eq, len)) continue;     // judged by the very same rule
+    return eq;
+  }
+  return null;
+}
+
+// ── state ──
+let len = 8, mode = 'daily', ANSWER = '', guesses = [], marks = [], cur = '', over = null;
+const TRIES = 6;
+
+function key(){ return (mode === 'daily' ? todayKey() : 'practice') + ':' + len; }
+function load(){
+  if (mode !== 'daily') return null;
+  try { return JSON.parse(localStorage.getItem(STORE + key()) || 'null'); } catch { return null; }
+}
+function save(){
+  if (mode !== 'daily') return;
+  try { localStorage.setItem(STORE + key(), JSON.stringify({ guesses, over })); } catch {}
+}
+function readStreak(){
+  try { return JSON.parse(localStorage.getItem(STORE+'streak') || 'null') || { n:0, last:null }; }
+  catch { return { n:0, last:null }; }
+}
+function bumpStreak(won){
+  try {
+    const s = readStreak(), k = todayKey();
+    if (s.last === k) return s;
+    const y = new Date(); y.setDate(y.getDate()-1);
+    s.n = won ? (s.last === todayKey(y) ? s.n + 1 : 1) : 0;
+    s.last = k;
+    localStorage.setItem(STORE+'streak', JSON.stringify(s));
+    return s;
+  } catch { return { n:0 }; }
+}
+
+function newPuzzle(){
+  const rand = mode === 'daily' ? rng(seedFrom('equals:' + todayKey() + ':' + len))
+                                : rng((Math.random()*4294967296) >>> 0);
+  ANSWER = generate(len, rand) || '';
+  guesses = []; marks = []; cur = ''; over = null;
+  const saved = load();
+  if (saved && Array.isArray(saved.guesses)){
+    for (const g of saved.guesses){ guesses.push(g); marks.push(mark(g, ANSWER)); }
+    over = saved.over || null;
+  }
+  render();
+}
+function setLen(l){ len = l; newPuzzle(); }
+function setMode(m){ mode = m; newPuzzle(); }
+
+function type(c){
+  if (over) return;
+  if (cur.length >= len) return;
+  cur += c; render();
+}
+function del(){ if (over) return; cur = cur.slice(0, -1); render(); }
+function submit(){
+  if (over) return;
+  const problem = checkEquation(cur, len);
+  if (problem){ render(); flash('bad', problem); return; }
+  guesses.push(cur);
+  marks.push(mark(cur, ANSWER));
+  const got = cur === ANSWER;
+  cur = '';
+  if (got){ over = 'won'; if (mode === 'daily') bumpStreak(true); }
+  else if (guesses.length >= TRIES){ over = 'lost'; if (mode === 'daily') bumpStreak(false); }
+  save(); render();
+  if (got) flash('good', guesses.length === 1 ? 'First go.' : 'Got it.');
+}
+let ft = null;
+function flash(kind, text){
+  const f = $('flash'); if (!f) return;
+  f.className = 'flash ' + kind; f.textContent = text;
+  if (ft) clearTimeout(ft);
+  ft = setTimeout(()=>{ const g = $('flash'); if (g){ g.textContent=''; g.className='flash'; } }, 2600);
+}
+document.addEventListener('keydown', e => {
+  if (over) return;
+  if (/^[0-9+\-*/=]$/.test(e.key)) type(e.key);
+  else if (e.key === 'Backspace') del();
+  else if (e.key === 'Enter') submit();
+});
+
+/* The shared grid says how it went and nothing about the answer. */
+function shareText(){
+  const rows = marks.map(m => m.map(x => x==='hit'?'🟩':x==='near'?'🟨':'⬛').join(''));
+  return 'Vela Equals ' + (mode==='daily' ? todayKey() : 'practice') + ' · ' +
+         (over === 'won' ? guesses.length : 'X') + '/' + TRIES + '\n' +
+         rows.join('\n') + '\nvelaparties.com/equals.html';
+}
+function copyShare(){
+  const done = () => { const b = $('shareBtn'); if (!b) return;
+    b.textContent = 'Copied'; setTimeout(()=>{ if($('shareBtn')) $('shareBtn').textContent='Copy result'; }, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(shareText()).then(done, done);
+  else done();
+}
+
+// ── render ──
+function bestFor(c){
+  let best = null;
+  guesses.forEach((g,i) => {
+    for (let k = 0; k < g.length; k++){
+      if (g[k] !== c) continue;
+      const m = marks[i][k];
+      if (m === 'hit') best = 'hit';
+      else if (m === 'near' && best !== 'hit') best = 'near';
+      else if (m === 'miss' && !best) best = 'miss';
+    }
+  });
+  return best || '';
+}
+function render(){
+  if (!ANSWER){
+    $('app').innerHTML = `<div class="panel center"><p class="faint">Couldn't work one out.
+      <button class="btn full" onclick="newPuzzle()">Try again</button></p></div>`;
+    return;
+  }
+  const L = lenOf(len);
+  const st = readStreak();
+  $('crumb').textContent = (mode === 'daily' ? todayKey() + ' · ' : 'Practice · ') + L.name;
+  const rows = [];
+  for (let i = 0; i < TRIES; i++){
+    const g = guesses[i];
+    const m = marks[i];
+    const text = g || (i === guesses.length ? cur : '');
+    rows.push(`<div class="row" style="grid-template-columns:repeat(${len},1fr)">
+      ${Array.from({length:len},(_,k)=>{
+        const ch = text[k] || '';
+        const cls = m ? m[k] : (ch ? 'filled' : '');
+        const shown = ch === '*' ? '×' : ch === '/' ? '÷' : ch;
+        return `<div class="sq ${cls}">${shown}</div>`;
+      }).join('')}</div>`);
+  }
+  const keyRow = (chars) => `<div class="r" style="grid-template-columns:repeat(${chars.length},1fr)">
+    ${chars.map(c=>`<button class="k ${bestFor(c)}" onclick="type('${c}')">${
+      c === '*' ? '×' : c === '/' ? '÷' : c}</button>`).join('')}</div>`;
+
+  $('app').innerHTML = `
+    ${over ? `<div class="panel center">
+        <div class="eyebrow">${over === 'won' ? 'Solved in ' + guesses.length : 'Out of goes'}</div>
+        <p class="big">${ANSWER.replace(/\*/g,'×').replace(/\//g,'÷')}</p>
+        ${mode === 'daily' ? `<p class="faint">Streak: <b class="streak">${st.n}</b></p>` : ''}
+        <div class="share">${shareText().split('\n').slice(1,-1).join('<br>')}</div>
+        <div class="grid">
+          <button class="btn" id="shareBtn" onclick="copyShare()">Copy result</button>
+          <button class="btn-ghost" onclick="setMode('practice')">Another one</button>
+        </div>
+      </div>` : ''}
+    <div class="panel">
+      <div class="rows">${rows.join('')}</div>
+      <div class="flash" id="flash"></div>
+      ${over ? '' : `
+      <div class="keys">
+        ${keyRow(['1','2','3','4','5','6','7','8','9','0'])}
+        ${keyRow(['+','-','*','/','='])}
+        <div class="r" style="grid-template-columns:1fr 1fr">
+          <button class="k wide" onclick="del()">Delete</button>
+          <button class="k wide" onclick="submit()">Enter</button>
+        </div>
+      </div>`}
+    </div>
+    <div class="panel">
+      <div class="eyebrow">How wide</div>
+      <div class="grid">${LENGTHS.map(x=>
+        `<button class="lvl ${len===x.len?'on':''}" onclick="setLen(${x.len})">${x.name}<small>${x.hint}</small></button>`).join('')}</div>
+      <div class="eyebrow" style="margin-top:16px">Which puzzle</div>
+      <div class="grid">
+        <button class="lvl ${mode==='daily'?'on':''}" onclick="setMode('daily')">Today's<small>same for everyone</small></button>
+        <button class="lvl ${mode==='practice'?'on':''}" onclick="setMode('practice')">Practice<small>as many as you like</small></button>
+      </div>
+    </div>`;
+}
+newPuzzle();
+</script>
+<script src="vp-report.js"></script>
+</body>
+</html>
