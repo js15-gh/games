@@ -19,7 +19,7 @@
     --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
     --magenta:#C2185B;
     --crimson:#A32633; --thread:#C1362B; --charades:#C2185B;
-    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E; --oneword:#C4573B; --dial:#2E6FA8;
+    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E; --oneword:#C4573B; --dial:#2E6FA8; --cipher:#1E7A4C;
   }
   * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
   body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
@@ -237,6 +237,13 @@ const GAMES = [
     blurb:"Everyone holds secret numbers and the table must play them lowest to highest — with no "
         + "talking, no counting and no signals. Sounds impossible. Stops being impossible.",
     tags:['Co-operative','No talking'] },
+
+  { slug:'cipher-online.html', name:'Cipher', emoji:'🔐', accent:'--cipher',
+    who:'4–12 in teams', time:'30–45 min', age:12, type:'word',
+    occasions:['diwali','kitty','travel'],
+    blurb:"Four secret words per side and a code to send. Your clues must be clear to your own team "
+        + "and useless to the other — who are writing down every one you have ever given.",
+    tags:['Teams','Keeps the grid for you'] },
 
   { slug:'the-dial-online.html', name:'The Dial', emoji:'🎯', accent:'--dial',
     who:'4–12 in teams', time:'25–40 min', age:10, type:'party',
