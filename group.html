@@ -105,6 +105,7 @@ const GAMES = [
   { id:'judgement', file:'judgement-card-game-online.html', name:'Judgement',   reports:true  },
   { id:'kaalitiri', file:'kaali-tiri-online.html',          name:'Kaali Tiri',  reports:true  },
   { id:'insync',    file:'in-sync-online.html',              name:'In Sync',     reports:true },
+  { id:'outsider',  file:'the-outsider-online.html',         name:'The Outsider',reports:true },
   { id:'tambola',   file:'tambola-housie-online.html',      name:'Tambola',     reports:true },
   { id:'antakshari',file:'antakshari-online.html',          name:'Antakshari',  reports:true },
   { id:'jeopardy',  file:'bollywood-jeopardy-online.html',  name:'Bollywood Jeopardy', reports:true },
@@ -124,6 +125,13 @@ const clean = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g,
   c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* For a value that lands INSIDE an inline handler rather than in text. The
+   browser HTML-decodes an attribute before the JS in it is parsed, so esc()'s
+   &#39; comes back as a bare quote and ends the string early — which is how a
+   player called D'Souza ends up with a button that silently does nothing.
+   \u escapes survive HTML decoding and mean the right thing to the parser. */
+const jss = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\u0027')
+  .replace(/"/g, '\\u0022').replace(/&/g, '\\u0026').replace(/[\r\n]+/g, ' ');
 const setErr = (m) => { $('err').textContent = m || ''; };
 
 let CODE = clean(new URLSearchParams(location.search).get('g'));
@@ -265,8 +273,8 @@ function roomsHTML(){
         <div class="sub">${esc(g.name)} · code ${esc(r.code)}${g.reports?'':' · scores not recorded yet'}</div></div>
       <div style="display:flex;gap:6px;align-items:center">
         <a class="pill" href="${esc(url)}">Open</a>
-        <button class="ghost" onclick="copy('${esc(url)}', this)">Link</button>
-        <button class="ghost" onclick="removeRoom('${esc(r.game)}','${esc(r.code)}')">Remove</button>
+        <button class="ghost" onclick="copy('${jss(url)}', this)">Link</button>
+        <button class="ghost" onclick="removeRoom('${jss(r.game)}','${jss(r.code)}')">Remove</button>
       </div></div>`;
   }).join('');
 }
@@ -327,7 +335,7 @@ function render(){
       <div class="code">${esc(CODE)}</div>
       <input class="linkfield" readonly value="${esc(hubURL())}" onclick="this.select()"
              aria-label="Group link">
-      <button class="ghost full" onclick="copy('${esc(hubURL())}', this)">Copy the group link</button>
+      <button class="ghost full" onclick="copy('${jss(hubURL())}', this)">Copy the group link</button>
       <p class="faint" style="font-size:14px;margin:10px 0 0">Anyone with this link can open the
         group, add rooms and see the standings. Share it with your group, not publicly.</p>
     </div>
@@ -357,7 +365,7 @@ function render(){
       <h2>Members</h2>
       ${(HUB.members||[]).length
         ? (HUB.members||[]).map(m=>`<div class="rowline"><span>${esc(m)}</span>
-            <button class="ghost" onclick="removeMember('${esc(m)}')">Remove</button></div>`).join('')
+            <button class="ghost" onclick="removeMember('${jss(m)}')">Remove</button></div>`).join('')
         : '<p class="faint" style="margin:8px 0 0">Nobody added yet — people are also added automatically the first time they appear in a result.</p>'}
       <div class="inline">
         <input id="mname" placeholder="Add a player" autocomplete="off">

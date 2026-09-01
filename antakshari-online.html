@@ -129,6 +129,13 @@ const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* For a value that lands INSIDE an inline handler rather than in text. The
+   browser HTML-decodes an attribute before the JS in it is parsed, so esc()'s
+   &#39; comes back as a bare quote and ends the string early — which is how a
+   player called D'Souza ends up with a button that silently does nothing.
+   \u escapes survive HTML decoding and mean the right thing to the parser. */
+const jss = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\u0027')
+  .replace(/"/g, '\\u0022').replace(/&/g, '\\u0026').replace(/[\r\n]+/g, ' ');
 function setErr(m){ $('err').textContent = m || ''; }
 
 const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
@@ -343,8 +350,8 @@ function render(){
         ${G.order.map(t=>`<div style="margin-top:10px"><span class="eyebrow">Team ${t}</span>
           ${G.teams[t].length ? G.teams[t].map(p=>`<div class="row"><span>${esc(p)}</span>
             <span style="display:flex;gap:6px">
-              <button class="btn-ghost" onclick="moveTeam('${esc(p)}')">Move</button>
-              <button class="btn-ghost" onclick="removePlayer('${esc(p)}')">Remove</button>
+              <button class="btn-ghost" onclick="moveTeam('${jss(p)}')">Move</button>
+              <button class="btn-ghost" onclick="removePlayer('${jss(p)}')">Remove</button>
             </span></div>`).join('') : '<p class="faint" style="font-size:14px;margin:6px 0 0">Nobody yet.</p>'}
         </div>`).join('')}
       </div>

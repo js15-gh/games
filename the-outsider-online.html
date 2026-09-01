@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Outsider — one of you doesn't know the word</title>
+<meta name="description" content="Everyone sees the secret word except one player. Give a one-word clue, then work out who was bluffing. Free party game for 3–12 people on their own phones — no app, no cards.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#150F1E; --panel:#211830; --line:rgba(240,176,90,.22);
+    --amber:#F0B05A; --ink:#F2ECE4; --faint:#9A8CA8; --red:#E4606D; --green:#6FCF97;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:600px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:28px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.05em;
+       font-size:clamp(28px,7.5vw,46px); margin:4px 0 0; }
+  h1 .s { color:var(--amber); }
+  .eyebrow { color:var(--amber); letter-spacing:.22em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:20px 18px; margin-top:14px; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px;
+         padding:9px 0; border-bottom:1px solid rgba(242,236,228,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:9px; margin-top:12px; }
+  input { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+          color:var(--ink); padding:13px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:9px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--amber); outline-offset:2px; }
+  .btn-amber { background:var(--amber); color:#1B1226; border:none; padding:14px 20px;
+               font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid rgba(154,140,168,.45);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:12px 10px; font-size:15px; }
+  .seat.on { background:var(--amber); border-color:var(--amber); color:#1B1226; font-weight:700; }
+  .seat:disabled { opacity:.4; cursor:default; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:9px; margin-top:14px; }
+
+  /* the sixteen candidates — everyone sees these, which is what lets the
+     Outsider bluff instead of just losing immediately */
+  .board { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:12px; }
+  .board div, .board button { border:1px solid rgba(242,236,228,.14); border-radius:8px;
+        padding:9px 4px; font-size:12px; text-align:center; line-height:1.25;
+        background:transparent; color:var(--ink); }
+  .board .hit { border-color:var(--amber); background:rgba(240,176,90,.15);
+                color:var(--amber); font-weight:700; }
+  @media (max-width:400px){ .board { grid-template-columns:repeat(3,1fr); } }
+
+  .card { border:1px dashed rgba(240,176,90,.5); border-radius:12px; padding:26px 14px;
+          text-align:center; margin-top:12px; }
+  .word { font-family:'Space Grotesk',sans-serif; font-size:clamp(26px,8vw,42px);
+          color:var(--amber); line-height:1.1; }
+  .outsider { color:var(--red); }
+  .clue { display:flex; justify-content:space-between; gap:10px; padding:10px 0;
+          border-bottom:1px solid rgba(242,236,228,.08); }
+  .clue b { font-family:'Space Grotesk',sans-serif; font-size:18px; }
+  .tick { color:var(--green); } .dot { color:var(--faint); }
+  .score { font-family:'Space Grotesk',sans-serif; font-size:19px; }
+
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+             padding:13px 15px; margin-top:14px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Space Grotesk',sans-serif; letter-spacing:.2em; font-size:26px; color:var(--amber); }
+  .linkfield { font-size:13px; margin-top:9px; padding:9px 10px; color:var(--faint); }
+  .rb-actions { display:flex; gap:8px; margin-top:9px; } .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:18px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover { color:var(--amber); }
+  details summary { color:var(--amber); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>THE <span class="s">OUTSIDER</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script src="feedback.js"></script>
+<script src="group.js"></script>
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "outsider";
+
+/* ── the boards ──────────────────────────────────────────────
+   Sixteen words per category. Everyone sees the whole board; only the secret
+   is marked, and only on the phones of people who aren't the Outsider. That
+   is what makes bluffing possible — the Outsider can see the neighbourhood
+   the word lives in, just not which one it is.                              */
+const CATS = [
+  { key:'bolly',   name:'Bollywood',        words:['Interval','Item song','Villain','Rain dance','Playback singer','Dialogue','Flashback','Long-lost brother','Wedding scene','Slow-motion entry','Police jeep','Filmi mother','Train platform','Fight scene','Switzerland','Sequel'] },
+  { key:'street',  name:'Street food',      words:['Pani puri','Vada pav','Pav bhaji','Bhel puri','Samosa','Jalebi','Chaat','Dosa','Momo','Kathi roll','Sugarcane juice','Cutting chai','Kulfi','Bhutta','Idli','Chole bhature'] },
+  { key:'shaadi',  name:'Indian wedding',   words:['Baraat','Mehendi','Sangeet','Pandit','Haldi','Garland','Shehnai','Buffet queue','Photographer','Joota chupai','Vidaai','Mandap','The aunties','DJ','Gift envelope','White horse'] },
+  { key:'cricket', name:'Cricket',          words:['Six','Yorker','Third umpire','Duck','Wide ball','Slip catch','Nightwatchman','Pitch report','The toss','Helmet','Sledging','Run out','Boundary rope','Powerplay','Bails','Century'] },
+  { key:'commute', name:'Getting around',   words:['Ticket queue','Window seat','Footbridge','Rush hour','Announcement','Platform number','Late train','Auto rickshaw','Traffic jam','Honking','Monsoon puddle','Umbrella','Metro card','Pothole','Red signal','Bus conductor'] },
+  { key:'tyohaar', name:'Festivals',        words:['Diya','Rangoli','Holi colours','Rakhi','Ganpati','Firecracker','Sweets box','New clothes','Aarti thali','Garba','Puja','Prasad','Kite','Bonfire','Dandiya','Temple bell'] },
+  { key:'ghar',    name:'Around the house', words:['Pressure cooker','Ceiling fan','Doorbell','Balcony','Water filter','Almirah','Terrace','Inverter','Broom','Mosquito coil','Newspaper','Slippers at the door','Steel tiffin','Clothesline','Mixer grinder','Sofa'] },
+  { key:'khana',   name:'Food at home',     words:['Dal','Roti','Rice','Pickle','Curd','Rajma','Khichdi','Paratha','Sabzi','Papad','Halwa','Poha','Upma','Biryani','Raita','Ladoo'] },
+  { key:'animals', name:'Animals',          words:['Elephant','Peacock','Street dog','Monkey','Cow','Tiger','Crow','Camel','Snake','Parrot','Goat','Squirrel','Pigeon','Buffalo','Lizard','Cat'] },
+  { key:'jobs',    name:'Jobs',             words:['Teacher','Doctor','Auto driver','Chef','Engineer','Police officer','Farmer','Tailor','Barber','Pilot','Watchman','Shopkeeper','Journalist','Electrician','Nurse','Accountant'] },
+  { key:'travel',  name:'Travel',           words:['Passport','Boarding pass','Suitcase','Beach','Hill station','Sleeper bus','Hotel lobby','Souvenir','Selfie point','Tour guide','Train pantry','Sunscreen','Map','Airport queue','Backpack','Room key'] },
+  { key:'sports',  name:'Sports',           words:['Football','Kabaddi','Badminton','Chess','Swimming','Marathon','Hockey','Wrestling','Table tennis','Carrom','Boxing','Cycling','Archery','Kho kho','Basketball','Gymnastics'] },
+  { key:'music',   name:'Music',            words:['Tabla','Harmonium','Guitar','Antakshari','Ringtone','Concert','Headphones','Bhajan','Qawwali','Dhol','Flute','Playlist','Karaoke','Sitar','Choir','Radio'] },
+  { key:'school',  name:'School',           words:['Homework','Blackboard','Lunch box','Sports day','Principal\u2019s office','Exam hall','Uniform','School bus','Library','Roll call','Chalk','Report card','Recess','Class monitor','Geometry box','Assembly'] },
+];
+const catByKey = (k) => CATS.find(c=>c.key===k) || null;
+
+const FRESH = { phase:'setup', players:[], rounds:5, clueRounds:1, cats:[],
+                round:0, cat:null, secret:null, outsider:null,
+                ready:{}, clues:{}, clueRound:1, votes:{},
+                accused:null, guess:null, outcome:null,
+                scores:{}, log:[], _sessionEnd:null };
+
+let G = null, me = null, stamp = 0, pending = null;
+let peeked = false;          // local only: has this phone revealed its own card?
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setErr(m){ $('err').textContent = m || ''; }
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() }) });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey(), p_state: next }) });
+  if (!r.ok) throw new Error('save '+r.status);
+  try { return (await r.json()) === true; } catch { return true; }
+}
+async function commit(fn){
+  for (let a=0; a<4; a++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = hydrate(fresh); stamp = Math.max(stamp, fresh._stamp||0); render(); }
+  }
+  return false;
+}
+async function mutate(fn){
+  try { if (await commit(fn)){ setErr(''); return; } } catch {}
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;
+}
+async function poll(){
+  if (!joined) return;
+  try {
+    if (pending){ const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn; }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch { if (!G){ G = structuredClone(FRESH); render(); } }
+}
+
+// ── round machinery ──
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function dealRound(g){
+  const pool = (g.cats && g.cats.length) ? CATS.filter(c=>g.cats.includes(c.key)) : CATS;
+  const cat = pick(pool.length ? pool : CATS);
+  g.cat = cat.key;
+  g.secret = pick(cat.words);
+  // don't hand the same person the Outsider role twice running if there is
+  // anyone else available — it is the one pattern a table notices immediately
+  const others = g.players.filter(p => p !== g.outsider);
+  g.outsider = pick(others.length ? others : g.players);
+  g.ready = {}; g.clues = {}; g.clueRound = 1; g.votes = {};
+  g.accused = null; g.guess = null; g.outcome = null;
+  g.phase = 'reveal';
+  return g;
+}
+
+function startGame(){
+  if (G.players.length < 3){ setErr('The Outsider needs at least 3 players.'); return; }
+  setErr(''); peeked = false;
+  mutate(g=>{
+    g.round = 1; g.scores = {}; g.log = []; g.outsider = null; g._sessionEnd = null;
+    for (const p of g.players) g.scores[p] = 0;
+    return dealRound(g);
+  });
+}
+
+function addPlayer(){
+  const el=$('nameInput'); const n=el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if (G.players.length>=12){ setErr('Twelve is as many as one word can carry.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{ g.players.push(n); return g; });
+}
+function removePlayer(n){
+  mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; });
+  if (me===n) me=null;
+}
+function setRounds(n){ mutate(g=>{ g.rounds=n; return g; }); }
+function setClueRounds(n){ mutate(g=>{ g.clueRounds=n; return g; }); }
+function toggleCat(k){
+  mutate(g=>{
+    g.cats = g.cats || [];
+    g.cats = g.cats.includes(k) ? g.cats.filter(x=>x!==k) : g.cats.concat([k]);
+    return g;
+  });
+}
+
+function iAmReady(){
+  if (!me) return;
+  mutate(g=>{
+    g.ready[me] = true;
+    if (g.players.every(p=>g.ready[p])) g.phase = 'clue';
+    return g;
+  });
+}
+
+function submitClue(){
+  if (!me) return;
+  const el = $('clueInput'); const raw = el.value.trim();
+  if (!raw) return;
+  if (/\s/.test(raw)){ setErr('One word only — that is the whole difficulty.'); return; }
+  if (G.secret && raw.toLowerCase() === String(G.secret).toLowerCase()){
+    setErr('You cannot just say the word.'); return;
+  }
+  if (raw.length > 24){ setErr('One word, and a real one.'); return; }
+  setErr(''); el.value = '';
+  mutate(g=>{
+    g.clues[me] = (g.clues[me] || []).slice(0, g.clueRound - 1).concat([raw]);
+    if (g.players.every(p => (g.clues[p]||[]).length >= g.clueRound)) g.phase = 'clueshow';
+    return g;
+  });
+}
+function anotherClueRound(){
+  mutate(g=>{ g.clueRound += 1; g.phase = 'clue'; return g; });
+}
+function goToVote(){ mutate(g=>{ g.phase = 'vote'; return g; }); }
+
+function castVote(name){
+  if (!me) return;
+  mutate(g=>{
+    g.votes[me] = name;
+    if (g.players.every(p => g.votes[p])) return tally(g);
+    return g;
+  });
+}
+
+/* One vote each. A clear plurality accuses; a tie accuses nobody, which is a
+   win for the Outsider — an undecided table is exactly what they were after. */
+function tally(g){
+  const count = {};
+  for (const p of g.players) count[g.votes[p]] = (count[g.votes[p]]||0) + 1;
+  const top = Math.max(...Object.values(count));
+  const leaders = Object.keys(count).filter(k => count[k] === top);
+  g.accused = leaders.length === 1 ? leaders[0] : null;
+  if (g.accused === g.outsider){
+    g.phase = 'guess';           // caught — but they get one shot at the word
+  } else {
+    g.outcome = 'escaped';
+    g.phase = 'result';
+    score(g);
+  }
+  return g;
+}
+function submitGuess(word){
+  mutate(g=>{
+    g.guess = word;
+    g.outcome = (word === g.secret) ? 'guessed' : 'caught';
+    g.phase = 'result';
+    return score(g);
+  });
+}
+
+/* Every point is explicable in one line, which matters when eight people are
+   looking at the scoreboard and one of them disagrees with it. */
+function score(g){
+  const add = (p,n) => { g.scores[p] = (g.scores[p]||0) + n; };
+  for (const p of g.players) if (p !== g.outsider && g.votes[p] === g.outsider) add(p, 1);
+  if (g.outcome === 'escaped') add(g.outsider, 3);
+  if (g.outcome === 'guessed') add(g.outsider, 2);
+  g.log = [{ round:g.round, cat:g.cat, secret:g.secret, outsider:g.outsider,
+             accused:g.accused, outcome:g.outcome, guess:g.guess }].concat(g.log).slice(0,20);
+  return g;
+}
+
+function nextRound(){
+  peeked = false;
+  mutate(g=>{
+    if (g.round >= g.rounds){
+      g.phase = 'gameover';
+      if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
+      return g;
+    }
+    g.round += 1;
+    return dealRound(g);
+  });
+}
+function playAgain(keep){
+  me = keep ? me : null; peeked = false;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep){ n.players=g.players; n.rounds=g.rounds; n.clueRounds=g.clueRounds; n.cats=g.cats; }
+    return n;
+  });
+}
+function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+
+// ── render ──
+function boardHTML(showSecret, pickable){
+  const cat = catByKey(G.cat); if (!cat) return '';
+  return `<div class="board">${cat.words.map((w,i)=>{
+    const hit = showSecret && w === G.secret ? 'hit' : '';
+    return pickable
+      ? `<button class="${hit}" onclick="guessWord(${i})">${esc(w)}</button>`
+      : `<div class="${hit}">${esc(w)}</div>`;
+  }).join('')}</div>`;
+}
+/* Indices, never names, in every generated handler. A player called O'Brien or
+   a board word like "Principal's office" would otherwise break the attribute
+   the moment it was clicked. */
+function guessWord(i){ const c = catByKey(G.cat); if (c) submitGuess(c.words[i]); }
+function pickSeat(i){ me = G.players[i]; peeked = false; render(); }
+function dropSeat(i){ removePlayer(G.players[i]); }
+function voteSeat(i){ castVote(G.players[i]); }
+function whoAmIHTML(){
+  if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
+      You are <b style="color:var(--ink)">${esc(me)}</b> ·
+      <a href="#" onclick="me=null;peeked=false;render();return false" style="color:var(--amber)">not you?</a></p></div>`;
+  return `<div class="panel"><div class="eyebrow">Which one are you?</div>
+      <p class="faint" style="font-size:14px;margin-top:6px">Your card shows only on your own phone.</p>
+      <div class="grid">${G.players.map((p,i)=>
+        `<button class="seat" onclick="pickSeat(${i})">${esc(p)}</button>`).join('')}</div></div>`;
+}
+function waitingHTML(done, label){
+  return `<div class="panel"><div class="eyebrow">${label}</div>
+    ${G.players.map(p=>`<div class="row"><span>${esc(p)}</span>
+      <span class="${done(p)?'tick':'dot'}">${done(p)?'✓ in':'…'}</span></div>`).join('')}</div>`;
+}
+function scoreHTML(){
+  const order = G.players.slice().sort((a,b)=>(G.scores[b]||0)-(G.scores[a]||0));
+  return `<div class="panel"><div class="eyebrow">Scores</div>
+    ${order.map(p=>`<div class="row"><span>${esc(p)}</span>
+      <span class="score">${G.scores[p]||0}</span></div>`).join('')}</div>`;
+}
+function cluesHTML(){
+  const rows = [];
+  for (let r = 0; r < G.clueRound; r++){
+    rows.push(`<div class="eyebrow" style="margin-top:${r?14:0}px">Clue ${r+1}</div>`);
+    for (const p of G.players){
+      const c = (G.clues[p]||[])[r];
+      rows.push(`<div class="clue"><span class="faint">${esc(p)}</span><b>${c?esc(c):'—'}</b></div>`);
+    }
+  }
+  return `<div class="panel">${rows.join('')}</div>`;
+}
+
+function render(){
+  if (!configured()){ $('app').innerHTML='<div class="panel"><p class="faint">Supabase is not configured.</p></div>'; return; }
+  const app = $('app');
+  const cat = catByKey(G.cat);
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
+    : G.phase==='gameover' ? 'Game over'
+    : `Round ${G.round} of ${G.rounds}${cat ? ' · ' + cat.name : ''}`;
+
+  if (G.phase==='setup'){
+    const had=$('nameInput'); const keep=had?had.value:'';
+    const chosen = G.cats || [];
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Players (3–12)</div>
+        <div style="display:flex;gap:8px;margin:12px 0">
+          <input id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-amber" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.players.length ? G.players.map((p,i)=>`<div class="row"><span>${esc(p)}</span>
+          <button class="btn-ghost" onclick="dropSeat(${i})">Remove</button></div>`).join('')
+          : '<p class="faint" style="font-style:italic">Nobody yet.</p>'}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Rounds</div>
+        <div class="grid">${[3,5,8,10].map(n=>
+          `<button class="seat ${G.rounds===n?'on':''}" onclick="setRounds(${n})">${n}</button>`).join('')}</div>
+        <div class="eyebrow" style="margin-top:18px">Clues each per round</div>
+        <div class="grid">${[1,2].map(n=>
+          `<button class="seat ${G.clueRounds===n?'on':''}" onclick="setClueRounds(${n})">${n}</button>`).join('')}</div>
+        <p class="faint" style="font-size:13px;margin-top:8px">Two clues gives the table more to
+           work with, and the Outsider more chances to slip.</p>
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Categories</div>
+        <p class="faint" style="font-size:14px;margin-top:6px">Pick a few, or none at all to use everything.</p>
+        <div class="grid">${CATS.map(c=>
+          `<button class="seat ${chosen.includes(c.key)?'on':''}" onclick="toggleCat('${c.key}')">${esc(c.name)}</button>`).join('')}</div>
+        <button class="btn-amber full" style="margin-top:18px" onclick="startGame()">Deal the first round</button>
+      </div>
+      <div class="panel"><details><summary>How to play</summary>
+        <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
+          <p>Everyone sees the same board of sixteen words, and everyone is told which one is the
+             secret — <b style="color:var(--ink)">except one player</b>, chosen at random. They
+             only know the category.</p>
+          <p>Each of you gives <b style="color:var(--ink)">one word</b> that points at the secret.
+             Too obvious and the Outsider simply reads it off you. Too vague and the table decides
+             the vague one is the Outsider.</p>
+          <p>Clues are typed on your phones and revealed <b style="color:var(--ink)">all at
+             once</b>, so nobody gets the easy job of going last.</p>
+          <p>Then everyone votes. Catch the Outsider and they still get one guess at the word —
+             get it right and they escape anyway.</p>
+          <p><b style="color:var(--ink)">Points:</b> +1 for voting for the real Outsider · +3 to
+             the Outsider if the table doesn't agree on them · +2 to the Outsider if caught but
+             they guess the word.</p>
+        </div></details></div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase==='reveal'){
+    if (!me){ app.innerHTML = whoAmIHTML(); return; }
+    const iAmIt = me === G.outsider;
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">${esc(cat.name)}</div>
+        ${!peeked
+          ? `<div class="card"><p class="faint" style="margin:0 0 14px">Make sure nobody is reading
+               over your shoulder.</p>
+             <button class="btn-amber" onclick="peeked=true;render()">Show my card</button></div>`
+          : `<div class="card">
+               ${iAmIt
+                 ? `<p class="word outsider">You are the Outsider</p>
+                    <p class="faint" style="margin-top:10px">You do not know the word. Give a clue
+                       that could fit any of these, and work out the rest from what everyone
+                       else says.</p>`
+                 : `<p class="faint" style="margin:0 0 6px">The secret word is</p>
+                    <p class="word">${esc(G.secret)}</p>`}
+             </div>
+             <button class="btn-ghost full" onclick="peeked=false;render()">Hide</button>`}
+        ${boardHTML(peeked && !iAmIt, null)}
+        ${G.ready[me] ? '<p class="faint" style="margin-top:14px">Waiting for the others…</p>'
+          : `<button class="btn-amber full" onclick="iAmReady()">Got it</button>`}
+      </div>`
+      + waitingHTML(p=>G.ready[p], 'Seen their card')
+      + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='clue'){
+    const mine = me ? (G.clues[me]||[]) : [];
+    const submitted = mine.length >= G.clueRound;
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">${esc(cat.name)} · clue ${G.clueRound}</div>
+        ${boardHTML(false, null)}
+        <p class="faint" style="font-size:13px;margin-top:10px">Everyone's clue is revealed at the
+           same moment, so there is no advantage in waiting.</p>
+      </div>
+      ${me ? (submitted
+        ? `<div class="panel center"><p style="margin:0">Your clue:
+             <b style="font-family:'Space Grotesk',sans-serif;font-size:18px">${esc(mine[G.clueRound-1])}</b></p>
+             <p class="faint" style="font-size:14px;margin-top:6px">Waiting for the others.</p></div>`
+        : `<div class="panel">
+             <div class="eyebrow">Your one-word clue</div>
+             <div style="display:flex;gap:8px;margin-top:12px">
+               <input id="clueInput" placeholder="One word" autocomplete="off" spellcheck="false">
+               <button class="btn-amber" onclick="submitClue()">Send</button>
+             </div>
+             ${me === G.outsider
+               ? '<p class="faint" style="font-size:13px;margin-top:8px">You are the Outsider. Say something that could plausibly fit half the board.</p>'
+               : `<p class="faint" style="font-size:13px;margin-top:8px">The word is <b style="color:var(--amber)">${esc(G.secret)}</b>. Don't say it.</p>`}
+           </div>`) : ''}
+      ` + waitingHTML(p=>(G.clues[p]||[]).length>=G.clueRound, 'Clues in') + whoAmIHTML();
+    const ci = $('clueInput');
+    if (ci) ci.addEventListener('keydown', e=>{ if(e.key==='Enter') submitClue(); });
+    return;
+  }
+
+  if (G.phase==='clueshow'){
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">${esc(cat.name)}</div>
+        ${boardHTML(false, null)}
+      </div>`
+      + cluesHTML()
+      + `<div class="panel">
+        <p class="faint" style="font-size:14px;margin:0 0 4px">Talk it over. Then someone press on.</p>
+        <div class="stack">
+          ${G.clueRound < G.clueRounds
+            ? `<button class="btn-amber" onclick="anotherClueRound()">Second clue round</button>` : ''}
+          <button class="${G.clueRound < G.clueRounds ? 'btn-ghost' : 'btn-amber'}" onclick="goToVote()">Go to the vote</button>
+        </div></div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='vote'){
+    const voted = me ? G.votes[me] : null;
+    app.innerHTML = cluesHTML() + `
+      <div class="panel">
+        <div class="eyebrow">Who is the Outsider?</div>
+        ${me
+          ? (voted
+             ? `<p style="margin-top:10px">You voted for <b>${esc(voted)}</b>.
+                  <a href="#" onclick="castVote(null);return false" style="color:var(--amber)">change</a></p>`
+             : `<div class="grid">${G.players.map((p,i)=> p===me ? '' :
+                  `<button class="seat" onclick="voteSeat(${i})">${esc(p)}</button>`).join('')}</div>`)
+          : '<p class="faint" style="margin-top:10px">Pick your seat below to vote.</p>'}
+        <p class="faint" style="font-size:13px;margin-top:10px">Nobody sees who you picked until
+           everyone has picked.</p>
+      </div>`
+      + waitingHTML(p=>!!G.votes[p], 'Votes in') + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='guess'){
+    const iAmIt = me === G.outsider;
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Caught</div>
+        <p style="margin-top:10px">The table voted for <b>${esc(G.accused)}</b> — and they were right.</p>
+        <p class="faint">One chance left: the Outsider guesses the word.</p>
+      </div>
+      ${iAmIt
+        ? `<div class="panel"><div class="eyebrow">Which word was it?</div>
+             ${boardHTML(false, true)}</div>`
+        : `<div class="panel center"><p class="faint" style="margin:0">Waiting for
+             <b style="color:var(--ink)">${esc(G.outsider)}</b> to guess.</p></div>`}
+      ` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='result'){
+    const votesFor = {};
+    for (const p of G.players) votesFor[G.votes[p]] = (votesFor[G.votes[p]]||[]).concat([p]);
+    const headline = G.outcome === 'escaped'
+        ? (G.accused ? `${G.accused} took the fall.` : 'The table could not agree.')
+        : G.outcome === 'guessed' ? `${G.outsider} was caught — and guessed it anyway.`
+        : `${G.outsider} was caught.`;
+    const good = G.outcome === 'caught';
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Round ${G.round}</div>
+        <p class="word ${good?'':'outsider'}" style="font-size:clamp(20px,5.5vw,30px)">${esc(headline)}</p>
+        <p class="faint" style="margin-top:8px">The Outsider was <b style="color:var(--ink)">${esc(G.outsider)}</b>.
+           The word was <b style="color:var(--amber)">${esc(G.secret)}</b>${
+           G.guess ? ` — they guessed <b style="color:var(--ink)">${esc(G.guess)}</b>` : ''}.</p>
+        ${boardHTML(true, null)}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">The vote</div>
+        ${G.players.map(p=>`<div class="row"><span>${esc(p)}${p===G.outsider?' <span class="faint">(Outsider)</span>':''}</span>
+          <span class="faint">${(votesFor[p]||[]).length ? esc((votesFor[p]||[]).join(', ')) : '—'}</span></div>`).join('')}
+      </div>`
+      + cluesHTML() + scoreHTML() + `
+      <div class="panel">
+        <button class="btn-amber full" onclick="nextRound()">${
+          G.round >= G.rounds ? 'Final scores' : 'Next round'}</button>
+        <button class="btn-ghost full" onclick="backToSetup()">Change players or settings</button>
+      </div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='gameover'){
+    const best = Math.max(...G.players.map(p=>G.scores[p]||0));
+    const winners = G.players.filter(p=>(G.scores[p]||0)===best);
+    if (window.vpMaybeReport) vpMaybeReport(G, 'outsider', ROOM,
+      G.players.map(p => ({ player:p, score:G.scores[p]||0, won: winners.includes(p) })));
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">${G.rounds} round${G.rounds===1?'':'s'} played</div>
+        <p class="word">${esc(winners.join(' & '))}</p>
+        <p class="faint">${winners.length>1?'share it':'wins'} on ${best} point${best===1?'':'s'}.</p>
+        <div class="stack">
+          <button class="btn-amber" onclick="playAgain(true)">Play again · same group</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New group</button>
+        </div>
+      </div>` + scoreHTML() + `
+      <div class="panel"><div class="eyebrow">Every round</div>
+        ${G.log.map(l=>`<div class="row"><span class="faint">${l.round}. ${esc(l.secret)}</span>
+          <span>${esc(l.outsider)} ${l.outcome==='caught'?'caught':l.outcome==='guessed'?'guessed it':'escaped'}</span></div>`).join('')}
+      </div>` + vpFeedbackHTML('The Outsider');
+    return;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+function newCode(){ const r=new Uint32Array(4); crypto.getRandomValues(r);
+  let c=''; for(let i=0;i<4;i++) c+=CODE_ALPHABET[r[i]%CODE_ALPHABET.length]; return c; }
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false, pollTimer = null, curRate = 0;
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+// Faster while people are typing clues or voting — those are the moments the
+// table is watching the screen waiting for the last name to tick over.
+function pollRate(){ return ['clue','vote','reveal','guess'].includes(G && G.phase) ? 1100 : 2500; }
+function schedulePoll(){
+  const want = pollRate(); if (want===curRate) return;
+  curRate = want; if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{ await poll(); schedulePoll(); }, want);
+}
+function enterRoom(){ joined=true; history.replaceState(null,'',inviteURL());
+  renderRoomBar(); render(); schedulePoll(); }
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } curRate=0;
+  joined=false; ROOM=''; G=null; me=null; pending=null; peeked=false;
+  history.replaceState(null,'',location.pathname);
+  $('roombar').innerHTML=''; $('crumb').textContent=''; setErr(''); renderLobby();
+}
+async function createRoom(){
+  setErr('');
+  const btn=$('createBtn'); if(btn){ btn.disabled=true; btn.textContent='Creating…'; }
+  try {
+    for (let i=0;i<5;i++){
+      ROOM=newCode();
+      if (await loadState()) continue;
+      G=structuredClone(FRESH);
+      if (!(await saveState(G))) continue;
+      enterRoom(); return;
+    }
+    ROOM=''; setErr('Could not find a free code. Please try again.');
+  } catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); }
+  if ($('createBtn')){ $('createBtn').disabled=false; $('createBtn').textContent='Create a game'; }
+}
+async function joinRoom(raw){
+  setErr('');
+  const c=cleanCode(raw);
+  if (c.length<4){ setErr('Enter the 4-character code.'); return; }
+  ROOM=c;
+  let s; try { s=await loadState(); }
+  catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM=''; renderLobby('No game found with code '+c+'. Check the code, or start a new one.'); return; }
+  G = hydrate(s); stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+function copyInvite(){
+  const url=inviteURL();
+  const done=()=>{ const b=$('copyBtn'); if(!b)return; b.textContent='Link copied';
+    setTimeout(()=>{ if($('copyBtn')) $('copyBtn').textContent='Copy invite link'; },1600); };
+  const fb=()=>{ const f=$('inviteField'); if(f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done,fb);
+  else fb();
+}
+function renderRoomBar(){
+  $('roombar').innerHTML = `<div class="roombar">
+      <div class="rb-top"><span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span></div>
+      <input id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div></div>`;
+}
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game and send the link to
+        everyone playing. Each phone shows its own card — one of them will be blank.</p>
+      <button class="btn-amber full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-amber" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') joinRoom(e.target.value); });
+}
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM); else renderLobby();
+})();
+</script>
+</body>
+</html>

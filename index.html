@@ -19,7 +19,7 @@
     --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
     --magenta:#C2185B;
     --crimson:#A32633; --thread:#C1362B; --charades:#C2185B;
-    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F;
+    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E;
   }
   * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
   body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
@@ -238,8 +238,15 @@ const GAMES = [
         + "talking, no counting and no signals. Sounds impossible. Stops being impossible.",
     tags:['Co-operative','No talking'] },
 
+  { slug:'the-outsider-online.html', name:'The Outsider', emoji:'🕵️', accent:'--outsider',
+    who:'3–12 players', time:'20–35 min', age:10, type:'deduction',
+    occasions:['diwali','wedding','kitty','travel','kids'],
+    blurb:"Everyone sees the secret word except one of you. Give a one-word clue — everyone's lands "
+        + "at the same moment, so nobody gets the easy job of going last — then find the bluffer.",
+    tags:['Bluffing','14 boards'] },
+
   { slug:'traitors-vote-online.html', name:'The Round Table', emoji:'🗡️', accent:'--crimson',
-    who:'3–20 players', time:'10–30 min', age:10, type:'party',
+    who:'3–20 players', time:'10–30 min', age:10, type:'deduction',
     occasions:['diwali','wedding'],
     blurb:"A live voting table for Traitors-style games. Everyone votes secretly from their own phone, "
         + "then the table reveals together and banishes the accused.",
@@ -249,7 +256,7 @@ const GAMES = [
 const FILTERS = [
   { key:'type', label:'Kind of game', opts:[
       ['party','Party'], ['card','Cards'], ['quiz','Quiz'],
-      ['singing','Singing'], ['numbers','Numbers'] ] },
+      ['deduction','Bluffing'], ['singing','Singing'], ['numbers','Numbers'] ] },
   { key:'age', label:'Age', opts:[ ['6','6+'], ['9','9+'], ['12','12+'] ] },
   { key:'occasions', label:'Occasion', opts:[
       ['diwali','Diwali'], ['wedding','Wedding'], ['kitty','Kitty party'],

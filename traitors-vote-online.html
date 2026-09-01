@@ -111,6 +111,13 @@ const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* For a value that lands INSIDE an inline handler rather than in text. The
+   browser HTML-decodes an attribute before the JS in it is parsed, so esc()'s
+   &#39; comes back as a bare quote and ends the string early — which is how a
+   player called D'Souza ends up with a button that silently does nothing.
+   \u escapes survive HTML decoding and mean the right thing to the parser. */
+const jss = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\u0027')
+  .replace(/"/g, '\\u0022').replace(/&/g, '\\u0026').replace(/[\r\n]+/g, ' ');
 function setErr(m){ $('err').textContent = m || ''; }
 
 const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
@@ -263,7 +270,7 @@ function render(){
         ${G.roster.length===0
           ? '<p class="faint" style="font-style:italic">The table is empty. Add each player\'s name to begin.</p>'
           : G.roster.map(p=>`<div class="row"><span>${esc(p)}</span>
-              <button class="btn-ghost" onclick="removePlayer('${esc(p)}')">Remove</button></div>`).join('')}
+              <button class="btn-ghost" onclick="removePlayer('${jss(p)}')">Remove</button></div>`).join('')}
         <button class="btn-crimson full" ${G.roster.length<3?'disabled style="opacity:.4"':''}
           onclick="startVoting()">Begin game ${G.gameNo}</button>
       </div>` + historyHTML();
@@ -277,12 +284,12 @@ function render(){
       inner = `<div class="eyebrow">Who are you?</div>
         <p class="faint" style="font-size:14px;margin-top:6px">Choose your own name. Your vote stays hidden until the reveal.</p>
         <div class="grid">${G.players.map(p=>
-          `<button class="seat" onclick="pickMe('${esc(p)}')">${esc(p)}</button>`).join('')}</div>`;
+          `<button class="seat" onclick="pickMe('${jss(p)}')">${esc(p)}</button>`).join('')}</div>`;
     } else {
       inner = `<div class="eyebrow">${G.votes[me]?'Your vote is cast':esc(me)+', cast your vote'}</div>
         <p class="faint" style="font-size:14px;margin-top:6px">${G.votes[me]?'You may change it until the reveal.':'Choose who you suspect.'}</p>
         <div class="grid">${G.players.filter(p=>p!==me).map(p=>
-          `<button class="seat ${G.votes[me]===p?'chosen':''}" onclick="castVote('${esc(p)}')">${esc(p)}</button>`).join('')}</div>
+          `<button class="seat ${G.votes[me]===p?'chosen':''}" onclick="castVote('${jss(p)}')">${esc(p)}</button>`).join('')}</div>
         <button class="btn-ghost" style="margin-top:14px" onclick="me=null;render()">Not ${esc(me)}? Switch player</button>`;
     }
     app.innerHTML = `<div class="panel">${inner}</div>`
