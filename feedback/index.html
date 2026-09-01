@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<meta name="vp-no-report" content="1">
+<title>Feedback inbox — Vela Parties</title>
+<meta name="description" content="Reports sent from the games.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐞</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#736451;
+          --marigold:#E08A1E; --magenta:#B5246B; --green:#2E7D4F; --red:#C0392B; }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 14px 40px; }
+  header { padding:22px 0 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.06em;
+       font-size:clamp(24px,6vw,34px); margin:4px 0 0; }
+  h1 .s { color:var(--magenta); }
+  .eyebrow { color:var(--marigold); letter-spacing:.2em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:16px; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .center { text-align:center; }
+  button { cursor:pointer; border-radius:9px; font-family:'Karla',system-ui,sans-serif; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:11px 16px;
+         font-size:14px; font-weight:700; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+               padding:9px 13px; font-size:13px; }
+  .btn-ghost.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .rep { border:1px solid var(--line); border-radius:11px; padding:14px 15px; margin-top:10px;
+         background:var(--panel); }
+  .rep.done { opacity:.55; }
+  .rep .top { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+              align-items:baseline; }
+  .rep .when { color:var(--faint); font-size:12.5px; }
+  .rep .txt { font-size:15.5px; line-height:1.6; margin:10px 0 0; white-space:pre-wrap;
+              word-break:break-word; }
+  .rep .meta { color:var(--faint); font-size:12.5px; margin-top:10px; line-height:1.7;
+               word-break:break-word; }
+  .rep .meta code { background:#F7F2E9; border-radius:5px; padding:1px 5px; }
+  .pill { display:inline-block; border:1px solid var(--line); border-radius:99px;
+          padding:3px 10px; font-size:12px; background:#FBF6EC; }
+  .pill.game { border-color:var(--magenta); color:var(--magenta); }
+  input[type=search] { width:100%; border:1px solid var(--line); border-radius:9px;
+        padding:11px 13px; font-size:15px; background:#FFFDF9; color:var(--ink); }
+  .homelink { display:inline-block; margin-top:16px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  footer { text-align:center; padding-top:22px; color:var(--faint); font-size:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="../">← Vela Parties</a>
+  <header>
+    <div class="eyebrow" id="crumb">Reports from the games</div>
+    <h1>FEEDBACK <span class="s">INBOX</span></h1>
+  </header>
+  <div id="app"><p class="faint center" style="margin-top:40px">Reading the inbox…</p></div>
+  <footer>Nothing here is indexed. Nobody's name is ever collected.</footer>
+</div>
+
+<script src="../vp-report.js"></script>
+<script>
+/* The inbox. Marking something handled is kept in this browser rather than in
+ * the shared row: it is a note to yourself, and writing it back would mean
+ * every reader could clear everybody else's list.
+ */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DONE = 'vp:feedback:done';
+
+let REPORTS = [], filter = 'open', q = '', gameFilter = '';
+
+function doneSet(){
+  try { return new Set(JSON.parse(localStorage.getItem(DONE) || '[]')); } catch { return new Set(); }
+}
+function markDone(id, on){
+  const s = doneSet();
+  if (on) s.add(id); else s.delete(id);
+  try { localStorage.setItem(DONE, JSON.stringify([...s])); } catch {}
+  render();
+}
+function when(iso){
+  try {
+    const d = new Date(iso), now = new Date();
+    const mins = Math.round((now - d) / 60000);
+    if (mins < 60) return mins + ' min ago';
+    if (mins < 60*24) return Math.round(mins/60) + ' h ago';
+    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  } catch { return iso; }
+}
+function setFilter(f){ filter = f; render(); }
+function setGame(g){ gameFilter = gameFilter === g ? '' : g; render(); }
+
+function matches(r){
+  const done = doneSet().has(r.id);
+  if (filter === 'open' && done) return false;
+  if (filter === 'done' && !done) return false;
+  if (gameFilter && r.game !== gameFilter) return false;
+  if (q){
+    const hay = [r.text, r.url, r.game, r.from, r.phase].join(' ').toLowerCase();
+    if (!hay.includes(q.toLowerCase())) return false;
+  }
+  return true;
+}
+
+function render(){
+  const done = doneSet();
+  const games = [...new Set(REPORTS.map(r => r.game).filter(Boolean))].sort();
+  const list = REPORTS.filter(matches);
+  const openCount = REPORTS.filter(r => !done.has(r.id)).length;
+  $('crumb').textContent = REPORTS.length + ' report' + (REPORTS.length===1?'':'s') +
+    ' · ' + openCount + ' still open';
+
+  $('app').innerHTML = `
+    <div class="panel">
+      <input type="search" id="q" placeholder="Search the text, a game, a page…" value="${esc(q)}">
+      <div class="chips">
+        ${[['open','Open'],['done','Handled'],['all','Everything']].map(([k,n])=>
+          `<button class="btn-ghost ${filter===k?'on':''}" onclick="setFilter('${k}')">${n}</button>`).join('')}
+        <button class="btn-ghost" onclick="load()">Refresh</button>
+      </div>
+      ${games.length ? `<div class="chips">${games.map(g=>
+        `<button class="btn-ghost ${gameFilter===g?'on':''}" onclick="setGame('${esc(g)}')">${esc(g)}</button>`).join('')}</div>` : ''}
+    </div>
+    ${list.length ? list.map(r => {
+      const isDone = done.has(r.id);
+      const s = r.settings || {};
+      return `<div class="rep ${isDone?'done':''}">
+        <div class="top">
+          <span>${r.game ? `<span class="pill game">${esc(r.game)}</span> ` : ''}
+            ${r.phase ? `<span class="pill">${esc(r.phase)}</span> ` : ''}
+            ${r.room ? `<span class="pill">room ${esc(r.room)}</span>` : ''}</span>
+          <span class="when">${esc(when(r.at))}</span>
+        </div>
+        <p class="txt">${esc(r.text)}</p>
+        <div class="meta">
+          <div><b>Page</b> <code>${esc(r.url)}</code></div>
+          ${r.playerCount ? `<div><b>Players</b> ${r.playerCount}${r.round?` · round ${esc(r.round)}`:''}</div>` : ''}
+          ${Object.keys(s).length ? `<div><b>Settings</b> ${Object.keys(s).map(k=>
+             esc(k)+'=' + esc(s[k])).join(' · ')}</div>` : ''}
+          ${r.from ? `<div><b>Reply to</b> <a href="mailto:${esc(r.from)}">${esc(r.from)}</a></div>` : ''}
+          <div><b>Screen</b> ${esc(r.screen)} · <b>Browser</b> ${esc((r.ua||'').slice(0,110))}</div>
+          <div><b>Ref</b> <code>${esc(r.id)}</code></div>
+        </div>
+        <div class="chips">
+          <button class="btn-ghost" onclick="markDone('${esc(r.id)}', ${isDone?'false':'true'})">
+            ${isDone ? 'Reopen' : 'Mark handled'}</button>
+          ${r.url ? `<a class="btn-ghost" style="text-decoration:none" href="..${esc(r.url)}">Open that page</a>` : ''}
+        </div>
+      </div>`;
+    }).join('')
+    : `<div class="panel center"><p class="faint" style="margin:0">${
+        REPORTS.length ? 'Nothing matches that.' : 'No reports yet. That is either very good or very quiet.'}</p></div>`}`;
+
+  const box = $('q');
+  if (box){
+    box.oninput = e => { q = e.target.value; const at = e.target.selectionStart; render();
+      const b2 = $('q'); if (b2){ b2.focus(); b2.setSelectionRange(at, at); } };
+  }
+}
+
+async function load(){
+  try {
+    const box = await vpReportsGet();
+    REPORTS = (box && Array.isArray(box.reports)) ? box.reports : [];
+  } catch {
+    $('app').innerHTML = `<div class="panel center"><p class="faint">Couldn't reach the inbox.
+      Check your connection and reload.</p></div>`;
+    return;
+  }
+  render();
+}
+load();
+</script>
+</body>
+</html>

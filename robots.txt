@@ -4,5 +4,6 @@ Allow: /
 # Private links, not secrets — but there is nothing here for a search engine.
 Disallow: /lobby.html
 Disallow: /group.html
+Disallow: /feedback/
 
 Sitemap: https://velaparties.com/sitemap.xml

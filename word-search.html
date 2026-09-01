@@ -203,14 +203,20 @@ function buildGrid(words, size, dirs, rand){
     const g = new Array(size*size).fill('');
     const placed = [];
     let ok = true;
-    for (const w of words.slice().sort((a,b)=>b.length-a.length)){
-      let done = false;
-      const starts = shuffled(Array.from({length:size*size},(_,k)=>k), rand);
-      const ds = shuffled(dirs, rand);
-      outer:
-      for (const s of starts){
+    const ordered = words.slice().sort((a,b)=>b.length-a.length);
+    for (let wi = 0; wi < ordered.length; wi++){
+      const w = ordered[wi];
+      /* Every legal placement is enumerated first, then chosen from — rather
+         than picking a start square and taking the first direction that fits.
+         The old way was quietly biased: a square near an edge only fits
+         straight lines, so straights won far more often than the geometry
+         alone would give, and diagonals came out at about one word in six.
+         A word search with one diagonal in it reads as a word search with
+         none. */
+      const diag = [], straight = [];
+      for (let s = 0; s < size*size; s++){
         const r0 = (s/size)|0, c0 = s%size;
-        for (const [dr,dc] of ds){
+        for (const [dr,dc] of dirs){
           const rEnd = r0 + dr*(w.length-1), cEnd = c0 + dc*(w.length-1);
           if (rEnd < 0 || rEnd >= size || cEnd < 0 || cEnd >= size) continue;
           let fits = true;
@@ -218,18 +224,22 @@ function buildGrid(words, size, dirs, rand){
             const cell = g[(r0+dr*k)*size + (c0+dc*k)];
             if (cell && cell !== w[k]){ fits = false; break; }
           }
-          if (!fits) continue;
-          const path = [];
-          for (let k = 0; k < w.length; k++){
-            const idx = (r0+dr*k)*size + (c0+dc*k);
-            g[idx] = w[k]; path.push(idx);
-          }
-          placed.push({ word:w, path });
-          done = true;
-          break outer;
+          if (fits) (dr && dc ? diag : straight).push([r0, c0, dr, dc]);
         }
       }
-      if (!done){ ok = false; break; }
+      // alternate the preference so roughly half the words go diagonally
+      // wherever the grid allows it
+      const first = (wi % 2 === 0 && diag.length) ? diag : straight;
+      const second = first === diag ? straight : diag;
+      const pool = shuffled(first, rand).concat(shuffled(second, rand));
+      if (!pool.length){ ok = false; break; }
+      const [r0, c0, dr, dc] = pool[0];
+      const path = [];
+      for (let k = 0; k < w.length; k++){
+        const idx = (r0+dr*k)*size + (c0+dc*k);
+        g[idx] = w[k]; path.push(idx);
+      }
+      placed.push({ word:w, path });
     }
     if (!ok) continue;
 
@@ -426,5 +436,6 @@ function render(){
   newPuzzle();
 })();
 </script>
+<script src="vp-report.js"></script>
 </body>
 </html>
