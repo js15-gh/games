@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Match — clear pairs that are equal or add up to ten</title>
+<meta name="description" content="Tap two numbers that match or add up to ten and they both go. The pen-and-paper game sometimes called Take Ten, on a phone. Free, no sign-up, quietly good arithmetic practice.">
+<link rel="canonical" href="https://velaparties.com/number-match.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Number Match">
+<meta property="og:description" content="Tap two numbers that match or add up to ten and they both go. The pen-and-paper game sometimes called Take Ten, on a phone.">
+<meta property="og:url" content="https://velaparties.com/number-match.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Number Match">
+<meta name="twitter:description" content="Tap two numbers that match or add up to ten and they both go.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Game", "name": "Number Match", "url": "https://velaparties.com/number-match.html",
+      "description": "Clear pairs of numbers that are equal or add up to ten. The pen-and-paper game sometimes called Take Ten.",
+      "genre": "Number puzzle", "inLanguage": "en", "isAccessibleForFree": true,
+      "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 1 },
+      "publisher": { "@type": "Organization", "name": "Vela Parties", "url": "https://velaparties.com/" } },
+    { "@type": "BreadcrumbList", "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Vela Parties", "item": "https://velaparties.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Number Match", "item": "https://velaparties.com/number-match.html" } ] }
+  ]
+}
+</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔟</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#736451;
+          --marigold:#E08A1E; --magenta:#B5246B; --green:#2E7D4F; --red:#C0392B; }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:22px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.06em;
+       font-size:clamp(26px,7vw,40px); margin:4px 0 0; }
+  h1 .s { color:var(--magenta); }
+  .eyebrow { color:var(--marigold); letter-spacing:.2em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:18px 16px; margin-top:14px; }
+  .faint { color:var(--faint); }
+  .center { text-align:center; }
+  button { cursor:pointer; border-radius:10px; font-family:'Karla',system-ui,sans-serif; }
+  button:focus-visible { outline:2px solid var(--magenta); outline-offset:2px; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:13px 18px;
+         font-size:15px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+  .btn[disabled] { opacity:.35; cursor:default; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+               padding:11px 14px; font-size:13px; }
+  .full { width:100%; margin-top:10px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:8px; margin-top:12px; }
+  .lvl { background:#F6EFE3; border:1px solid var(--line); border-radius:10px; padding:11px 8px;
+         font-size:13.5px; text-align:center; color:var(--ink); }
+  .lvl.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .lvl small { display:block; color:var(--faint); font-size:11px; margin-top:2px; }
+  .lvl.on small { color:#D9CEBF; }
+
+  .board { display:grid; grid-template-columns:repeat(9,1fr); gap:3px; margin-top:14px; }
+  .n { display:flex; align-items:center; justify-content:center; aspect-ratio:1;
+       background:#F9F3E8; border:1px solid var(--line); border-radius:6px; padding:0;
+       font-family:'Space Grotesk',sans-serif; font-size:clamp(13px,4.4vw,21px); color:var(--ink); }
+  .n.pick { background:var(--marigold); color:#fff; border-color:var(--marigold); }
+  .n.gone { background:transparent; border-color:transparent; color:transparent; }
+  .n.hint { outline:2px dashed var(--magenta); outline-offset:-2px; }
+
+  .stats { display:flex; justify-content:space-between; margin-top:12px; font-size:14px; }
+  .stats b { font-family:'Space Grotesk',sans-serif; font-size:18px; display:block; }
+  .flash { min-height:20px; font-weight:700; font-size:14px; margin-top:8px; text-align:center; }
+  .flash.bad { color:var(--red); } .flash.good { color:var(--green); }
+  .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(32px,11vw,54px); line-height:1;
+         color:var(--magenta); }
+  .tools { display:flex; gap:7px; margin-top:10px; } .tools button { flex:1; }
+  .homelink { display:inline-block; margin-top:16px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  .homelink:hover { color:var(--magenta); }
+  footer { text-align:center; padding-top:22px; color:var(--faint); font-size:12px; }
+  footer a { color:var(--faint); }
+
+  .howto { max-width:100%; margin-top:28px; }
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>NUMBER <span class="s">MATCH</span></h1>
+  </header>
+  <div id="app"><p class="faint center" style="margin-top:50px">Dealing the numbers…</p></div>
+
+  <section class="howto">
+    <h2>How to play Number Match</h2>
+    <ol>
+      <li>Tap two numbers to clear them both. A pair works if the two are <b>the same</b>, or if they <b>add up to ten</b>.</li>
+      <li>They also have to be <b>next to each other</b> — side by side, one above the other, diagonal, or simply the next one along when you read the grid like a book. <b>Cleared squares do not get in the way</b>, so the board keeps opening up.</li>
+      <li>Stuck? <b>Add rows</b> copies whatever is left onto the bottom, which gives you new neighbours. You get a limited number of those, so it is a real decision.</li>
+      <li>Clear the whole board to win.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">A row reads <b>7 · 3 · 5</b>. The <b>7</b> and the
+      <b>3</b> are side by side and add up to ten, so tap both and they go. Now the <b>5</b> has a
+      new neighbour — whatever sits to the left of where the 7 was — because the cleared squares
+      stop counting. That is the whole trick: every pair you take creates the next one.</p></div>
+    <p class="facts">On your own · 5–20 minutes · suggested from age 7 · free, no sign-up, plays in any browser.</p>
+  </section>
+  <footer>On your own, any time · <a href="./">Vela Parties</a></footer>
+</div>
+
+<script>
+/* Take Ten, the game from the back of every school exercise book.
+ *
+ * The rule that makes it work — and the one most phone versions get wrong — is
+ * that CLEARED SQUARES DO NOT BLOCK. Two numbers are neighbours if nothing
+ * uncleared sits between them along a row, a column, a diagonal, or in plain
+ * reading order. Without that the board seizes up after a dozen pairs; with
+ * it, every pair you take opens the next one.
+ */
+const STORE = 'vp:nummatch:';
+const COLS = 9;
+const $ = (id) => document.getElementById(id);
+
+const LEVELS = [
+  { key:'short',  name:'Short',   rows:3, adds:5,  hint:'27 numbers · from age 7' },
+  { key:'normal', name:'Normal',  rows:5, adds:5,  hint:'45 numbers' },
+  { key:'long',   name:'Long',    rows:7, adds:4,  hint:'63 numbers · a proper sitting' },
+];
+const levelOf = (k) => LEVELS.find(l => l.key === k) || LEVELS[0];
+
+// ── state ──
+let level = 'short';
+let cells = [], gone = [], sel = -1, addsLeft = 0, cleared = 0, moves = 0;
+let startedAt = 0, timer = null, done = false, hint2 = [];
+
+const alive = () => cells.map((v,i)=>i).filter(i => !gone[i]);
+const rowOf = (i) => (i / COLS) | 0, colOf = (i) => i % COLS;
+
+/* Neighbours in five senses, all of them skipping cleared squares. */
+function neighbours(i){
+  const out = new Set();
+  const live = alive();
+  // reading order: the previous and next surviving square
+  const at = live.indexOf(i);
+  if (at > 0) out.add(live[at-1]);
+  if (at >= 0 && at < live.length-1) out.add(live[at+1]);
+  // the four lines through this square
+  const rows = Math.ceil(cells.length / COLS);
+  for (const [dr, dc] of [[0,1],[1,0],[1,1],[1,-1]]){
+    for (const sign of [1,-1]){
+      let r = rowOf(i) + dr*sign, c = colOf(i) + dc*sign;
+      while (r >= 0 && r < rows && c >= 0 && c < COLS){
+        const k = r*COLS + c;
+        if (k < cells.length && !gone[k]){ out.add(k); break; }   // first live one wins
+        r += dr*sign; c += dc*sign;
+      }
+    }
+  }
+  out.delete(i);
+  return [...out];
+}
+const pairs = (a, b) => cells[a] === cells[b] || cells[a] + cells[b] === 10;
+function anyMove(){
+  for (const i of alive()) for (const j of neighbours(i)) if (pairs(i, j)) return [i, j];
+  return null;
+}
+
+function readBest(){ try { return JSON.parse(localStorage.getItem(STORE+'best')||'{}'); } catch { return {}; } }
+function saveBest(k, v){
+  try { const b = readBest(); if (!b[k] || v < b[k]){ b[k]=v; localStorage.setItem(STORE+'best', JSON.stringify(b)); return true; } }
+  catch {}
+  return false;
+}
+const fmt = (s) => Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+
+function newGame(){
+  const L = levelOf(level);
+  cells = Array.from({length: L.rows * COLS}, () => 1 + Math.floor(Math.random()*9));
+  // never open on a dead board
+  gone = cells.map(()=>false);
+  let guard = 0;
+  while (!anyMove() && guard++ < 50)
+    cells = Array.from({length: L.rows * COLS}, () => 1 + Math.floor(Math.random()*9));
+  sel = -1; addsLeft = L.adds; cleared = 0; moves = 0; done = false; hint2 = [];
+  startedAt = Date.now();
+  if (timer) clearInterval(timer);
+  timer = setInterval(()=>{ const el = $('clock'); if (el && !done)
+    el.textContent = fmt(Math.floor((Date.now()-startedAt)/1000)); }, 500);
+  render();
+}
+function setLevel(k){ level = k; newGame(); }
+
+function tap(i){
+  if (done || gone[i]) return;
+  if (sel < 0){ sel = i; render(); return; }
+  if (sel === i){ sel = -1; render(); return; }
+  const a = sel, b = i;
+  sel = -1;
+  let msg = null;
+  if (!pairs(a, b)){
+    msg = ['bad', cells[a] + ' and ' + cells[b] + ' is ' + (cells[a]+cells[b]) + ' — needs to match or make ten.'];
+  } else if (!neighbours(a).includes(b)){
+    msg = ['bad', 'Those two are not next to each other.'];
+  } else {
+    gone[a] = true; gone[b] = true;
+    cleared += 2; moves++;
+    dropEmptyRows();
+    msg = ['good', cells[a] === cells[b] ? 'A pair of ' + cells[a] + 's' : cells[a] + ' + ' + cells[b] + ' = 10'];
+    if (alive().length === 0){
+      done = true;
+      if (timer){ clearInterval(timer); timer = null; }
+      window.__secs = Math.floor((Date.now()-startedAt)/1000);
+      window.__isBest = saveBest(level, window.__secs);
+    }
+  }
+  render();
+  if (msg) flash(msg[0], msg[1]);
+}
+/* A row with nothing left in it is removed, so the board does not grow into a
+   screenful of blanks. */
+function dropEmptyRows(){
+  const rows = Math.ceil(cells.length / COLS);
+  const keep = [];
+  for (let r = 0; r < rows; r++){
+    const slice = [];
+    for (let c = 0; c < COLS; c++){ const k = r*COLS+c; if (k < cells.length) slice.push(k); }
+    if (slice.some(k => !gone[k])) keep.push(slice);
+  }
+  if (keep.length === rows) return;
+  const nc = [], ng = [];
+  for (const slice of keep) for (const k of slice){ nc.push(cells[k]); ng.push(gone[k]); }
+  cells = nc; gone = ng;
+}
+function addRows(){
+  if (done || addsLeft <= 0) return;
+  const left = alive().map(i => cells[i]);
+  if (!left.length) return;
+  cells = cells.concat(left);
+  gone = gone.concat(left.map(()=>false));
+  addsLeft--;
+  sel = -1; hint2 = [];
+  render();
+  flash('good', 'Added ' + left.length + ' — ' + addsLeft + ' add' + (addsLeft===1?'':'s') + ' left.');
+}
+function showHint(){
+  if (done) return;
+  const m = anyMove();
+  render();
+  if (!m){ flash('bad', addsLeft ? 'Nothing pairs — add rows.' : 'Nothing pairs, and no adds left.'); return; }
+  hint2 = m; render();
+  flash('good', 'These two.');
+  setTimeout(()=>{ hint2 = []; render(); }, 2200);
+}
+function giveUp(){
+  done = true;
+  if (timer){ clearInterval(timer); timer = null; }
+  window.__secs = null; window.__isBest = false;
+  render();
+}
+let ft = null;
+function flash(kind, text){
+  const f = $('flash'); if (!f) return;
+  f.className = 'flash ' + (kind||''); f.textContent = text || '';
+  if (ft) clearTimeout(ft);
+  if (text) ft = setTimeout(()=>{ const g=$('flash'); if(g){ g.textContent=''; g.className='flash'; } }, 1800);
+}
+
+// ── render ──
+function render(){
+  const L = levelOf(level);
+  const best = readBest()[level];
+  const left = alive().length;
+  const stuck = !done && !anyMove();
+  $('crumb').textContent = L.name + ' · ' + left + ' left';
+  $('app').innerHTML = `
+    ${done ? `<div class="panel center">
+        <div class="eyebrow">${window.__secs === null ? 'Given up' : (window.__isBest ? 'A new best' : 'Board cleared')}</div>
+        ${window.__secs === null
+          ? `<p class="faint" style="margin-top:8px">${left} left on the board.</p>`
+          : `<p class="big">${fmt(window.__secs)}</p>
+             <p class="faint">${moves} pairs${best && !window.__isBest ? ' · your best is ' + fmt(best) : ''}.</p>`}
+        <button class="btn full" onclick="newGame()">Another one</button>
+      </div>` : ''}
+    <div class="panel">
+      <div class="board">
+        ${cells.map((v,i)=>{
+          const cls = [ gone[i]?'gone':'', i===sel?'pick':'', hint2.includes(i)?'hint':'' ].filter(Boolean).join(' ');
+          return `<button class="n ${cls}" onclick="tap(${i})" ${gone[i]?'tabindex="-1"':''}>${gone[i]?'':v}</button>`;
+        }).join('')}
+      </div>
+      <div class="flash" id="flash"></div>
+      ${done ? '' : `
+      ${stuck ? `<p class="faint center" style="font-size:14px;margin:0">${addsLeft
+          ? 'Nothing pairs any more — add rows to make new neighbours.'
+          : 'Nothing pairs, and no adds left. That is the game.'}</p>` : ''}
+      <div class="stats">
+        <span class="faint">Left<b>${left}</b></span>
+        <span class="faint">Pairs<b>${moves}</b></span>
+        <span class="faint">Time<b id="clock">0:00</b></span>
+        <span class="faint">Best<b>${best?fmt(best):'—'}</b></span>
+      </div>
+      <button class="btn full" onclick="addRows()" ${addsLeft>0?'':'disabled'}>
+        Add rows${addsLeft>0?' · '+addsLeft+' left':' · none left'}</button>
+      <div class="tools">
+        <button class="btn-ghost" onclick="showHint()">Find me a pair</button>
+        <button class="btn-ghost" onclick="giveUp()">Give up</button>
+      </div>`}
+    </div>
+    <div class="panel">
+      <div class="eyebrow">How much of it</div>
+      <div class="grid">${LEVELS.map(l=>
+        `<button class="lvl ${level===l.key?'on':''}" onclick="setLevel('${l.key}')">${l.name}<small>${l.hint}</small></button>`).join('')}</div>
+    </div>`;
+}
+newGame();
+</script>
+</body>
+</html>

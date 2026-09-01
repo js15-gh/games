@@ -19,7 +19,7 @@
     --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
     --magenta:#C2185B;
     --crimson:#A32633; --thread:#C1362B; --charades:#C2185B;
-    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E; --oneword:#C4573B; --dial:#2E6FA8; --cipher:#1E7A4C; --clover:#4B8C3A; --facedown:#A83E86; --fibbers:#8A6B1E; --daily:#B5246B; --mostlikely:#1F7A73; --thisorthat:#6A4FB0; --twotruths:#9C7A1E; --maths:#1D6FA8; --ladder:#7A5A18; --sudoku:#4A4E8C; --wordsearch:#2E7D4F;
+    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E; --oneword:#C4573B; --dial:#2E6FA8; --cipher:#1E7A4C; --clover:#4B8C3A; --facedown:#A83E86; --fibbers:#8A6B1E; --daily:#B5246B; --mostlikely:#1F7A73; --thisorthat:#6A4FB0; --twotruths:#9C7A1E; --maths:#1D6FA8; --ladder:#7A5A18; --sudoku:#4A4E8C; --wordsearch:#2E7D4F; --nummatch:#A8571D;
   }
   * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
   body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
@@ -349,6 +349,13 @@
 // One list drives the tiles, the search and every filter, so adding a game is
 // a single entry rather than an edit in four places.
 const GAMES = [
+  { slug:'number-match.html', name:'Number Match', emoji:'🔟', accent:'--nummatch',
+    who:'On your own', time:'5–20 min', age:7, type:'solo',
+    occasions:['travel','kids'],
+    blurb:"Tap two numbers that match, or that add up to ten, and they both go. The one from the "
+        + "back of every school exercise book — quietly good arithmetic practice.",
+    tags:['Take Ten','Solo'] },
+
   { slug:'sudoku.html', name:'Sudoku', emoji:'🔢', accent:'--sudoku',
     who:'On your own', time:'3–20 min', age:6, type:'solo',
     occasions:['travel','kids'],
