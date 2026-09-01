@@ -273,17 +273,26 @@ function giveClue(){
   if (!raw){ setErr('Say something.'); return; }
   if (raw.length > 60){ setErr('Keep it short — a thing, not a sentence.'); return; }
   setErr('');
-  mutate(g=>{ g.clue = raw; g.phase = 'guess'; return g; });
+  mutate(g=>{
+    if (g.phase !== 'clue' || me !== g.psychic) return g;
+    g.clue = raw; g.phase = 'guess'; return g;
+  });
 }
 function moveDial(v){
   const n = Math.max(0, Math.min(100, Math.round(+v)));
-  mutate(g=>{ g.dial = n; return g; });
+  mutate(g=>{ if (g.phase !== 'guess') return g; g.dial = n; return g; });
 }
 function lockIn(){
-  mutate(g=>{ g.locked = g.dial; g.phase = 'bet'; return g; });
+  mutate(g=>{
+    if (g.phase !== 'guess') return g;
+    g.locked = g.dial; g.phase = 'bet'; return g;
+  });
 }
 function placeBet(side){
-  mutate(g=>{ g.bet = side; return settle(g); });
+  mutate(g=>{
+    if (g.phase !== 'bet' || g.bet) return g;
+    g.bet = side; return settle(g);
+  });
 }
 /* The guessing team scores by distance; the other team scores 1 for calling
    which side of the guess the real spot was on. A dead-on guess leaves them

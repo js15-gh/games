@@ -272,6 +272,7 @@ function sendClues(){
   }
   setErr('');
   mutate(g=>{
+    if (g.phase !== 'encrypt' || me !== g.encryptor) return g;
     g.clues = vals;
     g.phase = interceptionOpen(g) ? 'intercept' : 'decode';
     return g;
@@ -291,6 +292,8 @@ function submitGuess(which){
   const g3 = draft.slice();
   setErr('');
   mutate(g=>{
+    if (which === 'opp' && (g.phase !== 'intercept' || g.oppGuess)) return g;
+    if (which === 'own' && (g.phase !== 'decode' || g.ownGuess)) return g;
     if (which === 'opp'){
       g.oppGuess = g3;
       g.phase = 'decode';

@@ -269,6 +269,7 @@ function submitClue(){
   if (raw.length > 24){ setErr('One word, and a real one.'); return; }
   setErr(''); el.value = '';
   mutate(g=>{
+    if (g.phase !== 'clue' || me === g.guesser) return g;
     g.clues[me] = raw;
     const givers = g.players.filter(p => p !== g.guesser);
     if (givers.every(p => g.clues[p])) g.phase = 'reveal';
@@ -280,13 +281,17 @@ function guess(){
   if (!raw) return;
   setErr('');
   mutate(g=>{
+    if (g.phase !== 'reveal' || me !== g.guesser) return g;
     g.guess = raw;
     g.outcome = same(raw, g.secret) ? 'right' : 'wrong';
     return settle(g);
   });
 }
 function passRound(){
-  mutate(g=>{ g.guess = null; g.outcome = 'pass'; return settle(g); });
+  mutate(g=>{
+    if (g.phase !== 'reveal') return g;
+    g.guess = null; g.outcome = 'pass'; return settle(g);
+  });
 }
 /* Getting it wrong costs the card AND burns the next one — that penalty is
    what stops the table from guessing wildly, so it is worth keeping. */

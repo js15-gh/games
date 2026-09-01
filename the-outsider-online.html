@@ -233,6 +233,7 @@ function toggleCat(k){
 function iAmReady(){
   if (!me) return;
   mutate(g=>{
+    if (g.phase !== 'reveal') return g;
     g.ready[me] = true;
     if (g.players.every(p=>g.ready[p])) g.phase = 'clue';
     return g;
@@ -250,6 +251,7 @@ function submitClue(){
   if (raw.length > 24){ setErr('One word, and a real one.'); return; }
   setErr(''); el.value = '';
   mutate(g=>{
+    if (g.phase !== 'clue') return g;   // the Outsider gives a clue too — they bluff
     g.clues[me] = (g.clues[me] || []).slice(0, g.clueRound - 1).concat([raw]);
     if (g.players.every(p => (g.clues[p]||[]).length >= g.clueRound)) g.phase = 'clueshow';
     return g;
@@ -263,6 +265,7 @@ function goToVote(){ mutate(g=>{ g.phase = 'vote'; return g; }); }
 function castVote(name){
   if (!me) return;
   mutate(g=>{
+    if (g.phase !== 'vote') return g;
     g.votes[me] = name;
     if (g.players.every(p => g.votes[p])) return tally(g);
     return g;
@@ -288,6 +291,7 @@ function tally(g){
 }
 function submitGuess(word){
   mutate(g=>{
+    if (g.phase !== 'guess' || me !== g.outsider) return g;
     g.guess = word;
     g.outcome = (word === g.secret) ? 'guessed' : 'caught';
     g.phase = 'result';

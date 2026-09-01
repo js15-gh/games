@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Face Down — bet that you can turn over four petals and no thorn</title>
+<meta name="description" content="Everyone hides one disc at a time. Then somebody bets how many they can turn over without finding a thorn — starting with their own. A free bluffing game for 3–8 people on their own phones.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌺</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#16101A; --panel:#211826; --line:rgba(226,140,196,.22);
+    --rose:#E28CC4; --ink:#F3EAF1; --faint:#A38FA1; --red:#E4606D; --gold:#E8C36B; --green:#6FCF97;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:620px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:28px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.1em;
+       font-size:clamp(28px,7.5vw,44px); margin:4px 0 0; }
+  h1 .s { color:var(--rose); }
+  .eyebrow { color:var(--rose); letter-spacing:.22em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:20px 18px; margin-top:14px; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px;
+         padding:9px 0; border-bottom:1px solid rgba(243,234,241,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:9px; margin-top:12px; }
+  input[type=text] { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+          color:var(--ink); padding:13px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:9px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--rose); outline-offset:2px; }
+  .btn-rose { background:var(--rose); color:#1A1018; border:none; padding:14px 20px;
+              font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid rgba(163,143,161,.45);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:12px 10px; font-size:15px; }
+  .seat.on { background:var(--rose); border-color:var(--rose); color:#1A1018; font-weight:700; }
+  .seat:disabled { opacity:.3; cursor:default; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:9px; margin-top:14px; }
+
+  .disc { display:inline-flex; align-items:center; justify-content:center;
+          width:38px; height:38px; border-radius:50%; border:1px solid var(--line);
+          font-size:19px; background:rgba(243,234,241,.04); }
+  .disc.hidden { color:var(--faint); font-size:14px; letter-spacing:.1em; }
+  .disc.petal { border-color:var(--rose); background:rgba(226,140,196,.18); }
+  .disc.thorn { border-color:var(--red); background:rgba(228,96,109,.2); }
+  .discs { display:flex; gap:6px; flex-wrap:wrap; }
+  .who { display:flex; justify-content:space-between; align-items:center; gap:10px;
+         padding:11px 0; border-bottom:1px solid rgba(243,234,241,.08); }
+  .who .nm { font-size:15px; }
+  .who .nm small { display:block; color:var(--faint); font-size:12px; }
+  .wins { color:var(--gold); font-family:'Space Grotesk',sans-serif; }
+  .bidnum { font-family:'Space Grotesk',sans-serif; font-size:clamp(38px,12vw,64px);
+            color:var(--gold); line-height:1; }
+  .turnmark { color:var(--rose); font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  .tick { color:var(--green); } .dot { color:var(--faint); }
+
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+             padding:13px 15px; margin-top:14px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Space Grotesk',sans-serif; letter-spacing:.2em; font-size:26px; color:var(--rose); }
+  .linkfield { font-size:13px; margin-top:9px; padding:9px 10px; color:var(--faint);
+               background:var(--bg); border:1px solid var(--line); border-radius:8px; width:100%; }
+  .rb-actions { display:flex; gap:8px; margin-top:9px; } .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:18px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover { color:var(--rose); }
+  details summary { color:var(--rose); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>FACE <span class="s">DOWN</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script src="feedback.js"></script>
+<script src="group.js"></script>
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "facedown";
+
+const PETAL = 'p', THORN = 't';
+const WINS_NEEDED = 2;
+
+const FRESH = { phase:'setup', players:[], target:WINS_NEEDED,
+                hand:{}, stack:{}, lost:{}, wins:{},
+                turn:0, opened:false, bid:0, bidder:null, passed:[],
+                flips:[], toFlip:0, outcome:null, winner:null,
+                log:[], _sessionEnd:null };
+
+let G = null, me = null, stamp = 0, pending = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* For a value that lands INSIDE an inline handler rather than in text. The
+   browser HTML-decodes an attribute before the JS in it is parsed, so esc()'s
+   &#39; comes back as a bare quote and ends the string early — which is how a
+   player called D'Souza ends up with a button that silently does nothing.
+   \u escapes survive HTML decoding and mean the right thing to the parser. */
+const jss = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\u0027')
+  .replace(/"/g, '\\u0022').replace(/&/g, '\\u0026').replace(/[\r\n]+/g, ' ');
+function setErr(m){ $('err').textContent = m || ''; }
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() }) });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey(), p_state: next }) });
+  if (!r.ok) throw new Error('save '+r.status);
+  try { return (await r.json()) === true; } catch { return true; }
+}
+async function commit(fn){
+  for (let a=0; a<4; a++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = hydrate(fresh); stamp = Math.max(stamp, fresh._stamp||0); render(); }
+  }
+  return false;
+}
+async function mutate(fn){
+  try { if (await commit(fn)){ setErr(''); return; } } catch {}
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;
+}
+async function poll(){
+  if (!joined) return;
+  try {
+    if (pending){ const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn; }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch { if (!G){ G = structuredClone(FRESH); render(); } }
+}
+
+// ── who is still in ──
+const alive = (g) => g.players.filter(p => !g.lost[p]);
+const discsLeft = (g,p) => (g.hand[p]||[]).length + (g.stack[p]||[]).length;
+const current = (g) => { const a = alive(g); return a.length ? a[g.turn % a.length] : null; };
+const stillBidding = (g) => alive(g).filter(p => !g.passed.includes(p));
+const totalOnTable = (g) => alive(g).reduce((n,p)=>n + (g.stack[p]||[]).length, 0);
+
+function advance(g){
+  const a = alive(g);
+  if (!a.length) return g;
+  g.turn = (g.turn + 1) % a.length;
+  return g;
+}
+/* Bidding skips anyone who has already passed. */
+function advanceBidder(g){
+  const a = alive(g);
+  for (let i = 1; i <= a.length; i++){
+    const cand = a[(g.turn + i) % a.length];
+    if (!g.passed.includes(cand)) { g.turn = (g.turn + i) % a.length; return g; }
+  }
+  return g;
+}
+
+// ── a hand ──
+function newHand(g, starter){
+  // discs were already returned by returnAll(); a hand always starts bare
+  for (const p of g.players) g.stack[p] = [];
+  g.opened = false; g.bid = 0; g.bidder = null; g.passed = [];
+  g.flips = []; g.toFlip = 0; g.outcome = null;
+  const a = alive(g);
+  g.turn = Math.max(0, a.indexOf(starter));
+  g.phase = 'place';
+  return g;
+}
+function dealDiscs(g){
+  // four discs each: three petals and one thorn
+  g.hand = {}; g.stack = {};
+  for (const p of g.players) g.hand[p] = [PETAL, PETAL, PETAL, THORN];
+  return g;
+}
+function startGame(){
+  if (G.players.length < 3){ setErr('Face Down needs at least 3.'); return; }
+  setErr('');
+  mutate(g=>{
+    g.lost = {}; g.wins = {}; g.log = []; g.winner = null; g._sessionEnd = null;
+    for (const p of g.players) g.wins[p] = 0;
+    dealDiscs(g);
+    return newHand(g, g.players[0]);
+  });
+}
+
+function addPlayer(){
+  const el=$('nameInput'); const n=el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if (G.players.length>=8){ setErr('Eight is plenty.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{ g.players.push(n); return g; });
+}
+function removePlayer(n){
+  mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; });
+  if (me===n) me=null;
+}
+function setTarget(n){ mutate(g=>{ g.target=n; return g; }); }
+
+/* The opening round: everybody hides one disc at the same time, so nobody
+   learns anything from the order in which they went down. */
+function placeFirst(kind){
+  if (!me) return;
+  mutate(g=>{
+    if (g.phase !== 'place') return g;
+    if ((g.stack[me]||[]).length) return g;             // already placed
+    const h = g.hand[me] || [];
+    const i = h.indexOf(kind);
+    if (i < 0) return g;
+    h.splice(i,1);
+    g.stack[me] = (g.stack[me]||[]).concat([kind]);
+    if (alive(g).every(p => (g.stack[p]||[]).length)) g.phase = 'turn';
+    return g;
+  });
+}
+function placeMore(kind){
+  if (me !== current(G)) return;
+  mutate(g=>{
+    if (g.phase !== 'turn' || me !== current(g)) return g;
+    const h = g.hand[me] || [];
+    const i = h.indexOf(kind);
+    if (i < 0) return g;
+    h.splice(i,1);
+    g.stack[me] = (g.stack[me]||[]).concat([kind]);
+    return advance(g);
+  });
+}
+function openBidding(n){
+  if (me !== current(G)) return;
+  const max = totalOnTable(G);
+  if (n < 1 || n > max){ setErr('You can only bet on discs that are actually there.'); return; }
+  setErr('');
+  mutate(g=>{
+    if (g.phase !== 'turn' || me !== current(g)) return g;
+    g.opened = true; g.bid = n; g.bidder = me; g.passed = [];
+    g.phase = 'bid';
+    return advanceBidder(g);
+  });
+}
+function raise(n){
+  if (me !== current(G)) return;
+  if (n <= G.bid){ setErr('A raise has to be higher.'); return; }
+  if (n > totalOnTable(G)){ setErr('There are not that many discs on the table.'); return; }
+  setErr('');
+  mutate(g=>{
+    if (g.phase !== 'bid' || me !== current(g) || n <= g.bid) return g;
+    g.bid = n; g.bidder = me;
+    return advanceBidder(g);
+  });
+}
+function passBid(){
+  if (me !== current(G)) return;
+  mutate(g=>{
+    if (g.phase !== 'bid' || me !== current(g)) return g;
+    if (!g.passed.includes(me)) g.passed.push(me);
+    const left = stillBidding(g);
+    if (left.length <= 1){
+      g.bidder = left[0] || g.bidder;
+      g.toFlip = g.bid;
+      g.flips = [];
+      g.phase = 'flip';
+      return g;
+    }
+    return advanceBidder(g);
+  });
+}
+/* You must clear your own stack before touching anyone else's — which is why
+   burying your own thorn early is such a bad idea. */
+function ownStackClear(g){
+  return !(g.stack[g.bidder] || []).length;
+}
+function flipFrom(who){
+  if (me !== G.bidder) return;
+  mutate(g=>{
+    if (g.phase !== 'flip') return g;
+    if (who !== g.bidder && !ownStackClear(g)) return g;     // own stack first
+    const st = g.stack[who] || [];
+    if (!st.length) return g;
+    const disc = st.pop();                                    // top of the pile
+    g.flips.push({ player:who, disc });
+    if (disc === THORN) return bust(g);
+    if (g.flips.length >= g.toFlip) return succeed(g);
+    return g;
+  });
+}
+/* The one place discs are put away. Everything still on the table and
+   everything turned over this hand goes back to whoever owns it — turning a
+   disc over never destroys it. */
+function returnAll(g){
+  for (const p of g.players){
+    g.hand[p] = (g.hand[p]||[]).concat(g.stack[p]||[]);
+    g.stack[p] = [];
+  }
+  for (const f of g.flips) g.hand[f.player] = (g.hand[f.player]||[]).concat([f.disc]);
+  g.flips = [];
+  return g;
+}
+function succeed(g){
+  const b = g.bidder;
+  g.wins[b] = (g.wins[b]||0) + 1;
+  g.outcome = 'made';
+  g.log = [{ bidder:b, bid:g.bid, outcome:'made', removed:null,
+             flips:g.flips.slice() }].concat(g.log).slice(0,25);
+  returnAll(g);
+  if (g.wins[b] >= g.target) g.winner = b;
+  g.phase = 'result';
+  return g;
+}
+/* Turning up a thorn costs the bidder one disc, chosen at random, AFTER
+   everything has gone home — so they lose exactly one, never the pile they
+   happened to have turned over. Lose all four and you are out. */
+function bust(g){
+  const b = g.bidder;
+  g.outcome = 'bust';
+  g.log = [{ bidder:b, bid:g.bid, outcome:'bust', removed:null,
+             flips:g.flips.slice() }].concat(g.log).slice(0,25);
+  returnAll(g);
+  const pool = g.hand[b] || [];
+  if (pool.length){
+    const i = Math.floor(Math.random() * pool.length);
+    g.log[0].removed = pool[i];
+    pool.splice(i,1);
+  }
+  if (!pool.length) g.lost[b] = true;
+  const still = alive(g);
+  if (still.length === 1) g.winner = still[0];
+  g.phase = 'result';
+  return g;
+}
+function nextHand(){
+  mutate(g=>{
+    if (g.winner){
+      g.phase = 'gameover';
+      if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
+      return g;
+    }
+    const starter = g.lost[g.bidder] ? alive(g)[0] : g.bidder;
+    return newHand(g, starter);
+  });
+}
+function playAgain(keep){
+  me = keep ? me : null;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep){ n.players=g.players; n.target=g.target; }
+    return n;
+  });
+}
+function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+
+// ── render ──
+function discHTML(kind, revealed){
+  if (!revealed) return '<span class="disc hidden">?</span>';
+  return kind === THORN ? '<span class="disc thorn">✕</span>'
+                        : '<span class="disc petal">✿</span>';
+}
+function tableHTML(revealAll){
+  const cur = current(G);
+  return `<div class="panel">${G.players.map(p=>{
+    if (G.lost[p]) return `<div class="who"><span class="nm faint">${esc(p)}<small>out</small></span></div>`;
+    const st = G.stack[p] || [];
+    const mineToSee = (p === me) || revealAll;
+    return `<div class="who">
+      <span class="nm">${esc(p)}
+        <small>${(G.hand[p]||[]).length} in hand${p===cur&&G.phase!=='result'?' · <span class="turnmark">their turn</span>':''}</small></span>
+      <span style="display:flex;align-items:center;gap:10px">
+        <span class="discs">${st.length
+          ? st.map(d=>discHTML(d, mineToSee)).join('')
+          : '<span class="faint" style="font-size:13px">nothing down</span>'}</span>
+        <span class="wins">${'★'.repeat(G.wins[p]||0)}</span>
+      </span></div>`;
+  }).join('')}</div>`;
+}
+function myHandHTML(){
+  if (!me || G.lost[me]) return '';
+  const h = G.hand[me] || [];
+  return `<div class="panel center">
+    <div class="eyebrow">Your discs</div>
+    <div class="discs" style="justify-content:center;margin-top:10px">
+      ${h.map(d=>discHTML(d,true)).join('')}</div>
+    <p class="faint" style="font-size:13px;margin-top:8px">✿ petal · ✕ thorn — only you can see these.</p>
+  </div>`;
+}
+function whoAmIHTML(){
+  if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
+      You are <b style="color:var(--ink)">${esc(me)}</b> ·
+      <a href="#" onclick="me=null;render();return false" style="color:var(--rose)">not you?</a></p></div>`;
+  return `<div class="panel"><div class="eyebrow">Which one are you?</div>
+      <p class="faint" style="font-size:14px;margin-top:6px">Your discs show only on your own phone.</p>
+      <div class="grid">${G.players.map(p=>
+        `<button class="seat" onclick="me='${jss(p)}';render()">${esc(p)}</button>`).join('')}</div></div>`;
+}
+function bidButtons(fn, from){
+  const max = totalOnTable(G);
+  const opts = [];
+  for (let n = from; n <= max; n++) opts.push(n);
+  if (!opts.length) return '<p class="faint" style="font-size:13px">Nothing left to bet on.</p>';
+  return `<div class="grid">${opts.map(n=>
+    `<button class="seat" onclick="${fn}(${n})">${n}</button>`).join('')}</div>`;
+}
+
+function render(){
+  if (!configured()){ $('app').innerHTML='<div class="panel"><p class="faint">Supabase is not configured.</p></div>'; return; }
+  const app = $('app');
+  const cur = current(G);
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
+    : G.phase==='gameover' ? 'Game over'
+    : G.phase==='place' ? 'Everyone hides one'
+    : G.phase==='bid' ? `The bet stands at ${G.bid}`
+    : G.phase==='flip' ? `${G.bidder} is turning over ${G.toFlip}`
+    : G.phase==='turn' ? `${cur}'s turn` : 'Result';
+
+  if (G.phase==='setup'){
+    const had=$('nameInput'); const keep=had?had.value:'';
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Players (3–8)</div>
+        <div style="display:flex;gap:8px;margin:12px 0">
+          <input type="text" id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-rose" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.players.length ? G.players.map(p=>`<div class="row"><span>${esc(p)}</span>
+          <button class="btn-ghost" onclick="removePlayer('${jss(p)}')">Remove</button></div>`).join('')
+          : '<p class="faint" style="font-style:italic">Nobody yet.</p>'}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Bets to win</div>
+        <div class="grid">${[1,2,3].map(n=>
+          `<button class="seat ${G.target===n?'on':''}" onclick="setTarget(${n})">${n}</button>`).join('')}</div>
+        <button class="btn-rose full" style="margin-top:18px" onclick="startGame()">Deal the discs</button>
+      </div>
+      <div class="panel"><details><summary>How to play</summary>
+        <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
+          <p>You each have four discs: <b style="color:var(--ink)">three petals and one thorn</b>.
+             Everyone hides one face down at the same time.</p>
+          <p>Then, in turn, you either <b style="color:var(--ink)">hide another</b> or
+             <b style="color:var(--ink)">bet</b> — "I can turn over four discs and not find a
+             thorn." Everyone else raises or passes; the last one still betting has to do it.</p>
+          <p>And they must <b style="color:var(--ink)">start with their own pile</b>, all of it,
+             before touching anybody else's. Which is why burying your own thorn early is such a
+             bad idea, and why doing it anyway is such a good bluff.</p>
+          <p>Make the bet and you win it. Turn up a thorn and you lose a disc at random — lose all
+             four and you are out. ${G.target} successful bet${G.target===1?'':'s'} wins the game,
+             or being the last one left.</p>
+        </div></details></div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase==='place'){
+    const placed = me && (G.stack[me]||[]).length;
+    const h = me ? (G.hand[me]||[]) : [];
+    app.innerHTML = tableHTML(false) + `
+      <div class="panel center">
+        <div class="eyebrow">Hide one disc</div>
+        ${!me ? '<p class="faint" style="margin-top:10px">Pick your seat below.</p>'
+          : G.lost[me] ? '<p class="faint" style="margin-top:10px">You are out. Watch.</p>'
+          : placed ? '<p class="faint" style="margin-top:10px">Hidden. Waiting for the others.</p>'
+          : `<p class="faint" style="font-size:14px;margin-top:8px">Everyone places at the same
+               time, so nobody learns anything from the order.</p>
+             <div class="stack">
+               ${h.includes(PETAL) ? '<button class="btn-rose" onclick="placeFirst(\'p\')">Hide a petal ✿</button>' : ''}
+               ${h.includes(THORN) ? '<button class="btn-ghost" onclick="placeFirst(\'t\')">Hide the thorn ✕</button>' : ''}
+             </div>`}
+      </div>
+      <div class="panel"><div class="eyebrow">Placed</div>
+        ${alive(G).map(p=>`<div class="row"><span>${esc(p)}</span>
+          <span class="${(G.stack[p]||[]).length?'tick':'dot'}">${(G.stack[p]||[]).length?'✓':'…'}</span></div>`).join('')}
+      </div>` + myHandHTML() + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='turn'){
+    const mine = me === cur;
+    const h = me ? (G.hand[me]||[]) : [];
+    app.innerHTML = tableHTML(false) + `
+      <div class="panel center">
+        <div class="eyebrow">${esc(cur||'—')}'s turn</div>
+        ${mine
+          ? `<p class="faint" style="font-size:14px;margin-top:8px">Hide another disc, or start the
+               betting. ${totalOnTable(G)} disc${totalOnTable(G)===1?' is':'s are'} on the table.</p>
+             <div class="stack">
+               ${h.includes(PETAL) ? '<button class="btn-rose" onclick="placeMore(\'p\')">Hide a petal ✿</button>' : ''}
+               ${h.includes(THORN) ? '<button class="btn-ghost" onclick="placeMore(\'t\')">Hide the thorn ✕</button>' : ''}
+             </div>
+             <div class="eyebrow" style="margin-top:18px">Or bet you can turn over</div>
+             ${bidButtons('openBidding', 1)}`
+          : `<p class="faint" style="margin-top:12px">Waiting for ${esc(cur||'them')} to hide another
+               or open the betting.</p>`}
+      </div>` + myHandHTML() + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='bid'){
+    const mine = me === cur;
+    app.innerHTML = tableHTML(false) + `
+      <div class="panel center">
+        <div class="eyebrow">${esc(G.bidder)} says they can turn over</div>
+        <p class="bidnum">${G.bid}</p>
+        <p class="faint" style="font-size:14px">out of ${totalOnTable(G)} on the table, starting
+           with their own pile.</p>
+        ${mine
+          ? `<div class="eyebrow" style="margin-top:16px">Raise to</div>
+             ${bidButtons('raise', G.bid + 1)}
+             <button class="btn-ghost full" onclick="passBid()">Pass</button>`
+          : `<p class="faint" style="margin-top:12px">Waiting for ${esc(cur||'them')}.</p>`}
+      </div>
+      <div class="panel"><div class="eyebrow">Still in the betting</div>
+        ${alive(G).map(p=>`<div class="row"><span>${esc(p)}</span>
+          <span class="${G.passed.includes(p)?'dot':'tick'}">${G.passed.includes(p)?'passed':'in'}</span></div>`).join('')}
+      </div>` + myHandHTML() + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='flip'){
+    const mine = me === G.bidder;
+    const ownClear = ownStackClear(G);
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">${esc(G.bidder)} must turn over ${G.toFlip}</div>
+        <div class="discs" style="justify-content:center;margin-top:12px">
+          ${G.flips.map(f=>discHTML(f.disc,true)).join('')}
+          ${Array(Math.max(0,G.toFlip-G.flips.length)).fill('<span class="disc hidden">?</span>').join('')}
+        </div>
+        <p class="faint" style="font-size:14px;margin-top:10px">${G.flips.length} of ${G.toFlip} turned.</p>
+        ${mine
+          ? (!ownClear
+              ? `<p class="faint" style="font-size:14px">Your own pile first — all of it.</p>
+                 <button class="btn-rose full" onclick="flipFrom('${jss(G.bidder)}')">Turn over your top disc</button>`
+              : `<p class="faint" style="font-size:14px">Now choose whose to turn.</p>
+                 <div class="stack">${alive(G).filter(p=>p!==G.bidder && (G.stack[p]||[]).length)
+                   .map(p=>`<button class="btn-rose" onclick="flipFrom('${jss(p)}')">${esc(p)} — ${(G.stack[p]||[]).length} left</button>`).join('')
+                   || '<p class="faint">Nothing left to turn.</p>'}</div>`)
+          : `<p class="faint" style="margin-top:10px">Watching ${esc(G.bidder)} find out.</p>`}
+      </div>
+      <div class="panel"><div class="eyebrow">Turned so far</div>
+        ${G.flips.length ? G.flips.map(f=>`<div class="row"><span>${esc(f.player)}</span>
+          ${discHTML(f.disc,true)}</div>`).join('')
+          : '<p class="faint" style="font-style:italic;font-size:14px">Nothing yet.</p>'}
+      </div>` + tableHTML(false) + myHandHTML() + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='result'){
+    const l = G.log[0];
+    const made = l && l.outcome === 'made';
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">${made ? 'Made it' : 'Thorn'}</div>
+        <p class="bidnum" style="color:${made?'var(--green)':'var(--red)'}">${l ? l.bid : ''}</p>
+        <p class="faint">${esc(l?l.bidder:'')} ${made
+          ? 'turned them all over. That is a bet won.'
+          : 'found a thorn' + (l && l.removed ? ' and lost a ' + (l.removed===THORN?'thorn':'petal') : '') + '.'}</p>
+        <div class="discs" style="justify-content:center;margin-top:12px">
+          ${(l?l.flips:[]).map(f=>discHTML(f.disc,true)).join('')}</div>
+        <button class="btn-rose full" onclick="nextHand()">${G.winner ? 'Final' : 'Next hand'}</button>
+        <button class="btn-ghost full" onclick="backToSetup()">Change players</button>
+      </div>` + tableHTML(true) + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='gameover'){
+    const w = G.winner;
+    if (window.vpMaybeReport) vpMaybeReport(G, 'facedown', ROOM,
+      G.players.map(p => ({ player:p, score:G.wins[p]||0, won: p === w })));
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Game over</div>
+        <p class="bidnum" style="font-size:clamp(26px,7vw,40px);color:var(--rose)">${esc(w||'Nobody')} wins</p>
+        <p class="faint">${(G.wins[w]||0) >= G.target
+          ? (G.wins[w] + ' bet' + (G.wins[w]===1?'':'s') + ' made.')
+          : 'Last one with any discs left.'}</p>
+        <div class="stack">
+          <button class="btn-rose" onclick="playAgain(true)">Play again · same group</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New group</button>
+        </div>
+      </div>
+      <div class="panel"><div class="eyebrow">Every bet</div>
+        ${G.log.slice().reverse().map(l=>`<div class="row">
+          <span class="faint">${esc(l.bidder)} bet ${l.bid}</span>
+          <span class="${l.outcome==='made'?'tick':''}">${l.outcome==='made'?'made it':'thorn'}</span></div>`).join('')}
+      </div>` + vpFeedbackHTML('Face Down');
+    return;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+function newRoomCode(){ const r=new Uint32Array(4); crypto.getRandomValues(r);
+  let c=''; for(let i=0;i<4;i++) c+=CODE_ALPHABET[r[i]%CODE_ALPHABET.length]; return c; }
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false, pollTimer = null, curRate = 0;
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+function pollRate(){ return ['place','turn','bid','flip'].includes(G && G.phase) ? 1100 : 2500; }
+function schedulePoll(){
+  const want = pollRate(); if (want===curRate) return;
+  curRate = want; if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{ await poll(); schedulePoll(); }, want);
+}
+function enterRoom(){ joined=true; history.replaceState(null,'',inviteURL());
+  renderRoomBar(); render(); schedulePoll(); }
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } curRate=0;
+  joined=false; ROOM=''; G=null; me=null; pending=null;
+  history.replaceState(null,'',location.pathname);
+  $('roombar').innerHTML=''; $('crumb').textContent=''; setErr(''); renderLobby();
+}
+async function createRoom(){
+  setErr('');
+  const btn=$('createBtn'); if(btn){ btn.disabled=true; btn.textContent='Creating…'; }
+  try {
+    for (let i=0;i<5;i++){
+      ROOM=newRoomCode();
+      if (await loadState()) continue;
+      G=structuredClone(FRESH);
+      if (!(await saveState(G))) continue;
+      enterRoom(); return;
+    }
+    ROOM=''; setErr('Could not find a free code. Please try again.');
+  } catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); }
+  if ($('createBtn')){ $('createBtn').disabled=false; $('createBtn').textContent='Create a game'; }
+}
+async function joinRoom(raw){
+  setErr('');
+  const c=cleanCode(raw);
+  if (c.length<4){ setErr('Enter the 4-character code.'); return; }
+  ROOM=c;
+  let s; try { s=await loadState(); }
+  catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM=''; renderLobby('No game found with code '+c+'. Check the code, or start a new one.'); return; }
+  G = hydrate(s); stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+function copyInvite(){
+  const url=inviteURL();
+  const done=()=>{ const b=$('copyBtn'); if(!b)return; b.textContent='Link copied';
+    setTimeout(()=>{ if($('copyBtn')) $('copyBtn').textContent='Copy invite link'; },1600); };
+  const fb=()=>{ const f=$('inviteField'); if(f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done,fb);
+  else fb();
+}
+function renderRoomBar(){
+  $('roombar').innerHTML = `<div class="roombar">
+      <div class="rb-top"><span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span></div>
+      <input type="text" id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div></div>`;
+}
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game and send the link to
+        everyone playing. Your discs show on your own phone only.</p>
+      <button class="btn-rose full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input type="text" id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-rose" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') joinRoom(e.target.value); });
+}
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM); else renderLobby();
+})();
+</script>
+</body>
+</html>
