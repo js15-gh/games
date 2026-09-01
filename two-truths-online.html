@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Two Truths and a Lie — find out things you didn't know</title>
+<meta name="description" content="Everyone writes two true things and one invented one. The rest of the table works out which is which. A free party game and icebreaker for 3–12 people on their own phones.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤥</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#1A1509; --panel:#251F0F; --line:rgba(232,195,107,.24);
+    --gold:#E8C36B; --ink:#F4EEDD; --faint:#9C9377; --red:#E4606D; --green:#6FCF97;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:600px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:26px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.05em;
+       font-size:clamp(22px,6vw,36px); margin:4px 0 0; }
+  h1 .s { color:var(--gold); }
+  .eyebrow { color:var(--gold); letter-spacing:.22em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:20px 18px; margin-top:14px; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px;
+         padding:9px 0; border-bottom:1px solid rgba(244,238,221,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:9px; margin-top:12px; }
+  input[type=text] { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+          color:var(--ink); padding:12px 13px; font-size:16px; width:100%; }
+  button { cursor:pointer; border-radius:9px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  .btn-gold { background:var(--gold); color:#1C1607; border:none; padding:14px 20px;
+              font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid rgba(156,147,119,.45);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:12px 10px; font-size:15px; }
+  .seat.on { background:var(--gold); border-color:var(--gold); color:#1C1607; font-weight:700; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:9px; margin-top:14px; }
+
+  .stmt { display:block; width:100%; text-align:left; border:1px solid var(--line);
+          border-radius:11px; padding:14px 15px; background:transparent; color:var(--ink);
+          font-size:15.5px; line-height:1.4; margin-top:9px; }
+  .stmt.on { border-color:var(--gold); background:rgba(232,195,107,.14); }
+  .stmt.lie { border-color:var(--red); background:rgba(228,96,109,.14); }
+  .stmt.true { border-color:var(--green); background:rgba(111,207,151,.1); }
+  .stmt .tag { display:block; font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+               margin-top:6px; color:var(--faint); }
+  .hint { color:var(--faint); font-size:13px; font-style:italic; margin-top:6px; }
+  .score { font-family:'Space Grotesk',sans-serif; font-size:19px; }
+  .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(24px,7vw,38px); color:var(--gold); }
+  .tick { color:var(--green); } .dot { color:var(--faint); }
+  .away { color:var(--faint); font-size:11px; letter-spacing:.12em; text-transform:uppercase; }
+
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+             padding:13px 15px; margin-top:14px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Space Grotesk',sans-serif; letter-spacing:.2em; font-size:26px; color:var(--gold); }
+  .linkfield { font-size:13px; margin-top:9px; padding:9px 10px; color:var(--faint);
+               background:var(--bg); border:1px solid var(--line); border-radius:8px; width:100%; }
+  .rb-actions { display:flex; gap:8px; margin-top:9px; } .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:18px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover { color:var(--gold); }
+  details summary { color:var(--gold); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>TWO TRUTHS <span class="s">AND A LIE</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script src="feedback.js"></script>
+<script src="group.js"></script>
+<script src="vp.js"></script>
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "twotruths";
+
+let HINTS = ['somewhere you have been'];
+
+const FRESH = { phase:'setup', players:[],
+                sets:{},              // player -> { lines:[3], lie:0..2, order:[0,1,2] }
+                round:0, subject:null, guesses:{},
+                scores:{}, log:[], _sessionEnd:null };
+
+let G = null, me = null, stamp = 0, pending = null;
+let draftLie = null;
+/* render() rebuilds the whole panel, and marking the lie calls render() — so
+   without this, tapping "this is the lie" wiped all three statements the
+   player had just typed. Whatever is in the boxes is carried across every
+   rebuild, exactly as the name field is elsewhere. */
+let draftLines = ['','',''];
+function keepLines(){
+  for (let i=0;i<3;i++){ const el = $('s'+i); if (el) draftLines[i] = el.value; }
+}
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const jss = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\u0027')
+  .replace(/"/g, '\\u0022').replace(/&/g, '\\u0026').replace(/[\r\n]+/g, ' ');
+function setErr(m){ $('err').textContent = m || ''; }
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() }) });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey(), p_state: next }) });
+  if (!r.ok) throw new Error('save '+r.status);
+  try { return (await r.json()) === true; } catch { return true; }
+}
+async function commit(fn){
+  for (let a=0; a<4; a++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = hydrate(fresh); stamp = Math.max(stamp, fresh._stamp||0); render(); }
+  }
+  return false;
+}
+async function mutate(fn){
+  try { if (await commit(fn)){ setErr(''); return; } } catch {}
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;
+}
+async function poll(){
+  if (!joined) return;
+  if (!me && G && (G.players||[]).length) me = vpRecallSeat(GAME_ID, ROOM, G.players);
+  if (me) vpRememberSeat(GAME_ID, ROOM, me);
+  if (me && G && vpBeatDue()){ const t = Date.now(); vpMarkBeat(); mutate(g => vpStampSeen(g, me, t)); }
+  try {
+    if (pending){ const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn; }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch { if (!G){ G = structuredClone(FRESH); render(); } }
+}
+
+function addPlayer(){
+  const el=$('nameInput'); const n=el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if (G.players.length>=12){ setErr('Twelve is plenty — it is a long game otherwise.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{ g.players.push(n); return g; });
+}
+function removePlayer(n){
+  mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; });
+  if (me===n) me=null;
+}
+function startGame(){
+  if (G.players.length < 3){ setErr('Three at the least.'); return; }
+  setErr('');
+  mutate(g=>{
+    g.sets = {}; g.scores = {}; g.log = []; g.round = 0; g.subject = null;
+    g.guesses = {}; g._sessionEnd = null;
+    for (const p of g.players) g.scores[p] = 0;
+    g.phase = 'write';
+    return g;
+  });
+}
+function pickLie(i){ keepLines(); draftLie = draftLie === i ? null : i; render(); }
+/* The three lines are stored in a shuffled order, so the lie is not always in
+   the position its author put it in — which it would be, otherwise, and the
+   table would work that out inside two rounds. */
+function submitSet(){
+  if (!me) return;
+  keepLines();
+  const lines = draftLines.map(l => String(l).trim());
+  if (lines.some(l => !l)){ setErr('All three, please.'); return; }
+  if (lines.some(l => l.length > 140)){ setErr('Keep them to a sentence.'); return; }
+  if (draftLie === null){ setErr('Mark which one is the lie.'); return; }
+  const lower = lines.map(l=>l.toLowerCase());
+  if (new Set(lower).size !== 3){ setErr('Three different things.'); return; }
+  const order = [0,1,2];
+  for (let i=2;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; }
+  const shown = order.map(i => lines[i]);
+  const lieAt = order.indexOf(draftLie);
+  setErr('');
+  mutate(g=>{
+    if (g.phase !== 'write') return g;
+    g.sets[me] = { lines: shown, lie: lieAt };
+    if (g.players.every(p => g.sets[p])){
+      g.round = 1;
+      g.subject = g.players[0];
+      g.guesses = {};
+      g.phase = 'guess';
+    }
+    return g;
+  });
+  draftLie = null; draftLines = ['','',''];
+}
+function guessLie(i){
+  if (!me || me === G.subject) return;
+  mutate(g=>{
+    if (g.phase !== 'guess' || me === g.subject) return g;
+    g.guesses[me] = i;
+    const others = g.players.filter(p => p !== g.subject);
+    if (others.every(p => g.guesses[p] !== undefined)) return settle(g);
+    return g;
+  });
+}
+/* A point for spotting the lie, and a point to the author for every person
+   they fooled — otherwise there is no reason to write a good lie. */
+function settle(g){
+  const set = g.sets[g.subject];
+  let fooled = 0, caught = 0;
+  for (const p of g.players){
+    if (p === g.subject) continue;
+    if (g.guesses[p] === set.lie){ g.scores[p] = (g.scores[p]||0) + 1; caught++; }
+    else fooled++;
+  }
+  g.scores[g.subject] = (g.scores[g.subject]||0) + fooled;
+  g.log = [{ round:g.round, subject:g.subject, lines:set.lines.slice(), lie:set.lie,
+             caught, fooled, guesses:structuredClone(g.guesses) }].concat(g.log).slice(0,20);
+  g.phase = 'result';
+  return g;
+}
+function nextRound(){
+  mutate(g=>{
+    if (g.round >= g.players.length){
+      g.phase = 'gameover';
+      if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
+      return g;
+    }
+    g.round += 1;
+    g.subject = g.players[g.round - 1];
+    g.guesses = {};
+    g.phase = 'guess';
+    return g;
+  });
+}
+function playAgain(keep){
+  me = keep ? me : null; draftLie = null;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep) n.players = g.players;
+    return n;
+  });
+}
+function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+
+// ── render ──
+function whoAmIHTML(){
+  if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
+      ${vpAvatar(me)} You are <b style="color:var(--ink)">${esc(me)}</b> ·
+      <a href="#" onclick="me=null;draftLie=null;render();return false" style="color:var(--gold)">not you?</a></p></div>`;
+  return `<div class="panel"><div class="eyebrow">Which one are you?</div>
+      <div class="grid">${G.players.map(p=>
+        `<button class="seat" onclick="me='${jss(p)}';draftLie=null;render()">${vpAvatar(p)} ${esc(p)}</button>`).join('')}</div></div>`;
+}
+function scoresHTML(){
+  const order = G.players.slice().sort((a,b)=>(G.scores[b]||0)-(G.scores[a]||0));
+  return `<div class="panel"><div class="eyebrow">Scores</div>
+    ${order.map(p=>`<div class="row"><span>${vpAvatar(p)} ${esc(p)}</span>
+      <span class="score">${G.scores[p]||0}</span></div>`).join('')}</div>`;
+}
+
+function render(){
+  if (!configured()){ $('app').innerHTML='<div class="panel"><p class="faint">Supabase is not configured.</p></div>'; return; }
+  const app = $('app');
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
+    : G.phase==='write' ? 'Everyone writes three'
+    : G.phase==='gameover' ? 'Game over'
+    : `${G.subject} · ${G.round} of ${G.players.length}`;
+
+  if (G.phase==='setup'){
+    const had=$('nameInput'); const keep=had?had.value:'';
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Players (3–12)</div>
+        <div style="display:flex;gap:8px;margin:12px 0">
+          <input type="text" id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-gold" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.players.length ? G.players.map(p=>`<div class="row"><span>${vpAvatar(p)} ${esc(p)}</span>
+          <button class="btn-ghost" onclick="removePlayer('${jss(p)}')">Remove</button></div>`).join('')
+          : '<p class="faint" style="font-style:italic">Nobody yet.</p>'}
+        <p class="faint" style="font-size:13px;margin-top:10px">Everybody gets a turn, so the game
+           is as long as the table.</p>
+        <button class="btn-gold full" style="margin-top:14px" onclick="startGame()">Start writing</button>
+      </div>
+      <div class="panel"><details><summary>How to play</summary>
+        <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
+          <p>Write three things about yourself. <b style="color:var(--ink)">Two of them true, one
+             invented</b>, and tell your phone which is which.</p>
+          <p>Then one at a time everyone's three appear and the rest of the table votes on which is
+             the lie. Your phone shuffles them, so the lie is not sitting where you put it.</p>
+          <p>A point for spotting a lie, and a point to the author for everyone they fool. The best
+             lies are boring and true-sounding; the best truths are the ones nobody believes.</p>
+        </div></details></div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase==='write'){
+    const done = me && G.sets[me];
+    // keyed to the player, not random, or it would change on every poll
+    let h = 0; for (const ch of String(me||'')) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+    const hint = HINTS[h % HINTS.length];
+    keepLines();
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Three things about you</div>
+        ${!me ? '<p class="faint" style="margin-top:10px">Pick your seat below.</p>'
+          : done
+            ? '<p class="faint" style="margin-top:10px">Yours are in. Waiting for the others.</p>'
+            : `<p class="faint" style="font-size:14px;margin-top:6px">Two true, one invented. Then
+                 tap the invented one.</p>
+               ${[0,1,2].map(i=>`<input type="text" id="s${i}" placeholder="Statement ${i+1}"
+                  autocomplete="off" style="margin-top:9px" value="${esc(draftLines[i]||'')}"
+                  oninput="draftLines[${i}]=this.value">
+                 <button class="stmt ${draftLie===i?'on':''}" onclick="pickLie(${i})"
+                   style="padding:9px 12px;font-size:13px;margin-top:5px">${
+                   draftLie===i ? 'This is the lie ✓' : 'Mark this one as the lie'}</button>`).join('')}
+               <p class="hint">Stuck? Try ${esc(hint)}.</p>
+               <button class="btn-gold full" onclick="submitSet()">Hand them in</button>`}
+      </div>
+      <div class="panel"><div class="eyebrow">Written</div>
+        ${G.players.map(p=>`<div class="row"><span>${vpAvatar(p)} ${esc(p)}</span>
+          <span class="${G.sets[p]?'tick':'dot'}">${G.sets[p]?'✓ in':'…'}</span></div>`).join('')}
+      </div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='guess'){
+    const set = G.sets[G.subject];
+    const mine = me && me !== G.subject;
+    const myGuess = me ? G.guesses[me] : undefined;
+    const away = vpAway(G, G.players);
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">${vpAvatar(G.subject)} ${esc(G.subject)} says</div>
+        ${set.lines.map((l,i)=>`<button class="stmt ${myGuess===i?'on':''}"
+          ${mine && myGuess===undefined ? `onclick="guessLie(${i})"` : 'disabled'}>${esc(l)}</button>`).join('')}
+        <p class="faint" style="font-size:14px;margin-top:12px">${
+          me === G.subject ? 'Say nothing convincing. Or do.'
+          : myGuess !== undefined ? 'Locked in. Waiting for the others.'
+          : mine ? 'Which one is invented?' : 'Pick your seat below to vote.'}</p>
+      </div>
+      <div class="panel"><div class="eyebrow">Votes in</div>
+        ${G.players.filter(p=>p!==G.subject).map(p=>`<div class="row">
+          <span>${vpAvatar(p)} ${esc(p)} ${away.includes(p)?'<span class="away">away</span>':''}</span>
+          <span class="${G.guesses[p]!==undefined?'tick':'dot'}">${G.guesses[p]!==undefined?'✓ in':'…'}</span></div>`).join('')}
+      </div>` + scoresHTML() + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='result'){
+    const l = G.log[0];
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">${vpAvatar(l.subject)} ${esc(l.subject)}</div>
+        ${l.lines.map((line,i)=>`<div class="stmt ${i===l.lie?'lie':'true'}">${esc(line)}
+          <span class="tag">${i===l.lie?'the lie':'true'}</span></div>`).join('')}
+        <p class="faint" style="margin-top:14px">${l.caught} caught it, ${l.fooled} did not.
+          ${l.fooled ? esc(l.subject)+' takes '+l.fooled+' point'+(l.fooled===1?'':'s')+'.' : 'Nobody was fooled.'}</p>
+      </div>
+      <div class="panel"><div class="eyebrow">Who guessed what</div>
+        ${G.players.filter(p=>p!==l.subject).map(p=>`<div class="row">
+          <span>${vpAvatar(p)} ${esc(p)}</span>
+          <span class="${G.guesses[p]===l.lie?'tick':'faint'}">${esc(l.lines[G.guesses[p]]||'—')}</span></div>`).join('')}
+      </div>
+      <div class="panel">
+        <button class="btn-gold full" onclick="nextRound()">${
+          G.round >= G.players.length ? 'Final scores' : 'Next player'}</button>
+        <button class="btn-ghost full" onclick="backToSetup()">Change players</button>
+      </div>` + scoresHTML() + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='gameover'){
+    const best = Math.max(0, ...G.players.map(p=>G.scores[p]||0));
+    const winners = G.players.filter(p=>(G.scores[p]||0)===best);
+    if (window.vpMaybeReport) vpMaybeReport(G, 'twotruths', ROOM,
+      G.players.map(p => ({ player:p, score:G.scores[p]||0, won: winners.includes(p) })));
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Final</div>
+        <p class="big">${winners.map(w=>vpAvatar(w)+' '+esc(w)).join(' & ')}</p>
+        <p class="faint">on ${best} point${best===1?'':'s'}.</p>
+        <div class="stack">
+          <button class="btn-gold" onclick="playAgain(true)">Play again · same group</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New group</button>
+        </div>
+      </div>` + scoresHTML() + `
+      <div class="panel"><div class="eyebrow">Every lie</div>
+        ${G.log.slice().reverse().map(x=>`<div class="row">
+          <span class="faint">${esc(x.subject)}: ${esc(x.lines[x.lie])}</span>
+          <span>${x.caught}/${x.caught + x.fooled}</span></div>`).join('')}
+      </div>` + vpFeedbackHTML('Two Truths and a Lie');
+    return;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+function newRoomCode(){ const r=new Uint32Array(4); crypto.getRandomValues(r);
+  let c=''; for(let i=0;i<4;i++) c+=CODE_ALPHABET[r[i]%CODE_ALPHABET.length]; return c; }
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false, pollTimer = null, curRate = 0;
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+function pollRate(){ return ['write','guess'].includes(G && G.phase) ? 1200 : 2500; }
+function schedulePoll(){
+  const want = pollRate(); if (want===curRate) return;
+  curRate = want; if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{ await poll(); schedulePoll(); }, want);
+}
+function enterRoom(){
+  if (!me && G) me = vpRecallSeat(GAME_ID, ROOM, G.players);
+  joined=true; history.replaceState(null,'',inviteURL());
+  renderRoomBar(); render(); schedulePoll(); }
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } curRate=0;
+  vpForgetSeat(GAME_ID, ROOM);
+  joined=false; ROOM=''; G=null; me=null; pending=null; draftLie=null;
+  history.replaceState(null,'',location.pathname);
+  $('roombar').innerHTML=''; $('crumb').textContent=''; setErr(''); renderLobby();
+}
+async function createRoom(){
+  setErr('');
+  const btn=$('createBtn'); if(btn){ btn.disabled=true; btn.textContent='Creating…'; }
+  try {
+    for (let i=0;i<5;i++){
+      ROOM=newRoomCode();
+      if (await loadState()) continue;
+      G=structuredClone(FRESH);
+      if (!(await saveState(G))) continue;
+      enterRoom(); return;
+    }
+    ROOM=''; setErr('Could not find a free code. Please try again.');
+  } catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); }
+  if ($('createBtn')){ $('createBtn').disabled=false; $('createBtn').textContent='Create a game'; }
+}
+async function joinRoom(raw){
+  setErr('');
+  const c=cleanCode(raw);
+  if (c.length<4){ setErr('Enter the 4-character code.'); return; }
+  ROOM=c;
+  let s; try { s=await loadState(); }
+  catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM=''; renderLobby('No game found with code '+c+'. Check the code, or start a new one.'); return; }
+  G = hydrate(s); stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+function copyInvite(){
+  const url=inviteURL();
+  const done=()=>{ const b=$('copyBtn'); if(!b)return; b.textContent='Link copied';
+    setTimeout(()=>{ if($('copyBtn')) $('copyBtn').textContent='Copy invite link'; },1600); };
+  const fb=()=>{ const f=$('inviteField'); if(f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done,fb);
+  else fb();
+}
+function renderRoomBar(){
+  $('roombar').innerHTML = `<div class="roombar">
+      <div class="rb-top"><span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span></div>
+      <input type="text" id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div></div>`;
+}
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game and send the link to
+        everyone playing. What you write shows on your own phone only, until it is your turn.</p>
+      <button class="btn-gold full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input type="text" id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-gold" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') joinRoom(e.target.value); });
+}
+(async function boot(){
+  try {
+    const r = await fetch('content/prompts.json', { cache:'no-cache' });
+    const pack = await r.json();
+    if (pack.twoTruthsHints && pack.twoTruthsHints.length) HINTS = pack.twoTruthsHints;
+  } catch {}
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM); else renderLobby();
+})();
+</script>
+</body>
+</html>

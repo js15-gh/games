@@ -19,7 +19,7 @@
     --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
     --magenta:#C2185B;
     --crimson:#A32633; --thread:#C1362B; --charades:#C2185B;
-    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E; --oneword:#C4573B; --dial:#2E6FA8; --cipher:#1E7A4C; --clover:#4B8C3A; --facedown:#A83E86; --fibbers:#8A6B1E; --daily:#B5246B;
+    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E; --oneword:#C4573B; --dial:#2E6FA8; --cipher:#1E7A4C; --clover:#4B8C3A; --facedown:#A83E86; --fibbers:#8A6B1E; --daily:#B5246B; --mostlikely:#1F7A73; --thisorthat:#6A4FB0; --twotruths:#9C7A1E;
   }
   * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
   body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
@@ -244,6 +244,27 @@ const GAMES = [
     blurb:"Everyone holds secret numbers and the table must play them lowest to highest — with no "
         + "talking, no counting and no signals. Sounds impossible. Stops being impossible.",
     tags:['Co-operative','No talking'] },
+
+  { slug:'most-likely-online.html', name:'Most Likely To', emoji:'👉', accent:'--mostlikely',
+    who:'3–16 players', time:'15–30 min', age:8, type:'party',
+    occasions:['diwali','wedding','kitty','travel','kids'],
+    blurb:"Who is most likely to talk their way out of a parking ticket? Everyone votes secretly, "
+        + "then it all comes out at once. Family mode is on by default.",
+    tags:['Quick','Family mode'] },
+
+  { slug:'this-or-that-online.html', name:'This or That', emoji:'⚖️', accent:'--thisorthat',
+    who:'3–16 players', time:'15–25 min', age:8, type:'party',
+    occasions:['diwali','wedding','kitty','travel','kids'],
+    blurb:"Tea or coffee? One person answers where nobody can see, and everybody else guesses what "
+        + "they said. It sounds like a poll and turns into an argument.",
+    tags:['Quick','How well do you know them'] },
+
+  { slug:'two-truths-online.html', name:'Two Truths and a Lie', emoji:'🤥', accent:'--twotruths',
+    who:'3–12 players', time:'20–35 min', age:9, type:'deduction',
+    occasions:['wedding','kitty','travel','kids'],
+    blurb:"Two true things and one you made up. Your phone shuffles them so the lie isn't sitting "
+        + "where you put it. A point for spotting one, a point for every person you fool.",
+    tags:['Icebreaker','Everyone gets a turn'] },
 
   { slug:'clover-online.html', name:'Clover', emoji:'🍀', accent:'--clover',
     who:'2–8 players', time:'20–30 min', age:10, type:'word',
