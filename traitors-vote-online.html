@@ -3,6 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="3–20 players · about 10–30 minutes · suggested from age 10 · free, no sign-up, plays in any browser.">
+<link rel="canonical" href="https://velaparties.com/traitors-vote-online.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="The Round Table">
+<meta property="og:description" content="3–20 players · about 10–30 minutes · suggested from age 10 · free, no sign-up, plays in any browser.">
+<meta property="og:url" content="https://velaparties.com/traitors-vote-online.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The Round Table">
+<meta name="twitter:description" content="3–20 players · about 10–30 minutes · suggested from age 10 · free, no sign-up, plays in any browser.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Game",
+      "name": "The Round Table",
+      "url": "https://velaparties.com/traitors-vote-online.html",
+      "description": "3–20 players · about 10–30 minutes · suggested from age 10 · free, no sign-up, plays in any browser.",
+      "genre": "Party game",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 3,
+        "maxValue": 20
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "The Round Table",
+          "item": "https://velaparties.com/traitors-vote-online.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
 <title>The Round Table — Traitors Vote</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
 <style>
@@ -70,6 +123,24 @@
               text-decoration:none; font-family:'Cinzel',serif; font-size:12px;
               letter-spacing:.18em; text-transform:uppercase; }
   .homelink:hover, .homelink:focus-visible { color:var(--gold); }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
 </style>
 </head>
 <body>
@@ -83,6 +154,18 @@
   <p class="err" id="err"></p>
   <div id="roombar"></div>
   <div id="app"><p class="faint center" style="margin-top:60px">Lighting the candles…</p></div>
+
+  <section class="howto">
+    <h2>How to play The Round Table</h2>
+    <ol>
+      <li>One person opens the game and shares the link; everyone else joins on their own phone.</li>
+      <li>When it is time to vote, each player taps a name. Nobody can see anyone else's choice — but everyone can see <b>who has voted and who has not</b>, which is the part that stops the table waiting in silence.</li>
+      <li>Once the last vote is in, the table reveals together and the accused is banished.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">Six of you suspect Priya. Everyone taps a name privately. When the last vote lands, the screen reveals all six at once: Priya 4, Rahul 2. Priya is banished — and nobody had to be the first to raise a hand and set the room off.</p></div>
+    <p class="facts">3–20 players · about 10–30 minutes · suggested from age 10 · free, no sign-up, plays in any browser.</p>
+  </section>
   <footer id="foot">LIVE TABLE — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
 </div>
 

@@ -5,11 +5,63 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Puzzle — sixteen words, four groups, one a day</title>
 <meta name="description" content="A new grouping puzzle every day. Sixteen words hide four groups of four — sweets, cricket shots, things that ring. Everyone gets the same puzzle. Free, no sign-up, plays on any phone.">
+<link rel="canonical" href="https://velaparties.com/daily-puzzle.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Daily Puzzle">
+<meta property="og:description" content="A new grouping puzzle every day. Sixteen words hide four groups of four — sweets, cricket shots, things that ring. Everyone gets the same puzzle. Free, no sign-up, plays on any phone.">
+<meta property="og:url" content="https://velaparties.com/daily-puzzle.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Daily Puzzle">
+<meta name="twitter:description" content="A new grouping puzzle every day. Sixteen words hide four groups of four — sweets, cricket shots, things that ring. Everyone gets the same puzzle. Free, no sign-up, plays on any phone.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Game",
+      "name": "Daily Puzzle",
+      "url": "https://velaparties.com/daily-puzzle.html",
+      "description": "A new grouping puzzle every day. Sixteen words hide four groups of four — sweets, cricket shots, things that ring. Everyone gets the same puzzle. Free, no sign-up, plays on any phone.",
+      "genre": "Party game",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 1,
+        "maxValue": 1
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Daily Puzzle",
+          "item": "https://velaparties.com/daily-puzzle.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧩</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#8C7C68;
+    --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#736451;
     --marigold:#E08A1E; --magenta:#B5246B; --g1:#F2C14E; --g2:#8FBF6B;
     --g3:#6FA8DC; --g4:#C99BD4; --red:#C0392B;
   }
@@ -63,6 +115,24 @@
   details summary { color:var(--magenta); cursor:pointer; font-size:14px; }
   footer { text-align:center; padding-top:22px; color:var(--faint); font-size:12px; }
   footer a { color:var(--faint); }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
 </style>
 </head>
 <body>
@@ -73,6 +143,18 @@
     <h1>DAILY <span class="s">PUZZLE</span></h1>
   </header>
   <div id="app"><p class="faint center" style="margin-top:50px">Building today's puzzle…</p></div>
+
+  <section class="howto">
+    <h2>How to play Daily Puzzle</h2>
+    <ol>
+      <li>Sixteen words hide four groups of four. Find a group and it locks in.</li>
+      <li>Four wrong guesses and the puzzle keeps its secrets.</li>
+      <li>Everyone gets the same puzzle, and a new one arrives at midnight.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">Among the sixteen you spot <b>Ladoo, Jalebi, Barfi</b> and <b>Peda</b>. You tap all four and press Submit — they lock in as <b>Indian sweets</b> and leave twelve words behind. Get four wrong and it stops; but no word ever honestly belongs to two of the day's groups, so if it feels like it does, one of them is the trap.</p></div>
+    <p class="facts">On your own · about 5 minutes · suggested from age 9 · free, no sign-up, plays in any browser.</p>
+  </section>
   <footer>A new one every day · <a href="./">Vela Parties</a></footer>
 </div>
 

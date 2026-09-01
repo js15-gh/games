@@ -5,6 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cipher — say enough for your team, not enough for theirs</title>
 <meta name="description" content="Two teams, four secret words each, and a code to transmit. Your clues have to be clear to your own side and useless to the other — who are listening to every one of them. Free browser game for 4–12 players.">
+<link rel="canonical" href="https://velaparties.com/cipher-online.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Cipher">
+<meta property="og:description" content="Two teams, four secret words each, and a code to transmit. Your clues have to be clear to your own side and useless to the other — who are listening to every one of them. Free browser game for 4–12 players.">
+<meta property="og:url" content="https://velaparties.com/cipher-online.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cipher">
+<meta name="twitter:description" content="Two teams, four secret words each, and a code to transmit. Your clues have to be clear to your own side and useless to the other — who are listening to every one of them. Free browser game for 4–12 players.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Game",
+      "name": "Cipher",
+      "url": "https://velaparties.com/cipher-online.html",
+      "description": "Two teams, four secret words each, and a code to transmit. Your clues have to be clear to your own side and useless to the other — who are listening to every one of them. Free browser game for 4–12 players.",
+      "genre": "Party game",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 4,
+        "maxValue": 12
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Cipher",
+          "item": "https://velaparties.com/cipher-online.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -77,6 +129,24 @@
   .homelink:hover { color:var(--lime); }
   details summary { color:var(--lime); cursor:pointer; font-size:14px; }
   footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
 </style>
 </head>
 <body>
@@ -89,6 +159,18 @@
   <p class="err" id="err"></p>
   <div id="roombar"></div>
   <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
+
+  <section class="howto">
+    <h2>How to play Cipher</h2>
+    <ol>
+      <li>Each side gets four secret keywords, numbered 1 to 4, that only that side can see.</li>
+      <li>Each round one player is given a three-digit code and gives three clues, one per keyword, in order.</li>
+      <li>Your own side must read it. So must the other side, who are writing down every clue you have ever given — the app keeps that grid for you.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">Your words are <b>1 Igloo, 2 Yacht, 3 Ferry, 4 Dolphin</b> and your code is <b>1-4-3</b>. You say “cold, flipper, crossing”. Your team reads it easily. But now the other side knows that your 1 has something to do with cold — and they will remember that for the rest of the game.</p></div>
+    <p class="facts">4–12 players · about 30–45 minutes · suggested from age 12 · free, no sign-up, plays in any browser.</p>
+  </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
 </div>
 

@@ -5,6 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Your group — Vela Parties</title>
 <meta name="description" content="A permanent page for a group that plays together: your own game codes that keep working, and a scoreboard that carries from one night to the next.">
+<link rel="canonical" href="https://velaparties.com/group.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Groups & Standings">
+<meta property="og:description" content="A permanent page for a group that plays together: your own game codes that keep working, and a scoreboard that carries from one night to the next.">
+<meta property="og:url" content="https://velaparties.com/group.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Groups & Standings">
+<meta name="twitter:description" content="A permanent page for a group that plays together: your own game codes that keep working, and a scoreboard that carries from one night to the next.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "Groups & Standings",
+      "url": "https://velaparties.com/group.html",
+      "description": "A permanent page for a group that plays together: your own game codes that keep working, and a scoreboard that carries from one night to the next.",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Any web browser",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Groups & Standings",
+          "item": "https://velaparties.com/group.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎪</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
@@ -82,6 +134,24 @@
   }
   footer { text-align:center; padding-top:34px; color:var(--goldDim); font-size:13px; }
   footer a { color:var(--goldDim); }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
 </style>
 </head>
 <body>
@@ -94,6 +164,18 @@
   </header>
   <p class="err" id="err"></p>
   <div id="app"><p class="faint center" style="margin-top:50px">Loading…</p></div>
+
+  <section class="howto">
+    <h2>How to play Groups & Standings</h2>
+    <ol>
+      <li>Make a group once and share its link with the people you play with regularly.</li>
+      <li>Add a game to the group and its room <b>keeps its code</b> — the same link works every week.</li>
+      <li>Every finished game reports back, and standings carry from one night to the next.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">Your group adds a Judgement room and gets the code <b>YXGQ</b>. Next Friday the same link opens the same room. After three weeks the standings show who has played what, with points kept <b>per game</b> — because a Judgement night is worth a few hundred and an Ito night about four, and adding those together would mean nothing.</p></div>
+    <p class="facts">Free, no accounts, nothing to install. Works in any phone browser.</p>
+  </section>
   <footer><p><a href="./">All games</a> · <a href="privacy.html">Privacy</a></p></footer>
 </div>
 

@@ -5,6 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dumb Charades — Bollywood, on your phones</title>
 <meta name="description" content="Bollywood dumb charades for a group in one room. The film shows only on the actor's phone — no whispering, no walking out of the room.">
+<link rel="canonical" href="https://velaparties.com/dumb-charades-online.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Bollywood Dumb Charades">
+<meta property="og:description" content="Bollywood dumb charades for a group in one room. The film shows only on the actor's phone — no whispering, no walking out of the room.">
+<meta property="og:url" content="https://velaparties.com/dumb-charades-online.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Bollywood Dumb Charades">
+<meta name="twitter:description" content="Bollywood dumb charades for a group in one room. The film shows only on the actor's phone — no whispering, no walking out of the room.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Game",
+      "name": "Bollywood Dumb Charades",
+      "url": "https://velaparties.com/dumb-charades-online.html",
+      "description": "Bollywood dumb charades for a group in one room. The film shows only on the actor's phone — no whispering, no walking out of the room.",
+      "genre": "Party game",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 4,
+        "maxValue": 20
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Bollywood Dumb Charades",
+          "item": "https://velaparties.com/dumb-charades-online.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -81,6 +133,24 @@
   details summary { color:var(--gold); cursor:pointer; font-size:14px; }
   footer { text-align:center; padding-top:28px; color:var(--faint);
            font-size:12px; letter-spacing:.2em; }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
 </style>
 </head>
 <body>
@@ -93,6 +163,18 @@
   <p class="err" id="err"></p>
   <div id="roombar"></div>
   <div id="app"><p class="faint center" style="margin-top:60px">Rolling the titles…</p></div>
+
+  <section class="howto">
+    <h2>How to play Bollywood Dumb Charades</h2>
+    <ol>
+      <li>Split into two teams. The opposing team chooses the film — they type it on their own phones.</li>
+      <li>It appears on the actor's phone <b>only</b>. Nobody leaves the room and nobody whispers.</li>
+      <li>Act it out. Your team shouts guesses against the clock.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">Team B types <b>Sholay</b>. It appears on Asha's screen and nowhere else. She starts acting; her team shouts. If they get it inside the time, Team A scores — and Team B never had to send anyone out of the room to keep the film secret.</p></div>
+    <p class="facts">4–20 players · about 20–40 minutes · suggested from age 8 · free, no sign-up, plays in any browser.</p>
+  </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
 </div>
 

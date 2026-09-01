@@ -5,6 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Face Down — bet that you can turn over four petals and no thorn</title>
 <meta name="description" content="Everyone hides one disc at a time. Then somebody bets how many they can turn over without finding a thorn — starting with their own. A free bluffing game for 3–8 people on their own phones.">
+<link rel="canonical" href="https://velaparties.com/face-down-online.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Face Down">
+<meta property="og:description" content="Everyone hides one disc at a time. Then somebody bets how many they can turn over without finding a thorn — starting with their own. A free bluffing game for 3–8 people on their own phones.">
+<meta property="og:url" content="https://velaparties.com/face-down-online.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Face Down">
+<meta name="twitter:description" content="Everyone hides one disc at a time. Then somebody bets how many they can turn over without finding a thorn — starting with their own. A free bluffing game for 3–8 people on their own phones.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Game",
+      "name": "Face Down",
+      "url": "https://velaparties.com/face-down-online.html",
+      "description": "Everyone hides one disc at a time. Then somebody bets how many they can turn over without finding a thorn — starting with their own. A free bluffing game for 3–8 people on their own phones.",
+      "genre": "Party game",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 3,
+        "maxValue": 8
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Face Down",
+          "item": "https://velaparties.com/face-down-online.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌺</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -73,6 +125,24 @@
   .homelink:hover { color:var(--rose); }
   details summary { color:var(--rose); cursor:pointer; font-size:14px; }
   footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
 </style>
 </head>
 <body>
@@ -85,6 +155,18 @@
   <p class="err" id="err"></p>
   <div id="roombar"></div>
   <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
+
+  <section class="howto">
+    <h2>How to play Face Down</h2>
+    <ol>
+      <li>You each have four discs: three petals and one thorn. Everybody hides one at the same time.</li>
+      <li>In turn you either hide another or bet — “I can turn over four and not find a thorn.” Others raise or pass; the last one betting has to do it.</li>
+      <li>And they must clear <b>their own pile first, all of it</b>, before touching anybody else's.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">You bet <b>3</b>. Your own pile is one petal, so that is one. You pick Bilal's top disc — petal, two. You pick Chetan's — <b>thorn</b>. You lose a disc at random. This is why burying your own thorn early is such a bad idea, and why doing it anyway is such a good bluff.</p></div>
+    <p class="facts">3–8 players · about 20–35 minutes · suggested from age 10 · free, no sign-up, plays in any browser.</p>
+  </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
 </div>
 

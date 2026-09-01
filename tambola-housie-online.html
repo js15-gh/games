@@ -5,6 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tambola — Housie tickets and caller on your phones</title>
 <meta name="description" content="Play Tambola (Housie) with a group in one room. Real 3x9 tickets on every phone, one caller, and claims checked automatically. No paper tickets, no arguments.">
+<link rel="canonical" href="https://velaparties.com/tambola-housie-online.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Tambola (Housie)">
+<meta property="og:description" content="Play Tambola (Housie) with a group in one room. Real 3x9 tickets on every phone, one caller, and claims checked automatically. No paper tickets, no arguments.">
+<meta property="og:url" content="https://velaparties.com/tambola-housie-online.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Tambola (Housie)">
+<meta name="twitter:description" content="Play Tambola (Housie) with a group in one room. Real 3x9 tickets on every phone, one caller, and claims checked automatically. No paper tickets, no arguments.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Game",
+      "name": "Tambola (Housie)",
+      "url": "https://velaparties.com/tambola-housie-online.html",
+      "description": "Play Tambola (Housie) with a group in one room. Real 3x9 tickets on every phone, one caller, and claims checked automatically. No paper tickets, no arguments.",
+      "genre": "Party game",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 2,
+        "maxValue": 30
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Tambola (Housie)",
+          "item": "https://velaparties.com/tambola-housie-online.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -91,6 +143,24 @@
   details summary { color:var(--gold); cursor:pointer; font-size:14px; }
   footer { text-align:center; padding-top:28px; color:var(--faint);
            font-size:12px; letter-spacing:.2em; }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
 </style>
 </head>
 <body>
@@ -103,6 +173,18 @@
   <p class="err" id="err"></p>
   <div id="roombar"></div>
   <div id="app"><p class="faint center" style="margin-top:60px">Printing the tickets…</p></div>
+
+  <section class="howto">
+    <h2>How to play Tambola (Housie)</h2>
+    <ol>
+      <li>One person is the caller; everyone else gets a real three-by-nine ticket on their own phone.</li>
+      <li>The caller taps numbers as they come out. Any number on your ticket fills itself in — no pens, no missed calls.</li>
+      <li>Claim a prize and the app checks it against the numbers actually called, not against what you tapped.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">The caller taps <b>47</b>. It is on your ticket, so it fills in. Two calls later your top row is complete and you tap <b>Top Line</b>. The app checks all five numbers against what has genuinely been called and awards it — so a wrong claim is caught before it becomes an argument.</p></div>
+    <p class="facts">2–30 players · about 20–40 minutes · suggested from age 6 · free, no sign-up, plays in any browser.</p>
+  </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
 </div>
 

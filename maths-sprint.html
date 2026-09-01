@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maths Sprint — sixty seconds, as many as you can</title>
+<meta name="description" content="A mental maths game that gets harder as you get better. Sixty seconds, four levels from tables to two-step problems, and it shows you what you got wrong. Free, no sign-up, works on any phone.">
+<link rel="canonical" href="https://velaparties.com/maths-sprint.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Maths Sprint">
+<meta property="og:description" content="A mental maths game that gets harder as you get better. Sixty seconds, four levels from tables to two-step problems, and it shows you what you got wrong. Free, no sign-up, works on any phone.">
+<meta property="og:url" content="https://velaparties.com/maths-sprint.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Maths Sprint">
+<meta name="twitter:description" content="A mental maths game that gets harder as you get better. Sixty seconds, four levels from tables to two-step problems, and it shows you what you got wrong. Free, no sign-up, works on any phone.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Game",
+      "name": "Maths Sprint",
+      "url": "https://velaparties.com/maths-sprint.html",
+      "description": "A mental maths game that gets harder as you get better. Sixty seconds, four levels from tables to two-step problems, and it shows you what you got wrong. Free, no sign-up, works on any phone.",
+      "genre": "Party game",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 1,
+        "maxValue": 1
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Maths Sprint",
+          "item": "https://velaparties.com/maths-sprint.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>➗</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#736451;
+          --marigold:#E08A1E; --magenta:#B5246B; --green:#2E7D4F; --red:#C0392B; }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:22px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.05em;
+       font-size:clamp(26px,7vw,40px); margin:4px 0 0; }
+  h1 .s { color:var(--magenta); }
+  .eyebrow { color:var(--marigold); letter-spacing:.2em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:18px 16px; margin-top:14px; }
+  .faint { color:var(--faint); }
+  .center { text-align:center; }
+  button { cursor:pointer; border-radius:10px; font-family:'Karla',system-ui,sans-serif; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:13px 18px;
+         font-size:15px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+               padding:11px 14px; font-size:13px; }
+  .full { width:100%; margin-top:10px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:9px; margin-top:12px; }
+  .lvl { background:#F6EFE3; border:1px solid var(--line); border-radius:10px; padding:12px 10px;
+         font-size:14px; text-align:center; color:var(--ink); }
+  .lvl.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .lvl small { display:block; color:var(--faint); font-size:11.5px; margin-top:3px; }
+  .lvl.on small { color:#D9CEBF; }
+
+  .q { font-family:'Space Grotesk',sans-serif; font-size:clamp(38px,13vw,64px);
+       letter-spacing:.02em; margin:6px 0 0; }
+  .entry { font-family:'Space Grotesk',sans-serif; font-size:clamp(30px,10vw,48px);
+           color:var(--magenta); min-height:1.2em; letter-spacing:.06em; }
+  .entry.blank { color:var(--line); }
+  .pad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
+  .key { background:#F6EFE3; border:1px solid var(--line); border-radius:11px; padding:16px 0;
+         font-family:'Space Grotesk',sans-serif; font-size:24px; color:var(--ink); }
+  .key:active { background:var(--ink); color:#fff; }
+  .key.wide { grid-column:span 1; font-size:18px; }
+  .bar { height:9px; border-radius:99px; background:#EFE6D8; overflow:hidden; margin-top:14px; }
+  .bar span { display:block; height:100%; background:var(--marigold); transition:width .25s linear; }
+  .bar.low span { background:var(--red); }
+  .stats { display:flex; justify-content:space-between; margin-top:10px; font-size:14px; }
+  .stats b { font-family:'Space Grotesk',sans-serif; font-size:20px; display:block; }
+  .flash { min-height:22px; font-weight:700; font-size:15px; margin-top:8px; }
+  .flash.good { color:var(--green); } .flash.bad { color:var(--red); }
+  .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(40px,14vw,72px); line-height:1;
+         color:var(--magenta); }
+  .row { display:flex; justify-content:space-between; gap:10px; padding:8px 0;
+         border-bottom:1px solid var(--line); font-size:15px; }
+  .row:last-child { border-bottom:none; }
+  .row .yours { color:var(--red); } .row .right { color:var(--green); font-weight:700; }
+  .homelink { display:inline-block; margin-top:16px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  .homelink:hover { color:var(--magenta); }
+  details summary { color:var(--magenta); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:22px; color:var(--faint); font-size:12px; }
+  footer a { color:var(--faint); }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>MATHS <span class="s">SPRINT</span></h1>
+  </header>
+  <div id="app"></div>
+
+  <section class="howto">
+    <h2>How to play Maths Sprint</h2>
+    <ol>
+      <li>Pick a level and a length, then answer as many as you can before the clock runs out.</li>
+      <li>Three right in a row and the numbers get bigger; one wrong and they ease off. You find your own ceiling.</li>
+      <li>At the end it shows every question you got wrong next to the right answer.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">You choose <b>Standard</b> and 60 seconds. <b>7 × 8</b> appears. You tap 5, then 6, then Answer — right, and your streak goes to three, so the next questions grow. Getting one wrong costs nothing but the seconds it took; the clock is the only pressure here.</p></div>
+    <p class="facts">On your own · about 1 minutes · suggested from age 8 · free, no sign-up, plays in any browser.</p>
+  </section>
+  <footer>On your own, any time · <a href="./">Vela Parties</a></footer>
+</div>
+
+<script>
+/* Every question is generated, so the game never runs out and never needs a
+ * deploy to stay fresh. It also means the answer is arrived at the same way
+ * the question was — there is no answer key to get wrong.
+ *
+ * The difficulty moves WITHIN a level rather than between levels: three right
+ * in a row and the numbers grow, one wrong and they shrink. A child who picks
+ * "Standard" stays in standard territory and finds their own ceiling there,
+ * which is the point — a game that jumps you to something unrecognisable
+ * after a good run just teaches you to stop trying.
+ */
+const STORE = 'vp:maths:';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ri = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const gcd = (a,b) => b ? gcd(b, a % b) : a;
+/* A percentage question is only fair if the answer is a whole number: the
+   number pad has no decimal key, so "12% of 60" — 7.2 — cannot be typed at
+   all. Making the base a multiple of 100/gcd(pct,100) guarantees it never is. */
+function percentQ(pct, maxMultiple){
+  const step = 100 / gcd(pct, 100);
+  const base = ri(1, Math.max(1, maxMultiple)) * step;
+  return { q:`${pct}% of ${base}`, a: base * pct / 100 };
+}
+
+/* Each level is a list of question makers taking a "heat" from 0 to 1.
+   Every maker returns { q, a } and computes its own answer. */
+const LEVELS = [
+  { key:'warm', name:'Warm-up', hint:'Adding and taking away, small numbers', age:'8+',
+    makers: [
+      h => { const a = ri(2, 9 + Math.round(h*20)), b = ri(2, 9 + Math.round(h*20));
+             return { q:`${a} + ${b}`, a:a+b }; },
+      h => { const a = ri(5, 12 + Math.round(h*25)), b = ri(1, a);
+             return { q:`${a} − ${b}`, a:a-b }; },
+      h => { const a = ri(2, 5 + Math.round(h*5)), b = ri(2, 5 + Math.round(h*5));
+             return { q:`${a} × ${b}`, a:a*b }; },
+    ] },
+  { key:'std', name:'Standard', hint:'Tables to 12, and hundreds', age:'10+',
+    makers: [
+      h => { const a = ri(11, 40 + Math.round(h*160)), b = ri(11, 40 + Math.round(h*160));
+             return { q:`${a} + ${b}`, a:a+b }; },
+      h => { const a = ri(30, 80 + Math.round(h*220)), b = ri(10, a - 1);
+             return { q:`${a} − ${b}`, a:a-b }; },
+      h => { const a = ri(2, 12), b = ri(2, 9 + Math.round(h*3));
+             return { q:`${a} × ${b}`, a:a*b }; },
+      h => { const b = ri(2, 12), ans = ri(2, 8 + Math.round(h*4));
+             return { q:`${b*ans} ÷ ${b}`, a:ans }; },
+    ] },
+  { key:'tricky', name:'Tricky', hint:'Negatives, bigger tables, percentages', age:'12+',
+    makers: [
+      h => { const a = ri(20, 90), b = ri(20, 90 + Math.round(h*60));
+             return { q:`${a} − ${b}`, a:a-b }; },
+      h => { const a = ri(12, 19), b = ri(3, 12 + Math.round(h*7));
+             return { q:`${a} × ${b}`, a:a*b }; },
+      h => percentQ(pick([10,20,25,50,5]), 6 + Math.round(h*14)),
+      h => { const n = ri(4, 12 + Math.round(h*8)); return { q:`${n}²`, a:n*n }; },
+      h => { const b = ri(3, 12), ans = ri(3, 9 + Math.round(h*6));
+             return { q:`${b*ans} ÷ ${b}`, a:ans }; },
+    ] },
+  { key:'brutal', name:'Brutal', hint:'Two steps, in your head', age:'13+',
+    makers: [
+      h => { const a = ri(3, 9 + Math.round(h*4)), b = ri(3, 9 + Math.round(h*4)), c = ri(2, 20 + Math.round(h*40));
+             return { q:`${a} × ${b} + ${c}`, a:a*b+c }; },
+      h => { const a = ri(4, 12), b = ri(4, 12), c = ri(2, 9);
+             return { q:`(${a} + ${b}) × ${c}`, a:(a+b)*c }; },
+      h => { const n = ri(6, 15 + Math.round(h*10)); return { q:`${n}² − ${n}`, a:n*n-n }; },
+      h => percentQ(pick([15,30,60,75,12]), 5 + Math.round(h*15)),
+      h => { const b = ri(4, 12), ans = ri(4, 12), extra = ri(2, 15);
+             return { q:`${b*ans} ÷ ${b} + ${extra}`, a:ans+extra }; },
+    ] },
+];
+const levelByKey = (k) => LEVELS.find(l => l.key === k) || LEVELS[1];
+const TIMES = [30, 60, 120];
+
+/* Generated questions can repeat by chance, which feels broken even when it
+   isn't. Try a few times for one we haven't just asked. */
+function makeQuestion(level, heat, recent){
+  for (let i = 0; i < 12; i++){
+    const q = pick(level.makers)(heat);
+    if (!recent.includes(q.q)) return q;
+  }
+  return pick(level.makers)(heat);
+}
+
+// ── state ──
+let levelKey = 'std', seconds = 60;
+let running = false, endsAt = 0, tick = null;
+let cur = null, entry = '', neg = false;
+let score = 0, streak = 0, best = 0, heat = 0, asked = 0;
+let wrong = [], recent = [];
+
+function readBest(k, t){
+  try { return +(JSON.parse(localStorage.getItem(STORE + 'best') || '{}')[k + ':' + t] || 0); }
+  catch { return 0; }
+}
+function writeBest(k, t, v){
+  try {
+    const all = JSON.parse(localStorage.getItem(STORE + 'best') || '{}');
+    if (v > (all[k + ':' + t] || 0)){ all[k + ':' + t] = v; localStorage.setItem(STORE + 'best', JSON.stringify(all)); return true; }
+  } catch {}
+  return false;
+}
+
+function start(){
+  running = true;
+  score = 0; streak = 0; heat = 0; asked = 0; wrong = []; recent = [];
+  entry = ''; neg = false;
+  best = readBest(levelKey, seconds);
+  endsAt = Date.now() + seconds * 1000;
+  next();
+  if (tick) clearInterval(tick);
+  tick = setInterval(() => {
+    if (Date.now() >= endsAt){ finish(); return; }
+    const b = $('bar'); const left = Math.max(0, endsAt - Date.now());
+    if (b){ b.firstElementChild.style.width = (left / (seconds*1000) * 100) + '%';
+            b.classList.toggle('low', left < 10000); }
+    const c = $('clock'); if (c) c.textContent = Math.ceil(left / 1000);
+  }, 120);
+  render();
+}
+function next(){
+  cur = makeQuestion(levelByKey(levelKey), heat, recent);
+  recent = recent.concat([cur.q]).slice(-12);
+  entry = ''; neg = false; asked++;
+}
+function key(k){
+  if (!running) return;
+  if (k === 'del'){ entry = entry.slice(0, -1); render(); return; }
+  if (k === 'neg'){ neg = !neg; render(); return; }
+  if (k === 'go'){ submit(); return; }
+  if (entry.length >= 6) return;
+  if (k === '.' && entry.includes('.')) return;
+  entry += k;
+  render();
+}
+function value(){
+  if (entry === '' || entry === '.') return null;
+  const v = parseFloat(entry);
+  if (!isFinite(v)) return null;
+  return neg ? -v : v;
+}
+/* Getting it wrong costs nothing but the seconds it took, which is the honest
+   penalty — the clock is the only pressure this needs. */
+function submit(){
+  const v = value();
+  if (v === null) return;
+  const right = Math.abs(v - cur.a) < 1e-9;
+  if (right){
+    score++; streak++;
+    if (streak % 3 === 0) heat = Math.min(1, heat + 0.12);
+    flash('good', pick(['Yes','Right','Got it','Correct']));
+  } else {
+    if (wrong.length < 12) wrong.push({ q:cur.q, yours:v, right:cur.a });
+    streak = 0;
+    heat = Math.max(0, heat - 0.08);
+    flash('bad', 'It was ' + cur.a);
+  }
+  next();
+  render();
+}
+let flashTimer = null;
+function flash(kind, text){
+  const f = $('flash');
+  if (!f) return;
+  f.className = 'flash ' + kind; f.textContent = text;
+  if (flashTimer) clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { const g = $('flash'); if (g){ g.textContent = ''; g.className = 'flash'; } }, 900);
+}
+function finish(){
+  running = false;
+  if (tick){ clearInterval(tick); tick = null; }
+  const isBest = writeBest(levelKey, seconds, score);
+  render(isBest);
+}
+function setLevel(k){ levelKey = k; render(); }
+function setTime(t){ seconds = t; render(); }
+
+document.addEventListener('keydown', e => {
+  if (!running) return;
+  if (/^[0-9]$/.test(e.key)) key(e.key);
+  else if (e.key === '.') key('.');
+  else if (e.key === 'Backspace') key('del');
+  else if (e.key === 'Enter') key('go');
+  else if (e.key === '-') key('neg');
+});
+
+// ── render ──
+function render(isBest){
+  const L = levelByKey(levelKey);
+  if (running){
+    $('crumb').textContent = L.name;
+    $('app').innerHTML = `
+      <div class="panel center">
+        <div class="bar" id="bar"><span style="width:100%"></span></div>
+        <div class="stats">
+          <span class="faint">Score<b>${score}</b></span>
+          <span class="faint">Streak<b>${streak}</b></span>
+          <span class="faint">Seconds<b id="clock">${seconds}</b></span>
+        </div>
+        <p class="q">${esc(cur.q)}</p>
+        <p class="entry ${entry?'':'blank'}">${entry ? (neg?'−':'') + esc(entry) : '·'}</p>
+        <div class="flash" id="flash"></div>
+        <div class="pad">
+          ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="key" onclick="key('${n}')">${n}</button>`).join('')}
+          <button class="key wide" onclick="key('neg')">±</button>
+          <button class="key" onclick="key('0')">0</button>
+          <button class="key wide" onclick="key('del')">⌫</button>
+        </div>
+        <button class="btn full" onclick="key('go')">Answer</button>
+        <button class="btn-ghost full" onclick="finish()">Stop</button>
+      </div>`;
+    return;
+  }
+
+  const bestNow = readBest(levelKey, seconds);
+  const finished = asked > 0;
+  $('crumb').textContent = finished ? 'Time' : 'Pick a level';
+  $('app').innerHTML = `
+    ${finished ? `<div class="panel center">
+        <div class="eyebrow">${isBest ? 'A new best' : 'Time'}</div>
+        <p class="big">${score}</p>
+        <p class="faint">right in ${seconds} seconds${
+          isBest ? '' : (bestNow ? ' · your best is ' + bestNow : '')}.</p>
+        ${wrong.length ? `<div style="text-align:left;margin-top:14px">
+          <div class="eyebrow">What went wrong</div>
+          ${wrong.map(w=>`<div class="row"><span>${esc(w.q)}</span>
+            <span><span class="yours">${esc(String(w.yours))}</span> →
+                  <span class="right">${esc(String(w.right))}</span></span></div>`).join('')}
+          </div>` : '<p class="faint" style="margin-top:10px">Not a single one wrong.</p>'}
+        <button class="btn full" onclick="start()">Go again</button>
+      </div>` : ''}
+    <div class="panel">
+      <div class="eyebrow">Level</div>
+      <div class="grid">${LEVELS.map(l=>`
+        <button class="lvl ${levelKey===l.key?'on':''}" onclick="setLevel('${l.key}')">
+          ${esc(l.name)}<small>${esc(l.hint)}</small></button>`).join('')}</div>
+      <div class="eyebrow" style="margin-top:16px">How long</div>
+      <div class="grid">${TIMES.map(t=>`
+        <button class="lvl ${seconds===t?'on':''}" onclick="setTime(${t})">${t}s</button>`).join('')}</div>
+      <p class="faint" style="font-size:13px;margin-top:10px">Best at ${esc(L.name)} for ${seconds}s:
+         <b>${bestNow || '—'}</b>. Suggested from about ${esc(L.age)}.</p>
+      <button class="btn full" onclick="start()">${finished ? 'Start again' : 'Start'}</button>
+    </div>
+    <div class="panel"><details><summary>How it works</summary>
+      <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
+        <p>As many as you can before the clock runs out. Getting one wrong costs you nothing except
+           the seconds it took — the clock is the only pressure here.</p>
+        <p><b style="color:var(--ink)">It follows you.</b> Three right in a row and the numbers get
+           bigger; one wrong and they ease off. You stay inside the level you chose and find your
+           own ceiling in it.</p>
+        <p>At the end it shows you every one you got wrong, next to the right answer. That is the
+           part worth reading.</p>
+        <p>Nothing is sent anywhere. Your best score is kept on this phone only.</p>
+      </div></details></div>`;
+}
+render();
+</script>
+</body>
+</html>

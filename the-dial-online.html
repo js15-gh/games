@@ -5,6 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Dial — how spicy is spicy, exactly?</title>
 <meta name="description" content="One player sees a hidden spot on a sliding scale and gives a clue. Their team moves the dial to find it. A free party game about how differently people read the same word — 4–12 players on their own phones.">
+<link rel="canonical" href="https://velaparties.com/the-dial-online.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="The Dial">
+<meta property="og:description" content="One player sees a hidden spot on a sliding scale and gives a clue. Their team moves the dial to find it. A free party game about how differently people read the same word — 4–12 players on their own phones.">
+<meta property="og:url" content="https://velaparties.com/the-dial-online.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The Dial">
+<meta name="twitter:description" content="One player sees a hidden spot on a sliding scale and gives a clue. Their team moves the dial to find it. A free party game about how differently people read the same word — 4–12 players on their own phones.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Game",
+      "name": "The Dial",
+      "url": "https://velaparties.com/the-dial-online.html",
+      "description": "One player sees a hidden spot on a sliding scale and gives a clue. Their team moves the dial to find it. A free party game about how differently people read the same word — 4–12 players on their own phones.",
+      "genre": "Party game",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 4,
+        "maxValue": 12
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "The Dial",
+          "item": "https://velaparties.com/the-dial-online.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -78,6 +130,24 @@
   .homelink:hover { color:var(--sky); }
   details summary { color:var(--sky); cursor:pointer; font-size:14px; }
   footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
 </style>
 </head>
 <body>
@@ -90,6 +160,18 @@
   <p class="err" id="err"></p>
   <div id="roombar"></div>
   <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
+
+  <section class="howto">
+    <h2>How to play The Dial</h2>
+    <ol>
+      <li>A card gives you a scale — <i>Mild</i> at one end, <i>Spicy</i> at the other. One player is shown a hidden spot along it.</li>
+      <li>They name something that sits exactly there. Not a number, a thing.</li>
+      <li>Their team moves the dial and locks it in. The other team then bets whether the real spot was left or right of the guess.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">The scale is <b>Mild ↔ Spicy</b> and the hidden spot is <b>62</b>. The clue-giver says “a Chinese takeaway that says medium”. Their team argues and lands on <b>70</b> — eight away, worth 3 points. The other team bets <b>left</b>, which is right, and takes 1.</p></div>
+    <p class="facts">4–12 players · about 25–40 minutes · suggested from age 10 · free, no sign-up, plays in any browser.</p>
+  </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
 </div>
 

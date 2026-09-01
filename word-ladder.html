@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Ladder — turn COLD into WARM, one letter at a time</title>
+<meta name="description" content="Change one letter at a time, and every step has to be a real word. A daily ladder plus endless practice — free, no sign-up, good for ages 9 and up. Works on any phone.">
+
+<link rel="canonical" href="https://velaparties.com/word-ladder.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Word Ladder — turn COLD into WARM, one letter at a time">
+<meta property="og:description" content="Change one letter at a time, and every step has to be a real word. A daily ladder plus endless practice, free and with no sign-up.">
+<meta property="og:url" content="https://velaparties.com/word-ladder.html">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪜</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#736451;
+          --marigold:#E08A1E; --magenta:#B5246B; --green:#2E7D4F; --red:#C0392B; }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:22px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.05em;
+       font-size:clamp(26px,7vw,40px); margin:4px 0 0; }
+  h1 .s { color:var(--magenta); }
+  .eyebrow { color:var(--marigold); letter-spacing:.2em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:18px 16px; margin-top:14px; }
+  .faint { color:var(--faint); }
+  .center { text-align:center; }
+  button { cursor:pointer; border-radius:10px; font-family:'Karla',system-ui,sans-serif; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:13px 18px;
+         font-size:15px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+  .btn[disabled] { opacity:.35; cursor:default; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+               padding:11px 14px; font-size:13px; }
+  .full { width:100%; margin-top:10px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:9px; margin-top:12px; }
+  .lvl { background:#F6EFE3; border:1px solid var(--line); border-radius:10px; padding:12px 10px;
+         font-size:14px; text-align:center; color:var(--ink); }
+  .lvl.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+
+  .rung { display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .word { font-family:'Space Grotesk',sans-serif; font-size:clamp(22px,7vw,32px);
+          letter-spacing:.28em; padding:10px 14px; border-radius:10px; flex:1; text-align:center;
+          background:#F6EFE3; border:1px solid var(--line); }
+  .word.start { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .word.goal  { background:var(--marigold); color:#fff; border-color:var(--marigold); }
+  .word.done  { background:#E9F3EC; border-color:var(--green); color:var(--green); }
+  .word .lit  { color:var(--magenta); }
+  .word.done .lit { color:var(--green); }
+  .step { color:var(--faint); font-size:12px; width:22px; text-align:right; flex:none; }
+  input[type=text] { flex:1; background:#FFFDF9; border:1px solid var(--line); border-radius:10px;
+        color:var(--ink); padding:12px 14px; width:100%;
+        font-family:'Space Grotesk',sans-serif; font-size:24px; letter-spacing:.24em;
+        text-transform:uppercase; text-align:center; }
+  input:focus-visible, button:focus-visible { outline:2px solid var(--magenta); outline-offset:2px; }
+  .flash { min-height:22px; font-weight:700; font-size:15px; margin-top:8px; text-align:center; }
+  .flash.bad { color:var(--red); } .flash.good { color:var(--green); }
+  .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(34px,12vw,58px); line-height:1;
+         color:var(--magenta); }
+  .eg { background:#FFF0D6; border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+        margin-top:12px; }
+  .eg code { font-family:'Space Grotesk',sans-serif; letter-spacing:.16em; font-size:15px;
+             color:var(--ink); }
+  .homelink { display:inline-block; margin-top:16px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  .homelink:hover { color:var(--magenta); }
+  details summary { color:var(--magenta); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:22px; color:var(--faint); font-size:12px; }
+  footer a { color:var(--faint); }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
+</style>
+<meta property="og:site_name" content="Vela Parties">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Word Ladder">
+<meta name="twitter:description" content="Change one letter at a time, and every step has to be a real word. A daily ladder plus endless practice — free, no sign-up, good for ages 9 and up. Works on any phone.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Game",
+      "name": "Word Ladder",
+      "url": "https://velaparties.com/word-ladder.html",
+      "description": "Change one letter at a time, and every step has to be a real word. A daily ladder plus endless practice — free, no sign-up, good for ages 9 and up. Works on any phone.",
+      "genre": "Word puzzle",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 1,
+        "maxValue": 1
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Word Ladder",
+          "item": "https://velaparties.com/word-ladder.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>WORD <span class="s">LADDER</span></h1>
+  </header>
+  <div id="app"><p class="faint center" style="margin-top:50px">Building a ladder…</p></div>
+
+  <section class="howto">
+    <h2>How to play Word Ladder</h2>
+    <ol>
+      <li>Get from the first word to the last by changing <b>one letter at a time</b>.</li>
+      <li>Every rung in between has to be a real word — you cannot pass through nonsense.</li>
+      <li>A new ladder every day, plus endless practice ones. A shorter route than ours counts for more.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0"><b>COLD → CORD → WORD → WARD → WARM.</b> Each step moves exactly one letter — L to R, C to W, O to A, D to M — and every one of those four is a real word, which is the hard part. Get stuck and <b>Show me</b> gives you a way there from wherever you have reached.</p></div>
+    <p class="facts">On your own · about 5 minutes · suggested from age 9 · free, no sign-up, plays in any browser.</p>
+  </section>
+  <footer>On your own, any time · <a href="./">Vela Parties</a></footer>
+</div>
+
+<script>
+/* Ladders are GENERATED BY WALKING, never by searching for a path between two
+ * words somebody chose. Pick a start, take N random steps through the graph of
+ * words-that-differ-by-one-letter, and show the two ends. That guarantees a
+ * solution exists — the generator has already walked it — so the game can
+ * never hand a child something impossible, which is the failure that would
+ * make it worthless.
+ *
+ * The daily ladder is seeded by the local date, so everybody gets the same one
+ * and it needs no server and no cron: same date in, same ladder out.
+ */
+const STORE = 'vp:ladder:';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function todayKey(d){
+  d = d || new Date();
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
+function seedFrom(str){
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function rng(seed){
+  let a = seed >>> 0;
+  return function(){
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const diffOne = (a, b) => {
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d++;
+  return d === 1;
+};
+
+/* Neighbours are found through wildcard buckets (c_at, _at, ca_t …) rather
+   than by comparing every word with every other — 900 words would be 800,000
+   comparisons, and this is a few thousand. */
+let WORDS = [], SET = new Set(), NEIGH = new Map();
+function buildGraph(list){
+  WORDS = list.slice();
+  SET = new Set(WORDS);
+  const buckets = new Map();
+  for (const w of WORDS){
+    for (let i = 0; i < w.length; i++){
+      const k = w.slice(0,i) + '.' + w.slice(i+1);
+      if (!buckets.has(k)) buckets.set(k, []);
+      buckets.get(k).push(w);
+    }
+  }
+  NEIGH = new Map();
+  for (const w of WORDS) NEIGH.set(w, new Set());
+  for (const group of buckets.values()){
+    for (const a of group) for (const b of group) if (a !== b) NEIGH.get(a).add(b);
+  }
+  for (const [w, s] of NEIGH) NEIGH.set(w, [...s]);
+}
+
+/* Walk, don't search. Backtracks rather than returning a short ladder, so the
+   length asked for is the length given. */
+function makeLadder(steps, rand){
+  const rich = WORDS.filter(w => (NEIGH.get(w) || []).length >= 3);
+  for (let attempt = 0; attempt < 400; attempt++){
+    const start = rich[Math.floor(rand() * rich.length)];
+    const path = [start];
+    const used = new Set([start]);
+    let ok = true;
+    for (let i = 0; i < steps; i++){
+      const opts = (NEIGH.get(path[path.length-1]) || []).filter(w => !used.has(w));
+      if (!opts.length){ ok = false; break; }
+      const nxt = opts[Math.floor(rand() * opts.length)];
+      path.push(nxt); used.add(nxt);
+    }
+    // the ends must not already be one letter apart, or the ladder is a lie
+    if (ok && !diffOne(path[0], path[path.length-1]) && path[0] !== path[path.length-1])
+      return path;
+  }
+  return null;
+}
+/* The player's own route may be shorter or longer than the generator's, so a
+   solution is found properly when they ask to see one. */
+function solve(from, to){
+  const q = [[from]], seen = new Set([from]);
+  while (q.length){
+    const path = q.shift();
+    const last = path[path.length-1];
+    if (last === to) return path;
+    if (path.length > 8) continue;
+    for (const n of (NEIGH.get(last) || [])){
+      if (seen.has(n)) continue;
+      seen.add(n);
+      q.push(path.concat([n]));
+    }
+  }
+  return null;
+}
+
+const LEVELS = [{ n:3, name:'Three steps' }, { n:4, name:'Four steps' }, { n:5, name:'Five steps' }];
+
+// ── state ──
+let mode = 'daily', steps = 4, ladder = null, rungs = [], solved = false, gaveUp = false, revealed = null;
+
+function readStreak(){
+  try { return JSON.parse(localStorage.getItem(STORE + 'streak') || 'null') || { n:0, last:null }; }
+  catch { return { n:0, last:null }; }
+}
+function bumpStreak(won){
+  try {
+    const s = readStreak();
+    const key = todayKey();
+    if (s.last === key) return s;
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    s.n = won ? (s.last === todayKey(y) ? s.n + 1 : 1) : 0;
+    s.last = key;
+    localStorage.setItem(STORE + 'streak', JSON.stringify(s));
+    return s;
+  } catch { return { n:0 }; }
+}
+
+function newLadder(){
+  const rand = mode === 'daily'
+    ? rng(seedFrom('ladder:' + todayKey()))
+    : rng((Math.random() * 4294967296) >>> 0);
+  const n = mode === 'daily' ? 4 : steps;
+  ladder = makeLadder(n, rand);
+  rungs = []; solved = false; gaveUp = false; revealed = null;
+  render();
+}
+function setMode(m){ mode = m; newLadder(); }
+function setSteps(n){ steps = n; if (mode === 'practice') newLadder(); else render(); }
+
+function submit(){
+  if (solved || gaveUp) return;
+  const el = $('guess');
+  const w = (el ? el.value : '').trim().toLowerCase();
+  if (!w) return;
+  const prev = rungs.length ? rungs[rungs.length-1] : ladder[0];
+  const goal = ladder[ladder.length-1];
+  if (w.length !== prev.length){ flash('bad', 'Four letters.'); return; }
+  if (!diffOne(prev, w)){ flash('bad', 'Change exactly one letter from ' + prev.toUpperCase() + '.'); return; }
+  if (!SET.has(w)){ flash('bad', "That one isn't on the list."); return; }
+  if (rungs.includes(w) || w === ladder[0]){ flash('bad', 'You have used that already.'); return; }
+  rungs.push(w);
+  el.value = '';
+  if (w === goal){
+    solved = true;
+    if (mode === 'daily') bumpStreak(true);
+    flash('good', 'Got there.');
+  } else {
+    flash('good', 'Good — ' + w.toUpperCase() + '.');
+  }
+  render();
+  const g = $('guess'); if (g) g.focus();
+}
+function undo(){ if (!solved && !gaveUp) { rungs.pop(); render(); } }
+function giveUp(){
+  gaveUp = true;
+  revealed = solve(rungs.length ? rungs[rungs.length-1] : ladder[0], ladder[ladder.length-1]);
+  if (mode === 'daily') bumpStreak(false);
+  render();
+}
+let ft = null;
+function flash(kind, text){
+  const f = $('flash'); if (!f) return;
+  f.className = 'flash ' + kind; f.textContent = text;
+  if (ft) clearTimeout(ft);
+  ft = setTimeout(() => { const g = $('flash'); if (g){ g.textContent=''; g.className='flash'; } }, 2200);
+}
+
+// ── render ──
+function wordHTML(w, cls, against){
+  const letters = [...w.toUpperCase()].map((ch,i) =>
+    against && against[i] !== w[i] ? `<span class="lit">${ch}</span>` : ch).join('');
+  return `<div class="word ${cls||''}">${letters}</div>`;
+}
+function render(){
+  if (!ladder){
+    $('app').innerHTML = `<div class="panel center"><p class="faint">Couldn't build a ladder.
+      <button class="btn full" onclick="newLadder()">Try again</button></p></div>`;
+    return;
+  }
+  const start = ladder[0], goal = ladder[ladder.length-1];
+  const par = ladder.length - 1;
+  const st = readStreak();
+  $('crumb').textContent = mode === 'daily' ? todayKey() : 'Practice';
+
+  const rows = [];
+  rows.push(`<div class="rung"><span class="step"></span>${wordHTML(start,'start')}</div>`);
+  rungs.forEach((w,i) => {
+    const prev = i ? rungs[i-1] : start;
+    rows.push(`<div class="rung"><span class="step">${i+1}</span>${wordHTML(w, solved?'done':'', prev)}</div>`);
+  });
+  if (!solved){
+    rows.push(`<div class="rung"><span class="step">${rungs.length+1}</span>
+      <input type="text" id="guess" maxlength="${start.length}" autocomplete="off"
+             autocapitalize="characters" spellcheck="false" placeholder="????"></div>`);
+    rows.push(`<div class="rung"><span class="step"></span>${wordHTML(goal,'goal')}</div>`);
+  }
+
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="center" style="margin-bottom:6px">
+        <div class="eyebrow">${mode==='daily' ? "Today's ladder" : par + ' steps'}</div>
+        <p class="faint" style="font-size:13.5px;margin:6px 0 0">Turn
+          <b>${esc(start.toUpperCase())}</b> into <b>${esc(goal.toUpperCase())}</b>, changing
+          <b>one letter at a time</b>. Every step has to be a real word.</p>
+      </div>
+      ${rows.join('')}
+      <div class="flash" id="flash"></div>
+      ${solved
+        ? `<div class="center"><p class="big">${rungs.length}</p>
+             <p class="faint">step${rungs.length===1?'':'s'}${
+               rungs.length < par ? ' — shorter than ours, which was ' + par + '.'
+               : rungs.length === par ? ', same as ours.' : '.'}</p>
+             ${mode==='daily' ? `<p class="faint">Daily streak: <b>${st.n}</b>.</p>` : ''}
+           </div>
+           <button class="btn full" onclick="${mode==='daily'?"setMode('practice')":'newLadder()'}">${
+             mode==='daily' ? 'Play some more' : 'Another ladder'}</button>`
+        : gaveUp
+          ? `<div class="center"><p class="faint">One way there:</p>
+               <p style="font-family:'Space Grotesk',sans-serif;letter-spacing:.14em">${
+                 revealed ? revealed.map(w=>esc(w.toUpperCase())).join(' → ') : 'we could not find one either'}</p></div>
+             <button class="btn full" onclick="${mode==='daily'?"setMode('practice')":'newLadder()'}">Another ladder</button>`
+          : `<button class="btn full" onclick="submit()">Add this rung</button>
+             <div style="display:flex;gap:8px;margin-top:8px">
+               <button class="btn-ghost" style="flex:1" onclick="undo()" ${rungs.length?'':'disabled'}>Undo</button>
+               <button class="btn-ghost" style="flex:1" onclick="giveUp()">Show me</button>
+             </div>`}
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Which ladder</div>
+      <div class="grid">
+        <button class="lvl ${mode==='daily'?'on':''}" onclick="setMode('daily')">Today's</button>
+        <button class="lvl ${mode==='practice'?'on':''}" onclick="setMode('practice')">Practice</button>
+      </div>
+      ${mode==='practice' ? `<div class="eyebrow" style="margin-top:16px">How long</div>
+        <div class="grid">${LEVELS.map(l=>
+          `<button class="lvl ${steps===l.n?'on':''}" onclick="setSteps(${l.n})">${esc(l.name)}</button>`).join('')}</div>`
+        : `<p class="faint" style="font-size:13px;margin-top:10px">Everybody gets the same ladder
+             today. A new one at midnight.</p>`}
+    </div>
+    <div class="panel"><details open><summary>How to play, with an example</summary>
+      <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
+        <p>Get from the first word to the last by changing <b style="color:var(--ink)">one letter
+           at a time</b>. Every rung in between has to be a real word — you cannot pass through
+           nonsense to get somewhere.</p>
+        <div class="eg">
+          <p style="margin:0 0 6px;color:var(--ink)"><b>Example — COLD to WARM in four:</b></p>
+          <p style="margin:0"><code>COLD → CORD → WORD → WARD → WARM</code></p>
+          <p style="margin:8px 0 0;font-size:13px">Each step moves exactly one letter:
+             L→R, C→W, O→A, D→M. Every one of those is a real word, which is the hard part.</p>
+        </div>
+        <p style="margin-top:12px">You can take a different route from ours, and a shorter one
+           counts for more. Stuck? <b style="color:var(--ink)">Show me</b> gives you one way there
+           from wherever you have got to.</p>
+        <p>Nothing is sent anywhere. Your streak is kept on this phone only.</p>
+      </div></details></div>`;
+
+  const g = $('guess');
+  if (g){
+    g.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    if (rungs.length) g.focus();
+  }
+}
+
+(async function boot(){
+  try {
+    const r = await fetch('content/words4.json', { cache:'no-cache' });
+    const pack = await r.json();
+    buildGraph(pack.words);
+  } catch {
+    $('app').innerHTML = `<div class="panel center"><p class="faint">Couldn't load the word list.
+      Check your connection and reload.</p></div>`;
+    return;
+  }
+  newLadder();
+})();
+</script>
+</body>
+</html>

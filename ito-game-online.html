@@ -3,6 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="2–10 players · about 15–30 minutes · suggested from age 9 · free, no sign-up, plays in any browser.">
+<link rel="canonical" href="https://velaparties.com/ito-game-online.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Ito">
+<meta property="og:description" content="2–10 players · about 15–30 minutes · suggested from age 9 · free, no sign-up, plays in any browser.">
+<meta property="og:url" content="https://velaparties.com/ito-game-online.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Ito">
+<meta name="twitter:description" content="2–10 players · about 15–30 minutes · suggested from age 9 · free, no sign-up, plays in any browser.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Game",
+      "name": "Ito",
+      "url": "https://velaparties.com/ito-game-online.html",
+      "description": "2–10 players · about 15–30 minutes · suggested from age 9 · free, no sign-up, plays in any browser.",
+      "genre": "Party game",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "numberOfPlayers": {
+        "@type": "QuantitativeValue",
+        "minValue": 2,
+        "maxValue": 10
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Vela Parties",
+        "url": "https://velaparties.com/"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Vela Parties",
+          "item": "https://velaparties.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Ito",
+          "item": "https://velaparties.com/ito-game-online.html"
+        }
+      ]
+    }
+  ]
+}
+</script>
 <title>ITO 糸 — the thread game</title>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -74,6 +127,24 @@
               text-decoration:none; font-size:12px;
               letter-spacing:.18em; text-transform:uppercase; }
   .homelink:hover, .homelink:focus-visible { color:var(--gold); }
+
+  /* Static, always on the page: a crawler sees it without running any script,
+     and a player never has to go looking for the rules. */
+  .howto { max-width:100%; margin-top:28px; }
+  /* an explicit colour: some pages have their own h2 rule, and on one of them
+     the inherited heading sat at 4.04:1 */
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  /* --ink at reduced weight rather than --faint: the section has to stay
+     readable on every theme, and one of them had body text at 3.83:1. */
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
 </style>
 </head>
 <body>
@@ -87,6 +158,18 @@
   <p class="err" id="err"></p>
   <div id="roombar"></div>
   <div id="app"><p class="faint center" style="margin-top:60px">Threading the needle…</p></div>
+
+  <section class="howto">
+    <h2>How to play Ito</h2>
+    <ol>
+      <li>Everyone is dealt a secret number from 1 to 100. You can see only your own.</li>
+      <li>A theme appears — <i>how frightening</i>, <i>how expensive</i>, <i>how loud</i>. Describe your number as a thing on that scale, without saying any number.</li>
+      <li>Then play the cards in ascending order. Get the order wrong and the thread snaps.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">The theme is <b>how frightening</b>. You are holding 73, so you say “a wasp in the car”. Someone holding 12 says “a slightly cold bath”. Now the table has to decide who goes first — and if 73 is played before 12, you lose a life.</p></div>
+    <p class="facts">2–10 players · about 15–30 minutes · suggested from age 9 · free, no sign-up, plays in any browser.</p>
+  </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
 </div>
 
