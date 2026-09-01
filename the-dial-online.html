@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Dial — how spicy is spicy, exactly?</title>
+<meta name="description" content="One player sees a hidden spot on a sliding scale and gives a clue. Their team moves the dial to find it. A free party game about how differently people read the same word — 4–12 players on their own phones.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0E1520; --panel:#17202E; --line:rgba(110,190,255,.22);
+    --sky:#6EBEFF; --ink:#E8F0F8; --faint:#8496A8; --red:#E4606D; --green:#6FCF97; --gold:#E8C36B;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:600px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:28px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.05em;
+       font-size:clamp(30px,8vw,48px); margin:4px 0 0; }
+  h1 .s { color:var(--sky); }
+  .eyebrow { color:var(--sky); letter-spacing:.22em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:20px 18px; margin-top:14px; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px;
+         padding:9px 0; border-bottom:1px solid rgba(232,240,248,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:9px; margin-top:12px; }
+  input[type=text] { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+          color:var(--ink); padding:13px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:9px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--sky); outline-offset:2px; }
+  .btn-sky { background:var(--sky); color:#0B1420; border:none; padding:14px 20px;
+             font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid rgba(132,150,168,.45);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:12px 10px; font-size:15px; }
+  .seat.on { background:var(--sky); border-color:var(--sky); color:#0B1420; font-weight:700; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:9px; margin-top:14px; }
+
+  /* the dial itself */
+  .scale { display:flex; justify-content:space-between; font-size:13px;
+           color:var(--faint); margin-top:14px; gap:12px; }
+  .scale b { color:var(--ink); font-size:15px; font-weight:700; }
+  .scale div:last-child { text-align:right; }
+  .track { position:relative; height:44px; margin-top:8px; border-radius:8px;
+           background:linear-gradient(90deg,#1D2A3C,#243449); border:1px solid var(--line);
+           overflow:hidden; }
+  .band { position:absolute; top:0; bottom:0; }
+  .b4 { background:rgba(111,207,151,.55); }
+  .b3 { background:rgba(111,207,151,.30); }
+  .b2 { background:rgba(111,207,151,.15); }
+  .needle { position:absolute; top:-4px; bottom:-4px; width:3px; background:var(--gold);
+            border-radius:2px; transform:translateX(-1.5px); }
+  .needle.guess { background:var(--sky); }
+  input[type=range] { width:100%; margin-top:10px; accent-color:var(--sky); height:34px; }
+  .val { font-family:'Space Grotesk',sans-serif; font-size:26px; color:var(--sky); }
+  .clueword { font-family:'Space Grotesk',sans-serif; font-size:clamp(24px,7vw,38px);
+              color:var(--gold); line-height:1.15; }
+  .score { font-family:'Space Grotesk',sans-serif; font-size:22px; }
+  .teamA { color:var(--sky); } .teamB { color:var(--gold); }
+  .tick { color:var(--green); } .dot { color:var(--faint); }
+
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+             padding:13px 15px; margin-top:14px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Space Grotesk',sans-serif; letter-spacing:.2em; font-size:26px; color:var(--sky); }
+  .linkfield { font-size:13px; margin-top:9px; padding:9px 10px; color:var(--faint);
+               background:var(--bg); border:1px solid var(--line); border-radius:8px; width:100%; }
+  .rb-actions { display:flex; gap:8px; margin-top:9px; } .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:18px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover { color:var(--sky); }
+  details summary { color:var(--sky); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>THE <span class="s">DIAL</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script src="feedback.js"></script>
+<script src="group.js"></script>
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "dial";
+
+/* Each card is a scale with an end at 0 and an end at 100. They are written so
+   that neither end is obviously "better" — the argument is the game. */
+const CARDS = [
+  ['Cold','Hot'], ['Underrated','Overrated'], ['Cheap','Expensive'], ['Round','Pointy'],
+  ['Quiet','Loud'], ['Temporary','Permanent'], ['Casual','Formal'], ['Forgettable','Unforgettable'],
+  ['Useless','Useful'], ['Common','Rare'], ['Dry','Wet'], ['Smooth','Rough'],
+  ['Simple','Complicated'], ['Safe','Dangerous'], ['Clean','Dirty'], ['Weak','Strong'],
+  ['Villain','Hero'], ['Snack','Meal'], ['Ugly','Beautiful'], ['Soft','Hard'],
+  ['Young','Old'], ['Awkward','Smooth'], ['Underdressed','Overdressed'], ['Slow','Fast'],
+  ['Light','Heavy'], ['Empty','Crowded'], ['Clumsy','Graceful'], ['Messy','Neat'],
+  ['Dull colour','Bright colour'], ['Wobbly','Sturdy'], ['Sour','Sweet'], ['Mild','Spicy'],
+  ['Rude','Polite'], ['Chaotic','Organised'], ['Silly','Serious'], ['Selfish','Generous'],
+  ['Introvert','Extrovert'], ['Modest','Show-off'], ['Passive','Aggressive'], ['Rushed','Patient'],
+  ['Antisocial','Sociable'], ['Predictable','Surprising'], ['Fake','Authentic'], ['Cringe','Cool'],
+  ['Guilty pleasure','Genuinely respected'], ['Bad habit','Good habit'],
+  ['Small talk','Deep conversation'], ['Bad advice','Good advice'],
+  ['Waste of time','Time well spent'], ['Necessity','Luxury'], ['Old-fashioned','Modern'],
+  ['Unhealthy','Healthy'], ['Boring','Fascinating'], ['Solo activity','Group activity'],
+  ['Indoor','Outdoor'], ['Difficult to learn','Easy to learn'], ['Underpaid','Overpaid'],
+  ['Fictional','Real'], ['Comfort food','Health food'], ['Local','Global'],
+  ['Tolerable','Unbearable'], ['Hobby','Obsession'], ['Traditional','Experimental'],
+  ['Junk','Treasure'], ['Ordinary day','Big occasion'], ['Uncomfortable','Cosy'],
+  ['Nightmare','Dream'], ['Beginner','Expert'], ['Painful','Pleasant'], ['Unlucky','Lucky'],
+  ['Hard to pronounce','Easy to pronounce'], ['Nostalgic','Futuristic'], ['Bad idea','Genius idea'],
+  ['Underwhelming','Impressive'], ['Forgotten','Iconic'], ['Sad song','Happy song'],
+  ['Casual friend','Best friend'], ['Bad excuse','Believable excuse'], ['Guilty','Innocent'],
+  ['Cheap gift','Thoughtful gift'], ['Kids\u2019 film','Grown-ups\u2019 film'],
+  ['Street food','Fine dining'], ['Everyday clothes','Wedding clothes'],
+  ['Cheap seat','Best seat in the house'], ['Superstition','Science'],
+  ['Bollywood flop','Blockbuster'], ['Loud family','Quiet family'],
+  ['Cold weather food','Hot weather food'], ['Something you tolerate','Something you love'],
+  ['Barely a sport','Definitely a sport'], ['Overhyped city','Underrated city'],
+  ['Would never eat','Would eat every day'], ['Bad singer','Good singer'],
+  ['Chore','Treat'], ['Awkward silence','Comfortable silence'],
+  ['Terrible film you enjoy','Great film you endure'], ['Free','Priceless'],
+];
+
+/* Four wedges either side of centre. Generous enough that a good clue is
+   usually worth something, tight enough that 4 feels earned. */
+const BANDS = [ {within:5, pts:4}, {within:12, pts:3}, {within:20, pts:2} ];
+const pointsFor = (d) => { for (const b of BANDS) if (d <= b.within) return b.pts; return 0; };
+
+const FRESH = { phase:'setup', players:[], teams:{A:[],B:[]}, goal:10, names:{A:'Team A',B:'Team B'},
+                round:0, turn:'A', psychic:null, card:null, spot:null, clue:'',
+                dial:50, locked:null, bet:null, used:[],
+                scores:{A:0,B:0}, log:[], _sessionEnd:null };
+
+let G = null, me = null, stamp = 0, pending = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* For a value that lands INSIDE an inline handler rather than in text. The
+   browser HTML-decodes an attribute before the JS in it is parsed, so esc()'s
+   &#39; comes back as a bare quote and ends the string early — which is how a
+   player called D'Souza ends up with a button that silently does nothing.
+   \u escapes survive HTML decoding and mean the right thing to the parser. */
+const jss = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\u0027')
+  .replace(/"/g, '\\u0022').replace(/&/g, '\\u0026').replace(/[\r\n]+/g, ' ');
+function setErr(m){ $('err').textContent = m || ''; }
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() }) });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey(), p_state: next }) });
+  if (!r.ok) throw new Error('save '+r.status);
+  try { return (await r.json()) === true; } catch { return true; }
+}
+async function commit(fn){
+  for (let a=0; a<4; a++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = hydrate(fresh); stamp = Math.max(stamp, fresh._stamp||0); render(); }
+  }
+  return false;
+}
+async function mutate(fn){
+  try { if (await commit(fn)){ setErr(''); return; } } catch {}
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;
+}
+async function poll(){
+  if (!joined) return;
+  try {
+    if (pending){ const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn; }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
+      // don't yank the slider out from under someone who is dragging it
+      if (changed && !dragging) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch { if (!G){ G = structuredClone(FRESH); render(); } }
+}
+let dragging = false;
+
+// ── teams and setup ──
+const other = (t) => t === 'A' ? 'B' : 'A';
+const teamOf = (p) => G.teams.A.includes(p) ? 'A' : G.teams.B.includes(p) ? 'B' : null;
+
+function addPlayer(){
+  const el=$('nameInput'); const n=el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if (G.players.length>=12){ setErr('Twelve is plenty.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{
+    g.players.push(n);
+    // keep the sides even as people arrive
+    (g.teams.A.length <= g.teams.B.length ? g.teams.A : g.teams.B).push(n);
+    return g;
+  });
+}
+function removePlayer(n){
+  mutate(g=>{
+    g.players = g.players.filter(p=>p!==n);
+    g.teams.A = g.teams.A.filter(p=>p!==n);
+    g.teams.B = g.teams.B.filter(p=>p!==n);
+    return g;
+  });
+  if (me===n) me=null;
+}
+function swapTeam(n){
+  mutate(g=>{
+    if (g.teams.A.includes(n)){ g.teams.A = g.teams.A.filter(p=>p!==n); g.teams.B.push(n); }
+    else { g.teams.B = g.teams.B.filter(p=>p!==n); g.teams.A.push(n); }
+    return g;
+  });
+}
+function setGoal(n){ mutate(g=>{ g.goal=n; return g; }); }
+
+function dealRound(g){
+  const unused = CARDS.filter((c,i) => !(g.used||[]).includes(i));
+  const pool = unused.length ? unused : CARDS;
+  const card = pool[Math.floor(Math.random()*pool.length)];
+  g.card = card;
+  g.used = (g.used||[]).concat([CARDS.indexOf(card)]);
+  // 8..92 so the target is never so close to an end that any clue works
+  g.spot = 8 + Math.floor(Math.random()*85);
+  const team = g.teams[g.turn];
+  g.psychic = team.length ? team[(Math.floor((g.round-1)/2)) % team.length] : null;
+  g.clue = ''; g.dial = 50; g.locked = null; g.bet = null;
+  g.phase = 'clue';
+  return g;
+}
+function startGame(){
+  if (G.teams.A.length < 2 || G.teams.B.length < 2){
+    setErr('Each side needs at least two — one to give the clue and one to argue with.'); return;
+  }
+  setErr('');
+  mutate(g=>{
+    g.round = 1; g.turn = 'A'; g.scores = {A:0,B:0}; g.log = []; g.used = []; g._sessionEnd = null;
+    return dealRound(g);
+  });
+}
+
+function giveClue(){
+  const el = $('clueInput'); const raw = el.value.trim();
+  if (!raw){ setErr('Say something.'); return; }
+  if (raw.length > 60){ setErr('Keep it short — a thing, not a sentence.'); return; }
+  setErr('');
+  mutate(g=>{ g.clue = raw; g.phase = 'guess'; return g; });
+}
+function moveDial(v){
+  const n = Math.max(0, Math.min(100, Math.round(+v)));
+  mutate(g=>{ g.dial = n; return g; });
+}
+function lockIn(){
+  mutate(g=>{ g.locked = g.dial; g.phase = 'bet'; return g; });
+}
+function placeBet(side){
+  mutate(g=>{ g.bet = side; return settle(g); });
+}
+/* The guessing team scores by distance; the other team scores 1 for calling
+   which side of the guess the real spot was on. A dead-on guess leaves them
+   nothing to be right about, so the bet loses. */
+function settle(g){
+  const d = Math.abs(g.spot - g.locked);
+  const pts = pointsFor(d);
+  g.scores[g.turn] += pts;
+  const trueSide = g.spot < g.locked ? 'left' : g.spot > g.locked ? 'right' : null;
+  const betRight = trueSide !== null && g.bet === trueSide;
+  if (betRight) g.scores[other(g.turn)] += 1;
+  g.log = [{ round:g.round, team:g.turn, psychic:g.psychic, card:g.card, clue:g.clue,
+             spot:g.spot, locked:g.locked, pts, bet:g.bet, betRight }].concat(g.log).slice(0,30);
+  g.phase = 'result';
+  return g;
+}
+function nextRound(){
+  mutate(g=>{
+    if (g.scores.A >= g.goal || g.scores.B >= g.goal){
+      g.phase = 'gameover';
+      if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
+      return g;
+    }
+    g.round += 1; g.turn = other(g.turn);
+    return dealRound(g);
+  });
+}
+function playAgain(keep){
+  me = keep ? me : null;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep){ n.players=g.players; n.teams=g.teams; n.goal=g.goal; }
+    return n;
+  });
+}
+function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+
+// ── render ──
+function trackHTML(opts){
+  const { showSpot, showGuess } = opts;
+  const bands = [];
+  if (showSpot){
+    for (const b of BANDS.slice().reverse()){
+      const lo = Math.max(0, G.spot - b.within), hi = Math.min(100, G.spot + b.within);
+      bands.push(`<div class="band b${b.pts}" style="left:${lo}%;width:${hi-lo}%"></div>`);
+    }
+    bands.push(`<div class="needle" style="left:${G.spot}%"></div>`);
+  }
+  if (showGuess && G.locked !== null)
+    bands.push(`<div class="needle guess" style="left:${G.locked}%"></div>`);
+  return `<div class="scale"><div><b>${esc(G.card[0])}</b><br>0</div>
+      <div><b>${esc(G.card[1])}</b><br>100</div></div>
+    <div class="track">${bands.join('')}</div>`;
+}
+function scoresHTML(){
+  return `<div class="panel"><div class="row">
+      <span class="teamA">${esc(G.names.A)}</span><span class="score teamA">${G.scores.A}</span></div>
+    <div class="row" style="border:none">
+      <span class="teamB">${esc(G.names.B)}</span><span class="score teamB">${G.scores.B}</span></div>
+    <p class="faint center" style="font-size:13px;margin:8px 0 0">First to ${G.goal}</p></div>`;
+}
+function whoAmIHTML(){
+  if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
+      You are <b style="color:var(--ink)">${esc(me)}</b> (${esc(G.names[teamOf(me)]||'no team')}) ·
+      <a href="#" onclick="me=null;render();return false" style="color:var(--sky)">not you?</a></p></div>`;
+  return `<div class="panel"><div class="eyebrow">Which one are you?</div>
+      <p class="faint" style="font-size:14px;margin-top:6px">The hidden spot shows only on the
+         clue-giver's phone.</p>
+      <div class="grid">${G.players.map(p=>
+        `<button class="seat" onclick="me='${jss(p)}';render()">${esc(p)}</button>`).join('')}</div></div>`;
+}
+
+function render(){
+  if (!configured()){ $('app').innerHTML='<div class="panel"><p class="faint">Supabase is not configured.</p></div>'; return; }
+  const app = $('app');
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
+    : G.phase==='gameover' ? 'Game over'
+    : `Round ${G.round} · ${G.names[G.turn]} on the dial`;
+
+  if (G.phase==='setup'){
+    const had=$('nameInput'); const keep=had?had.value:'';
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Players (4–12, two per side)</div>
+        <div style="display:flex;gap:8px;margin:12px 0">
+          <input type="text" id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-sky" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.players.length ? ['A','B'].map(t=>`
+          <div class="eyebrow" style="margin-top:12px">${esc(G.names[t])}</div>
+          ${G.teams[t].length ? G.teams[t].map(p=>`<div class="row"><span>${esc(p)}</span>
+            <span style="display:flex;gap:6px">
+              <button class="btn-ghost" onclick="swapTeam('${jss(p)}')">→ ${t==='A'?'B':'A'}</button>
+              <button class="btn-ghost" onclick="removePlayer('${jss(p)}')">Remove</button></span></div>`).join('')
+            : '<p class="faint" style="font-style:italic;font-size:14px">Empty.</p>'}`).join('')
+          : '<p class="faint" style="font-style:italic">Nobody yet.</p>'}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Play to</div>
+        <div class="grid">${[6,10,15,20].map(n=>
+          `<button class="seat ${G.goal===n?'on':''}" onclick="setGoal(${n})">${n}</button>`).join('')}</div>
+        <button class="btn-sky full" style="margin-top:18px" onclick="startGame()">Start</button>
+      </div>
+      <div class="panel"><details><summary>How to play</summary>
+        <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
+          <p>A card gives you a scale — <i>Cold</i> at one end, <i>Hot</i> at the other. One player
+             on the guessing side is shown a <b style="color:var(--ink)">hidden spot</b> somewhere
+             along it. Everyone else sees nothing.</p>
+          <p>They say one thing that sits exactly there. Not "warm" — name something.
+             <i>A cup of tea you forgot about.</i> Then their team argues about where on the dial
+             that is, and locks it in.</p>
+          <p>4 points for landing on it, 3 near, 2 close. The other team then bets whether the real
+             spot was <b style="color:var(--ink)">left or right</b> of the guess, for 1 point — so
+             nobody is ever just watching.</p>
+          <p>The clue-giver may not speak once the clue is given. That is the hard part.</p>
+        </div></details></div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  const iAmPsychic = me === G.psychic;
+  const myTeam = me ? teamOf(me) : null;
+
+  if (G.phase==='clue'){
+    app.innerHTML = scoresHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">${esc(G.psychic||'—')} is giving the clue</div>
+        ${trackHTML({ showSpot: iAmPsychic })}
+        ${iAmPsychic
+          ? `<p class="val" style="margin-top:12px">${G.spot}</p>
+             <p class="faint" style="font-size:14px">Name something that sits exactly there. Don't
+                describe the number — give them a thing.</p>
+             <div style="display:flex;gap:8px;margin-top:12px">
+               <input type="text" id="clueInput" placeholder="Your clue" autocomplete="off">
+               <button class="btn-sky" onclick="giveClue()">Send</button>
+             </div>`
+          : `<p class="faint" style="margin-top:14px">Only ${esc(G.psychic||'the clue-giver')} can see
+               where the spot is. Wait for the clue.</p>`}
+      </div>` + whoAmIHTML();
+    const ci = $('clueInput');
+    if (ci){ ci.addEventListener('keydown', e=>{ if(e.key==='Enter') giveClue(); }); ci.focus(); }
+    return;
+  }
+
+  if (G.phase==='guess'){
+    const mine = myTeam === G.turn;
+    app.innerHTML = scoresHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">The clue</div>
+        <p class="clueword">${esc(G.clue)}</p>
+        ${trackHTML({ showSpot: iAmPsychic })}
+        <p class="val" id="dialVal" style="margin-top:10px">${G.dial}</p>
+        ${mine && !iAmPsychic
+          ? `<input type="range" id="dialer" min="0" max="100" value="${G.dial}"
+               oninput="dragging=true;$('dialVal').textContent=this.value"
+               onchange="dragging=false;moveDial(this.value)"
+               onpointerdown="dragging=true" onpointerup="dragging=false"
+               onpointercancel="dragging=false" onblur="dragging=false" aria-label="The dial">
+             <p class="faint" style="font-size:13px">Anyone on your side can move it. Talk it out,
+                then lock it in.</p>
+             <button class="btn-sky full" onclick="dragging=false;lockIn()">Lock it in</button>`
+          : iAmPsychic
+            ? '<p class="faint" style="font-size:14px;margin-top:10px">Say nothing. Watch them get it wrong.</p>'
+            : `<p class="faint" style="font-size:14px;margin-top:10px">${esc(G.names[G.turn])} are
+                 deciding. You'll bet on which side they missed.</p>`}
+      </div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='bet'){
+    const betting = myTeam === other(G.turn);
+    app.innerHTML = scoresHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">${esc(G.names[G.turn])} said</div>
+        <p class="clueword">${esc(G.clue)}</p>
+        ${trackHTML({ showSpot:false, showGuess:true })}
+        <p class="val" style="margin-top:10px">${G.locked}</p>
+        ${betting
+          ? `<p class="faint" style="font-size:14px">Was the real spot to the left or the right of
+                that? 1 point if you're right.</p>
+             <div class="stack">
+               <button class="btn-sky" onclick="placeBet('left')">← Left of ${G.locked}</button>
+               <button class="btn-sky" onclick="placeBet('right')">Right of ${G.locked} →</button>
+             </div>`
+          : `<p class="faint" style="font-size:14px;margin-top:10px">${esc(G.names[other(G.turn)])}
+               are betting on which side you missed.</p>`}
+      </div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='result'){
+    const l = G.log[0];
+    app.innerHTML = scoresHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">${l.pts ? l.pts + ' point' + (l.pts===1?'':'s') : 'Nothing'}</div>
+        <p class="clueword">${esc(G.clue)}</p>
+        ${trackHTML({ showSpot:true, showGuess:true })}
+        <p class="faint" style="margin-top:12px">The spot was <b style="color:var(--gold)">${G.spot}</b>.
+           ${esc(G.names[G.turn])} said <b style="color:var(--sky)">${G.locked}</b> —
+           ${Math.abs(G.spot-G.locked)} away.</p>
+        <p class="faint">${esc(G.names[other(G.turn)])} bet <b style="color:var(--ink)">${esc(G.bet||'—')}</b>
+           — ${l.betRight ? 'right, 1 point' : 'wrong, nothing'}.</p>
+        <button class="btn-sky full" onclick="nextRound()">${
+          (G.scores.A>=G.goal||G.scores.B>=G.goal) ? 'Final score' : 'Next round'}</button>
+        <button class="btn-ghost full" onclick="backToSetup()">Change players or settings</button>
+      </div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='gameover'){
+    const win = G.scores.A === G.scores.B ? null : (G.scores.A > G.scores.B ? 'A' : 'B');
+    if (window.vpMaybeReport) vpMaybeReport(G, 'dial', ROOM,
+      ['A','B'].flatMap(t => (G.teams[t]||[]).map(p =>
+        ({ player:p, score:G.scores[t]||0, won: win === null ? false : t === win }))));
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Final</div>
+        <p class="clueword" style="color:var(--sky)">${win ? esc(G.names[win]) + ' win' : 'A draw'}</p>
+        <p class="faint">${G.scores.A} – ${G.scores.B}</p>
+        <div class="stack">
+          <button class="btn-sky" onclick="playAgain(true)">Play again · same teams</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New teams</button>
+        </div>
+      </div>` + scoresHTML() + `
+      <div class="panel"><div class="eyebrow">Every round</div>
+        ${G.log.slice().reverse().map(l=>`<div class="row">
+          <span class="faint">${esc(l.card[0])} → ${esc(l.card[1])}: ${esc(l.clue)}</span>
+          <span>${l.pts}</span></div>`).join('')}
+      </div>` + vpFeedbackHTML('The Dial');
+    return;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+function newCode(){ const r=new Uint32Array(4); crypto.getRandomValues(r);
+  let c=''; for(let i=0;i<4;i++) c+=CODE_ALPHABET[r[i]%CODE_ALPHABET.length]; return c; }
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false, pollTimer = null, curRate = 0;
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+// the dial moving in front of everyone is most of the fun, so keep it quick
+function pollRate(){ return ['guess','bet','clue'].includes(G && G.phase) ? 1000 : 2500; }
+function schedulePoll(){
+  const want = pollRate(); if (want===curRate) return;
+  curRate = want; if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{ await poll(); schedulePoll(); }, want);
+}
+function enterRoom(){ joined=true; history.replaceState(null,'',inviteURL());
+  renderRoomBar(); render(); schedulePoll(); }
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } curRate=0;
+  joined=false; ROOM=''; G=null; me=null; pending=null;
+  history.replaceState(null,'',location.pathname);
+  $('roombar').innerHTML=''; $('crumb').textContent=''; setErr(''); renderLobby();
+}
+async function createRoom(){
+  setErr('');
+  const btn=$('createBtn'); if(btn){ btn.disabled=true; btn.textContent='Creating…'; }
+  try {
+    for (let i=0;i<5;i++){
+      ROOM=newCode();
+      if (await loadState()) continue;
+      G=structuredClone(FRESH);
+      if (!(await saveState(G))) continue;
+      enterRoom(); return;
+    }
+    ROOM=''; setErr('Could not find a free code. Please try again.');
+  } catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); }
+  if ($('createBtn')){ $('createBtn').disabled=false; $('createBtn').textContent='Create a game'; }
+}
+async function joinRoom(raw){
+  setErr('');
+  const c=cleanCode(raw);
+  if (c.length<4){ setErr('Enter the 4-character code.'); return; }
+  ROOM=c;
+  let s; try { s=await loadState(); }
+  catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM=''; renderLobby('No game found with code '+c+'. Check the code, or start a new one.'); return; }
+  G = hydrate(s); stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+function copyInvite(){
+  const url=inviteURL();
+  const done=()=>{ const b=$('copyBtn'); if(!b)return; b.textContent='Link copied';
+    setTimeout(()=>{ if($('copyBtn')) $('copyBtn').textContent='Copy invite link'; },1600); };
+  const fb=()=>{ const f=$('inviteField'); if(f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done,fb);
+  else fb();
+}
+function renderRoomBar(){
+  $('roombar').innerHTML = `<div class="roombar">
+      <div class="rb-top"><span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span></div>
+      <input type="text" id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div></div>`;
+}
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game and send the link to
+        everyone playing. The hidden spot shows on one phone only.</p>
+      <button class="btn-sky full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input type="text" id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-sky" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') joinRoom(e.target.value); });
+}
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM); else renderLobby();
+})();
+</script>
+</body>
+</html>
