@@ -19,7 +19,7 @@
     --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
     --magenta:#C2185B;
     --crimson:#A32633; --thread:#C1362B; --charades:#C2185B;
-    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E; --oneword:#C4573B; --dial:#2E6FA8; --cipher:#1E7A4C; --clover:#4B8C3A; --facedown:#A83E86; --fibbers:#8A6B1E;
+    --tambola:#A9761A; --jeopardy:#9C6B0E; --antak:#CC5F16; --cards:#1B7F5A; --kaali:#4A4E8C; --sync:#12796F; --outsider:#7A4E9E; --oneword:#C4573B; --dial:#2E6FA8; --cipher:#1E7A4C; --clover:#4B8C3A; --facedown:#A83E86; --fibbers:#8A6B1E; --daily:#B5246B;
   }
   * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
   body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
@@ -182,6 +182,13 @@
 // One list drives the tiles, the search and every filter, so adding a game is
 // a single entry rather than an edit in four places.
 const GAMES = [
+  { slug:'daily-puzzle.html', name:'Daily Puzzle', emoji:'🧩', accent:'--daily',
+    who:'On your own', time:'5 min', age:9, type:'solo',
+    occasions:['travel','kids'],
+    blurb:"Sixteen words hide four groups of four. Everyone gets the same puzzle, a new one lands "
+        + "at midnight, and you can send your grid to the group chat without spoiling it.",
+    tags:['New every day','Solo'] },
+
   { slug:'antakshari-online.html', name:'Antakshari', emoji:'🎤', accent:'--antak',
     who:'2–4 teams', time:'Any length', age:6, type:'singing',
     occasions:['diwali','wedding','kitty','travel','kids'],
@@ -299,7 +306,7 @@ const FILTERS = [
   { key:'type', label:'Kind of game', opts:[
       ['party','Party'], ['card','Cards'], ['quiz','Quiz'],
       ['deduction','Bluffing'], ['word','Words'], ['singing','Singing'],
-      ['numbers','Numbers'] ] },
+      ['numbers','Numbers'], ['solo','On your own'] ] },
   { key:'age', label:'Age', opts:[ ['6','6+'], ['9','9+'], ['12','12+'] ] },
   { key:'occasions', label:'Occasion', opts:[
       ['diwali','Diwali'], ['wedding','Wedding'], ['kitty','Kitty party'],
