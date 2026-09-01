@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Werewolf, Mafia &amp; Traitors — the whole game on your phones, no moderator</title>
+<meta name="description" content="The full social deduction game — roles, a narrated night, secret kills and a day vote — run entirely on everyone's own phone. Nobody has to sit out to moderate. Free, no app, 5–20 players.">
+<link rel="canonical" href="https://velaparties.com/werewolf-mafia-traitors.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Werewolf, Mafia &amp; Traitors">
+<meta property="og:description" content="The full social deduction game — roles, a narrated night, secret kills and a day vote — run entirely on everyone's own phone. Nobody has to sit out to moderate.">
+<meta property="og:url" content="https://velaparties.com/werewolf-mafia-traitors.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Werewolf, Mafia &amp; Traitors">
+<meta name="twitter:description" content="Roles, a narrated night and a day vote, run entirely on everyone's own phone. No moderator.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Game", "name": "Werewolf, Mafia & Traitors",
+      "url": "https://velaparties.com/werewolf-mafia-traitors.html",
+      "description": "The full social deduction game with roles, a narrated night phase and a day vote, run on everyone's own phone with no moderator.",
+      "alternateName": ["Werewolf", "Mafia", "The Traitors"],
+      "genre": "Social deduction", "inLanguage": "en", "isAccessibleForFree": true,
+      "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 5, "maxValue": 20 },
+      "publisher": { "@type": "Organization", "name": "Vela Parties", "url": "https://velaparties.com/" } },
+    { "@type": "BreadcrumbList", "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Vela Parties", "item": "https://velaparties.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Werewolf, Mafia & Traitors", "item": "https://velaparties.com/werewolf-mafia-traitors.html" } ] }
+  ]
+}
+</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌘</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0C0A10; --panel:#161320; --line:rgba(198,164,255,.20);
+    --violet:#C6A4FF; --ink:#EFEAF6; --faint:#9A90A8; --red:#E4606D; --green:#6FCF97;
+    --gold:#E8C36B; --blood:#8E1B26;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  body.night { background:#07060B; }
+  .wrap { max-width:600px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:24px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.06em;
+       font-size:clamp(24px,6.5vw,38px); margin:4px 0 0; }
+  h1 .s { color:var(--violet); }
+  .eyebrow { color:var(--violet); letter-spacing:.22em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:20px 18px; margin-top:14px; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px;
+         padding:9px 0; border-bottom:1px solid rgba(239,234,246,.08); }
+  .row:last-child { border-bottom:none; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:9px; margin-top:12px; }
+  input[type=text] { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+          color:var(--ink); padding:13px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:9px; font-family:'Karla',system-ui,sans-serif; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--violet); outline-offset:2px; }
+  .btn { background:var(--violet); color:#140F1C; border:none; padding:14px 20px;
+         font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .btn[disabled] { opacity:.35; cursor:default; }
+  .btn-ghost { background:transparent; border:1px solid rgba(154,144,168,.45);
+               color:var(--faint); padding:11px 14px; font-size:13px; }
+  .btn-ghost.on { background:var(--violet); border-color:var(--violet); color:#140F1C; font-weight:700; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:12px 10px; font-size:15px; }
+  .seat.on { background:var(--violet); border-color:var(--violet); color:#140F1C; font-weight:700; }
+  .seat.dead { opacity:.35; text-decoration:line-through; }
+  .seat:disabled { opacity:.3; cursor:default; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:9px; margin-top:14px; }
+
+  /* the identity card */
+  .card { border:1px dashed rgba(198,164,255,.45); border-radius:14px; padding:30px 16px;
+          text-align:center; margin-top:12px; }
+  .role { font-family:'Space Grotesk',sans-serif; font-size:clamp(26px,8vw,44px); line-height:1.1; }
+  .role.evil { color:var(--red); } .role.good { color:var(--green); }
+  .tok { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line);
+         border-radius:99px; padding:7px 13px; margin:5px 4px 0; font-size:14px; }
+  .tok .em { font-size:17px; }
+  .tok.used { opacity:.4; text-decoration:line-through; }
+
+  /* the night */
+  .tappad { border:1px solid var(--line); border-radius:14px; padding:34px 14px; text-align:center;
+            background:rgba(198,164,255,.05); user-select:none; -webkit-user-select:none;
+            touch-action:manipulation; }
+  .tappad .n { font-family:'Space Grotesk',sans-serif; font-size:clamp(30px,10vw,52px);
+               color:var(--violet); line-height:1; }
+  .tappad:active { background:rgba(198,164,255,.14); }
+  .secret { border:1px solid rgba(228,96,109,.4); border-radius:12px; padding:16px;
+            margin-top:12px; background:rgba(228,96,109,.06); }
+
+  /* the death card */
+  .death { border-radius:16px; padding:40px 18px; text-align:center; margin-top:12px;
+           background:radial-gradient(circle at 50% 30%, #3A0A12, #0A0509 70%);
+           border:1px solid rgba(142,27,38,.7); animation:rise .6s ease-out; }
+  @keyframes rise { from { opacity:0; transform:scale(.94) } to { opacity:1; transform:none } }
+  .death .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(30px,10vw,52px);
+                color:#FF6B76; line-height:1.05; letter-spacing:.02em; }
+  .death .sub { color:#C98F97; margin-top:10px; font-size:15px; }
+  .survive { border-radius:16px; padding:34px 18px; text-align:center; margin-top:12px;
+             background:radial-gradient(circle at 50% 30%, #0C2A1B, #060B08 70%);
+             border:1px solid rgba(111,207,151,.5); animation:rise .6s ease-out; }
+  .survive .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(26px,8vw,42px);
+                  color:var(--green); line-height:1.1; }
+
+  .who { display:flex; justify-content:space-between; align-items:center; gap:10px;
+         padding:10px 0; border-bottom:1px solid rgba(239,234,246,.08); }
+  .who small { display:block; color:var(--faint); font-size:12px; }
+  .tick { color:var(--green); } .dot { color:var(--faint); }
+  .tag { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  .tag.evil { color:var(--red); } .tag.good { color:var(--green); }
+  .bar { height:7px; border-radius:99px; background:rgba(239,234,246,.1); margin-top:5px; }
+  .bar span { display:block; height:100%; border-radius:99px; background:var(--violet); }
+
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+             padding:13px 15px; margin-top:14px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Space Grotesk',sans-serif; letter-spacing:.2em; font-size:26px; color:var(--violet); }
+  .linkfield { font-size:13px; margin-top:9px; padding:9px 10px; color:var(--faint);
+               background:var(--bg); border:1px solid var(--line); border-radius:8px; width:100%; }
+  .rb-actions { display:flex; gap:8px; margin-top:9px; } .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:18px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover { color:var(--violet); }
+  details summary { color:var(--violet); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+
+  .howto { max-width:100%; margin-top:28px; }
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1 id="title">WEREWOLF · MAFIA · <span class="s">TRAITORS</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
+
+  <section class="howto">
+    <h2>How to play Werewolf, Mafia or Traitors</h2>
+    <ol>
+      <li>Everyone joins on their own phone and taps their own name. Tap the face-down card and it tells you, privately, whether you are one of the <b>villagers</b> or one of the <b>wolves</b> — and hands you any special token you have been given.</li>
+      <li><b>Night.</b> One phone reads the instructions aloud: everyone closes their eyes and <b>keeps tapping their phone</b>, so the room cannot hear who is doing something. The wolves choose their victim on their own screens. Nobody else's screen shows anything unusual.</li>
+      <li><b>Morning.</b> Only the person who was taken sees it — their screen turns, and they hold it up. Everyone else finds out by looking at them.</li>
+      <li><b>Day.</b> Argue. Then everyone votes at once, secretly, and the votes are revealed together so nobody follows the room.</li>
+      <li>The village wins when every wolf is gone. The wolves win the moment they equal the villagers in number.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">Eight play, with two wolves. On the first night the wolves
+      both tap <b>Priya</b>. But Priya was dealt the <b>shield</b>, so in the morning everyone's
+      screen says the night passed without a death — and Priya alone is told she was attacked and
+      survived. She now knows something nobody else does, and has to decide whether saying so makes
+      her safe or makes her the next target.</p></div>
+    <p class="facts">5–20 players · 20–45 minutes · suggested from age 12 · free, no sign-up, and nobody has to sit out to moderate.</p>
+  </section>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script src="feedback.js"></script>
+<script src="group.js"></script>
+<script src="vp.js"></script>
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "werewolf";
+
+/* ── one game, three names ───────────────────────────────────
+   The rules are identical; only the words change. Tables argue about which
+   name is the real one, so let them all be. */
+const THEMES = {
+  werewolf: { key:'werewolf', game:'Werewolf', title:['WERE','WOLF'],
+    evil:'Werewolf', evils:'Werewolves', good:'Villager', goods:'Villagers',
+    verb:'taken by the wolves', place:'the village', night:'The wolves are hunting.' },
+  mafia: { key:'mafia', game:'Mafia', title:['MA','FIA'],
+    evil:'Mafioso', evils:'Mafia', good:'Townsfolk', goods:'Townsfolk',
+    verb:'dealt with in the night', place:'the town', night:'The Mafia are moving.' },
+  traitors: { key:'traitors', game:'Traitors', title:['TRAI','TORS'],
+    evil:'Traitor', evils:'Traitors', good:'Faithful', goods:'The Faithful',
+    verb:'murdered', place:'the castle', night:'The Traitors are choosing.' },
+};
+const TH = () => THEMES[(G && G.theme) || 'werewolf'] || THEMES.werewolf;
+
+/* ── tokens ──────────────────────────────────────────────────
+   Dealt to the GOOD side only. A shield on a wolf is a dead token — nobody
+   attacks them at night — and a token that can be wasted by the deal feels
+   like bad luck rather than a decision. They are the counterweight to the
+   wolves knowing each other, so they belong on the side that knows nothing. */
+const TOKENS = {
+  dagger:  { em:'🗡️', name:'Dagger',  blurb:'Your vote counts twice, every day.' },
+  shield:  { em:'🛡️', name:'Shield',  blurb:'Survive the first attempt on you. Once.' },
+  mask:    { em:'🎭', name:'Mask',    blurb:'You were shown one other player\u2019s identity.' },
+  lantern: { em:'🏮', name:'Lantern', blurb:'Once, in the day, prove what you are. The app vouches for it, so nobody can fake it.' },
+};
+
+const FRESH = { phase:'setup', theme:'werewolf', players:[], evilCount:2,
+                use:{ dagger:true, shield:true, mask:false, lantern:false },
+                seer:false, doctor:false, recruit:false, revealOnDeath:true,
+                round:0, narrator:null,
+                roles:{}, tokens:{}, masked:{}, alive:{}, seen:{},
+                seerOf:null, doctorOf:null,
+                nightPicks:{}, seerPick:null, doctorPick:null, recruitPick:null,
+                victim:null, savedBy:null, attacked:null, recruited:null,
+                votes:{}, banished:null, lanternShown:{},
+                usedShield:{}, usedLantern:{},
+                log:[], winner:null, _sessionEnd:null };
+
+let G = null, me = null, stamp = 0, pending = null;
+let peeked = false, taps = 0, primed = false, spokeFor = '';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const jss = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\u0027')
+  .replace(/"/g, '\\u0022').replace(/&/g, '\\u0026').replace(/[\r\n]+/g, ' ');
+function setErr(m){ $('err').textContent = m || ''; }
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() }) });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey(), p_state: next }) });
+  if (!r.ok) throw new Error('save '+r.status);
+  try { return (await r.json()) === true; } catch { return true; }
+}
+async function commit(fn){
+  for (let a=0; a<4; a++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = hydrate(fresh); stamp = Math.max(stamp, fresh._stamp||0); render(); }
+  }
+  return false;
+}
+async function mutate(fn){
+  try { if (await commit(fn)){ setErr(''); return; } } catch {}
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;
+}
+async function poll(){
+  if (!joined) return;
+  if (!me && G && (G.players||[]).length) me = vpRecallSeat(GAME_ID, ROOM, G.players);
+  if (me) vpRememberSeat(GAME_ID, ROOM, me);
+  if (me && G && vpBeatDue()){ const t = Date.now(); vpMarkBeat(); mutate(g => vpStampSeen(g, me, t)); }
+  try {
+    if (pending){ const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn; }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      const was = G && G.phase;
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
+      if (G.phase !== was){ peeked = false; taps = 0; }
+      if (G.phase === 'night' || G.phase === 'morning') speakFor(G.phase);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch { if (!G){ G = structuredClone(FRESH); render(); } }
+}
+
+// ── who is who ──
+const living = (g) => (g.players||[]).filter(p => g.alive[p]);
+const evils  = (g) => living(g).filter(p => g.roles[p] === 'evil');
+const goods  = (g) => living(g).filter(p => g.roles[p] !== 'evil');
+const isEvil = (g,p) => g.roles[p] === 'evil';
+const hasTok = (g,p,k) => (g.tokens[p]||[]).includes(k);
+const voteWeight = (g,p) => hasTok(g,p,'dagger') ? 2 : 1;
+
+/* Nobody acts at night except the wolves, the Seer and the Doctor, and they
+   all act at the same moment — a moderator has to wake each role in turn, but
+   phones do not. */
+function nightActors(g){
+  const need = evils(g).slice();
+  if (g.seer && g.seerOf && g.alive[g.seerOf]) need.push(g.seerOf);
+  if (g.doctor && g.doctorOf && g.alive[g.doctorOf]) need.push(g.doctorOf);
+  return [...new Set(need)];
+}
+function nightReady(g){
+  const evilDone = evils(g).every(p => g.nightPicks[p] || g.recruitPick);
+  const seerDone = !(g.seer && g.seerOf && g.alive[g.seerOf]) || !!g.seerPick;
+  const docDone  = !(g.doctor && g.doctorOf && g.alive[g.doctorOf]) || !!g.doctorPick;
+  return evilDone && seerDone && docDone;
+}
+
+// ── setup ──
+function addPlayer(){
+  const el=$('nameInput'); const n=el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if (G.players.length>=20){ setErr('Twenty is as many as this holds.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{ g.players.push(n); return g; });
+}
+function removePlayer(n){
+  mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; });
+  if (me===n) me=null;
+}
+function setTheme(k){ mutate(g=>{ g.theme=k; return g; }); }
+function setEvil(n){ mutate(g=>{ g.evilCount=n; return g; }); }
+function toggleUse(k){ mutate(g=>{ g.use[k] = !g.use[k]; return g; }); }
+function toggleFlag(k){ mutate(g=>{ g[k] = !g[k]; return g; }); }
+
+function specialsNeeded(g){ return (g.seer?1:0) + (g.doctor?1:0); }
+function setupProblem(g){
+  const n = g.players.length;
+  if (n < 5) return 'Five at the very least — below that there is nothing to deduce.';
+  if (g.evilCount < 1) return 'There has to be at least one on the other side.';
+  /* The obvious check — "do the wolves already equal the village" — is not
+     enough. Two wolves among five passes it, and then the first night kill
+     makes it two against two and the wolves win before anybody has voted
+     once. So the real question is whether the village survives ONE night
+     with a game still to play: evil*2 + 1 < total. */
+  if (g.evilCount * 2 + 1 >= n)
+    return `With ${n} playing, ${g.evilCount} ${TH().evils.toLowerCase()} would win after a single night — the village needs at least two more than that.`;
+  if (n - g.evilCount - specialsNeeded(g) < 1)
+    return 'Not enough on the village side to carry the Seer and the Doctor as well.';
+  return null;
+}
+
+function shuffle(a){
+  a = a.slice();
+  for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function assignRoles(g){
+  const order = shuffle(g.players);
+  g.roles = {}; g.tokens = {}; g.masked = {}; g.alive = {}; g.seen = {};
+  g.usedShield = {}; g.usedLantern = {}; g.lanternShown = {};
+  order.forEach((p,i) => { g.roles[p] = i < g.evilCount ? 'evil' : 'good'; g.alive[p] = true; });
+  const good = shuffle(order.filter(p => g.roles[p] === 'good'));
+  let k = 0;
+  g.seerOf = g.seer ? good[k++] : null;
+  g.doctorOf = g.doctor ? good[k++] : null;
+  // tokens go to the side that knows nothing — see the note by TOKENS
+  const pool = shuffle(good);
+  let t = 0;
+  for (const key of Object.keys(TOKENS)){
+    if (!g.use[key]) continue;
+    const who = pool[t++];
+    if (!who) break;
+    g.tokens[who] = (g.tokens[who]||[]).concat([key]);
+    if (key === 'mask'){
+      const others = order.filter(x => x !== who);
+      g.masked[who] = others[Math.floor(Math.random()*others.length)];
+    }
+  }
+  return g;
+}
+function startGame(){
+  const problem = setupProblem(G);
+  if (problem){ setErr(problem); return; }
+  setErr(''); peeked = false;
+  mutate(g=>{
+    assignRoles(g);
+    g.round = 0; g.log = []; g.winner = null; g._sessionEnd = null;
+    g.phase = 'reveal';
+    return g;
+  });
+}
+function iHaveSeen(){
+  if (!me) return;
+  primeSpeech();
+  mutate(g=>{
+    if (g.phase !== 'reveal') return g;
+    g.seen[me] = true;
+    if (g.players.every(p => g.seen[p])) beginNight(g);
+    return g;
+  });
+}
+
+// ── the night ──
+function beginNight(g){
+  g.round += 1;
+  // drawn here, in shared state, so every phone agrees who is speaking
+  const up = living(g);
+  g.narrator = up.length ? up[Math.floor(Math.random() * up.length)] : null;
+  g.nightPicks = {}; g.seerPick = null; g.doctorPick = null; g.recruitPick = null;
+  g.victim = null; g.savedBy = null; g.attacked = null; g.recruited = null;
+  g.votes = {}; g.banished = null;
+  g.phase = 'night';
+  return g;
+}
+/* Browsers refuse to speak until the device has had a real user gesture, and
+   they refuse silently. Every phone taps a seat and taps "I know what I am"
+   before night one, so this fires on those taps and the refusal never
+   happens. */
+function primeSpeech(){
+  if (primed) return;
+  primed = true;
+  try { if ('speechSynthesis' in window) speechSynthesis.speak(new SpeechSynthesisUtterance('')); } catch {}
+}
+const speechOK = () => { try { return 'speechSynthesis' in window; } catch { return false; } };
+const iNarrate = () => !!(G && me && G.narrator === me);
+
+function say(text){
+  if (!iNarrate() || !speechOK()) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 0.9; u.pitch = 0.9;
+    speechSynthesis.speak(u);
+  } catch {}
+}
+function nightScript(){
+  const t = TH();
+  return `Night falls on ${t.place}. Everybody, close your eyes. `
+       + `Keep tapping your phone, so nobody can hear who is moving. ${t.night}`;
+}
+function morningScript(){
+  const t = TH();
+  return `${t.evils}, close your eyes. Everybody, open your eyes. It is morning in ${t.place}.`;
+}
+/* Said once per round per phase, never twice — poll() runs every second or so
+   and a line repeating over a dark room is worse than no line at all. */
+function speakFor(phase){
+  const key = phase + ':' + (G ? G.round : 0);
+  if (spokeFor === key) return;
+  spokeFor = key;
+  if (phase === 'night') say(nightScript());
+  if (phase === 'morning') setTimeout(() => {
+    if (G && G.phase === 'morning') say(morningScript());
+  }, 3000);                                  // three seconds to look up first
+}
+function sayAgain(){
+  spokeFor = '';
+  say(G.phase === 'night' ? nightScript() : morningScript());
+}
+function tapPad(){ primeSpeech(); taps++; const el = $('tapcount'); if (el) el.textContent = taps; }
+
+function nightPick(target){
+  if (!me) return;
+  mutate(g=>{
+    if (g.phase !== 'night' || !g.alive[me]) return g;
+    if (isEvil(g, me)) g.nightPicks[me] = target;
+    else if (g.seerOf === me) g.seerPick = target;
+    else if (g.doctorOf === me) g.doctorPick = target;
+    else return g;
+    if (nightReady(g)) return resolveNight(g);
+    return g;
+  });
+}
+function recruitPick(target){
+  if (!me) return;
+  mutate(g=>{
+    if (g.phase !== 'night' || !isEvil(g, me) || evils(g).length !== 1 || !g.recruit) return g;
+    g.recruitPick = target;
+    g.nightPicks[me] = null;
+    if (nightReady(g)) return resolveNight(g);
+    return g;
+  });
+}
+/* The wolves vote among themselves; the most-picked name is taken. A tie is
+   broken by the first pick made, which is the closest thing to "they argued
+   and one of them moved first". */
+function resolveNight(g){
+  if (g.recruitPick){
+    g.recruited = g.recruitPick;
+    g.roles[g.recruitPick] = 'evil';
+    g.victim = null;
+    g.log = [{ round:g.round, kind:'recruit', who:g.recruitPick }].concat(g.log).slice(0,40);
+  } else {
+    const tally = {};
+    for (const p of evils(g)){ const v = g.nightPicks[p]; if (v) tally[v] = (tally[v]||0) + 1; }
+    const top = Math.max(0, ...Object.values(tally));
+    const leaders = Object.keys(tally).filter(k => tally[k] === top);
+    let target = leaders[0] || null;
+    if (leaders.length > 1){
+      for (const p of evils(g)) if (leaders.includes(g.nightPicks[p])){ target = g.nightPicks[p]; break; }
+    }
+    g.attacked = target;
+    if (target){
+      if (g.doctorPick === target){ g.victim = null; g.savedBy = 'doctor'; }
+      else if (hasTok(g, target, 'shield') && !g.usedShield[target]){
+        g.victim = null; g.savedBy = 'shield'; g.usedShield[target] = true;
+      } else {
+        g.victim = target; g.alive[target] = false;
+      }
+    }
+    g.log = [{ round:g.round, kind:'night', attacked:target, victim:g.victim,
+               savedBy:g.savedBy }].concat(g.log).slice(0,40);
+  }
+  if (g.seerPick) g.seerResult = { who:g.seerPick, evil:isEvil(g, g.seerPick), round:g.round };
+  g.phase = 'morning';
+  return checkWin(g);
+}
+function toDay(){ mutate(g=>{ if (g.phase !== 'morning') return g; g.phase = 'day'; return g; }); }
+
+// ── the day ──
+function castVote(name){
+  if (!me) return;
+  mutate(g=>{
+    if (g.phase !== 'day' || !g.alive[me]) return g;
+    g.votes[me] = name;
+    if (living(g).every(p => g.votes[p])) return resolveDay(g);
+    return g;
+  });
+}
+function useLantern(){
+  if (!me) return;
+  mutate(g=>{
+    if (!hasTok(g, me, 'lantern') || g.usedLantern[me] || !g.alive[me]) return g;
+    g.usedLantern[me] = true;
+    g.lanternShown[me] = g.roles[me];      // the app vouches — this cannot be faked
+    return g;
+  });
+}
+function resolveDay(g){
+  const tally = {};
+  for (const p of living(g)){
+    const v = g.votes[p]; if (!v) continue;
+    tally[v] = (tally[v]||0) + voteWeight(g, p);
+  }
+  const top = Math.max(0, ...Object.values(tally));
+  const leaders = Object.keys(tally).filter(k => tally[k] === top);
+  g.banished = leaders.length === 1 ? leaders[0] : null;
+  if (g.banished) g.alive[g.banished] = false;
+  g.log = [{ round:g.round, kind:'day', banished:g.banished, tally }].concat(g.log).slice(0,40);
+  g.phase = 'verdict';
+  return checkWin(g);
+}
+/* The village wins when the last wolf is gone. The wolves win the moment they
+   equal the village in number — from there they simply cannot be outvoted. */
+function checkWin(g){
+  const e = evils(g).length, v = goods(g).length;
+  if (e === 0) g.winner = 'good';
+  else if (e >= v) g.winner = 'evil';
+  if (g.winner){
+    g.phase = 'gameover';
+    if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
+  }
+  return g;
+}
+function nextNight(){ mutate(g=>{ if (g.phase !== 'verdict') return g; return beginNight(g); }); }
+function playAgain(keep){
+  me = keep ? me : null; peeked = false;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep){ n.players=g.players; n.theme=g.theme; n.evilCount=g.evilCount; n.use=g.use;
+               n.seer=g.seer; n.doctor=g.doctor; n.recruit=g.recruit; n.revealOnDeath=g.revealOnDeath; }
+    return n;
+  });
+}
+function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+
+// ── render ──
+function whoAmIHTML(){
+  if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
+      ${vpAvatar(me)} You are <b style="color:var(--ink)">${esc(me)}</b> ·
+      <a href="#" onclick="me=null;peeked=false;render();return false" style="color:var(--violet)">not you?</a></p></div>`;
+  return `<div class="panel"><div class="eyebrow">Which one are you?</div>
+      <p class="faint" style="font-size:14px;margin-top:6px">Everything after this is private to
+         your own phone. Pick carefully.</p>
+      <div class="grid">${G.players.map(p=>
+        `<button class="seat" onclick="me='${jss(p)}';peeked=false;render()">${vpAvatar(p)} ${esc(p)}</button>`).join('')}</div></div>`;
+}
+function tableHTML(showRoles){
+  return `<div class="panel"><div class="eyebrow">${TH().place.replace(/^the /,'')}</div>
+    ${G.players.map(p=>{
+      const dead = !G.alive[p];
+      const lantern = G.lanternShown[p];
+      return `<div class="who">
+        <span>${vpAvatar(p)} ${esc(p)}
+          ${dead ? '<small>out</small>' : ''}
+          ${lantern ? `<small class="tag ${lantern==='evil'?'evil':'good'}">shown: ${
+            lantern==='evil'?esc(TH().evil):esc(TH().good)}</small>` : ''}</span>
+        <span class="tag ${showRoles && dead ? (isEvil(G,p)?'evil':'good') : ''}">${
+          showRoles && dead && G.revealOnDeath ? (isEvil(G,p)?esc(TH().evil):esc(TH().good)) : ''}</span>
+      </div>`;
+    }).join('')}
+    <p class="faint" style="font-size:13px;margin:10px 0 0">${living(G).length} still in.</p></div>`;
+}
+function myCardHTML(){
+  if (!me) return '';
+  const evil = isEvil(G, me);
+  const toks = G.tokens[me] || [];
+  return `<div class="card">
+      <p class="role ${evil?'evil':'good'}">${evil ? esc(TH().evil) : esc(TH().good)}</p>
+      ${evil ? `<p class="faint" style="margin-top:10px">With you:
+         <b style="color:var(--ink)">${G.players.filter(p=>isEvil(G,p)&&p!==me).map(esc).join(', ') || 'nobody — you are alone'}</b></p>` : ''}
+      ${G.seerOf === me ? '<p class="faint" style="margin-top:8px">You are the <b style="color:var(--ink)">Seer</b> — each night you may look at one person.</p>' : ''}
+      ${G.doctorOf === me ? '<p class="faint" style="margin-top:8px">You are the <b style="color:var(--ink)">Doctor</b> — each night you may protect one person.</p>' : ''}
+      ${toks.length ? `<div style="margin-top:12px">${toks.map(k=>{
+          const T = TOKENS[k];
+          const used = (k==='shield' && G.usedShield[me]) || (k==='lantern' && G.usedLantern[me]);
+          return `<span class="tok ${used?'used':''}"><span class="em">${T.em}</span> ${T.name}</span>`;
+        }).join('')}
+        <p class="faint" style="font-size:13px;margin-top:8px">${toks.map(k=>TOKENS[k].blurb).join(' ')}</p></div>` : ''}
+      ${G.masked[me] ? `<p class="faint" style="margin-top:10px">🎭 Your mask showed you:
+         <b style="color:var(--ink)">${esc(G.masked[me])}</b> is
+         <b style="color:${isEvil(G,G.masked[me])?'var(--red)':'var(--green)'}">${
+           isEvil(G,G.masked[me]) ? esc(TH().evil) : esc(TH().good)}</b>.</p>` : ''}
+    </div>`;
+}
+/* Everyone is told who is speaking. It is drawn at random and gives nothing
+   away, and a room that does not know which phone to listen to just sits in
+   the dark. */
+function narratorHTML(){
+  if (!G.narrator) return '';
+  if (!iNarrate())
+    return `<p class="faint" style="font-size:13px;margin-top:12px">🔈 <b style="color:var(--ink)">${
+      esc(G.narrator)}</b>'s phone is reading this round aloud.</p>`;
+  return `<div class="secret" style="border-color:rgba(198,164,255,.4);background:rgba(198,164,255,.06)">
+      <div class="eyebrow">🔊 Your phone is the voice this round</div>
+      <p class="faint" style="font-size:13.5px;margin-top:6px">Hold it up so everyone can hear.
+        ${speechOK() ? '' : 'This browser will not speak, so read it out yourself:'}</p>
+      <p style="font-size:14.5px;margin-top:6px">${esc(G.phase === 'night' ? nightScript() : morningScript())}</p>
+      <button class="btn-ghost full" onclick="sayAgain()">Say it again</button>
+    </div>`;
+}
+
+function render(){
+  if (!configured()){ $('app').innerHTML='<div class="panel"><p class="faint">Supabase is not configured.</p></div>'; return; }
+  const app = $('app'), t = TH();
+  document.body.classList.toggle('night', G.phase === 'night');
+  $('title').innerHTML = t.title[0] + '<span class="s">' + t.title[1] + '</span>';
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
+    : G.phase==='gameover' ? 'Game over'
+    : G.phase==='reveal' ? 'Look at your card'
+    : G.phase==='night' ? `Night ${G.round}`
+    : G.phase==='morning' ? `Morning ${G.round}`
+    : `Day ${G.round}`;
+
+  if (G.phase==='setup'){
+    const had=$('nameInput'); const keep=had?had.value:'';
+    const problem = setupProblem(G);
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Which name do you call it</div>
+        <div class="grid">${Object.values(THEMES).map(x=>
+          `<button class="seat ${G.theme===x.key?'on':''}" onclick="setTheme('${x.key}')">${esc(x.game)}</button>`).join('')}</div>
+        <p class="faint" style="font-size:13px;margin-top:8px">The same game either way — only the
+          words change.</p>
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Players (5–20)</div>
+        <div style="display:flex;gap:8px;margin:12px 0">
+          <input type="text" id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.players.length ? G.players.map(p=>`<div class="row"><span>${vpAvatar(p)} ${esc(p)}</span>
+          <button class="btn-ghost" onclick="removePlayer('${jss(p)}')">Remove</button></div>`).join('')
+          : '<p class="faint" style="font-style:italic">Nobody yet.</p>'}
+        <p class="faint" style="font-size:13px;margin-top:10px">${G.players.length} added.</p>
+      </div>
+      <div class="panel">
+        <div class="eyebrow">How many ${esc(t.evils.toLowerCase())}</div>
+        <div class="grid">${[1,2,3,4].map(n=>
+          `<button class="seat ${G.evilCount===n?'on':''}" onclick="setEvil(${n})">${n}</button>`).join('')}</div>
+        <p class="faint" style="font-size:13px;margin-top:8px">About one for every four playing is
+          the usual balance.</p>
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Tokens — dealt among ${esc(t.goods.toLowerCase())}</div>
+        <div class="stack">${Object.keys(TOKENS).map(k=>{
+          const T = TOKENS[k];
+          return `<button class="btn-ghost ${G.use[k]?'on':''}" onclick="toggleUse('${k}')"
+            style="text-align:left">${T.em} <b>${T.name}</b> — ${esc(T.blurb)}</button>`;
+        }).join('')}</div>
+        <p class="faint" style="font-size:13px;margin-top:8px">One of each, to one person. They go
+          to the village side because a shield on a ${esc(t.evil.toLowerCase())} would do nothing.</p>
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Extra roles and rules</div>
+        <div class="stack">
+          <button class="btn-ghost ${G.seer?'on':''}" onclick="toggleFlag('seer')" style="text-align:left">
+            🔮 <b>Seer</b> — each night, look at one person and learn what they are.</button>
+          <button class="btn-ghost ${G.doctor?'on':''}" onclick="toggleFlag('doctor')" style="text-align:left">
+            🩺 <b>Doctor</b> — each night, protect one person from the attack.</button>
+          <button class="btn-ghost ${G.recruit?'on':''}" onclick="toggleFlag('recruit')" style="text-align:left">
+            🤝 <b>Recruit</b> — the last ${esc(t.evil.toLowerCase())} standing may turn someone instead of killing.</button>
+          <button class="btn-ghost ${G.revealOnDeath?'on':''}" onclick="toggleFlag('revealOnDeath')" style="text-align:left">
+            📜 <b>Show what they were</b> when somebody goes out.</button>
+        </div>
+      </div>
+      <div class="panel">
+        ${problem ? `<p class="faint center" style="font-size:14px;margin:0 0 10px">${esc(problem)}</p>` : ''}
+        <button class="btn full" onclick="startGame()" ${problem?'disabled':''}>Deal the roles</button>
+      </div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase==='reveal'){
+    if (!me){ app.innerHTML = whoAmIHTML(); return; }
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Your card</div>
+        ${!peeked
+          ? `<div class="card"><p class="faint" style="margin:0 0 14px">Make sure nobody can see
+               your screen.</p>
+             <button class="btn" onclick="peeked=true;render()">Turn it over</button></div>`
+          : myCardHTML() + `<button class="btn-ghost full" onclick="peeked=false;render()">Hide it</button>`}
+        ${G.seen[me] ? '<p class="faint" style="margin-top:14px">Waiting for the others…</p>'
+          : `<button class="btn full" onclick="iHaveSeen()">I know what I am</button>`}
+      </div>
+      <div class="panel"><div class="eyebrow">Looked</div>
+        ${G.players.map(p=>`<div class="row"><span>${vpAvatar(p)} ${esc(p)}</span>
+          <span class="${G.seen[p]?'tick':'dot'}">${G.seen[p]?'✓':'…'}</span></div>`).join('')}
+      </div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='night'){
+    speakFor('night');
+    const iAct = me && G.alive[me] && (isEvil(G,me) || G.seerOf===me || G.doctorOf===me);
+    const mine = me ? (isEvil(G,me) ? G.nightPicks[me] : G.seerOf===me ? G.seerPick : G.doctorPick) : null;
+    const targets = living(G).filter(p => isEvil(G,me) ? !isEvil(G,p) : true);
+    const lastEvil = isEvil(G,me) && evils(G).length === 1 && G.recruit;
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Night ${G.round}</div>
+        <p class="faint" style="font-size:15px;margin-top:8px">Eyes closed. <b style="color:var(--ink)">Keep
+          tapping</b> — everybody taps, so nobody can hear who is doing something.</p>
+        <div class="tappad" onclick="tapPad()"><div class="n" id="tapcount">${taps}</div>
+          <p class="faint" style="font-size:13px;margin:8px 0 0">tap · tap · tap</p></div>
+        ${narratorHTML()}
+      </div>
+      ${!me ? whoAmIHTML() : !G.alive[me]
+        ? `<div class="panel center"><p class="faint" style="margin:0">You are out. Keep tapping with
+             everyone else and say nothing.</p></div>`
+        : iAct ? `<div class="secret">
+            <div class="eyebrow">${isEvil(G,me) ? esc(TH().evils) + ' — choose'
+              : G.seerOf===me ? 'Seer — look at one person' : 'Doctor — protect one person'}</div>
+            ${isEvil(G,me) && G.players.filter(p=>isEvil(G,p)&&p!==me&&G.alive[p]).length
+              ? `<p class="faint" style="font-size:13px;margin-top:6px">With you:
+                   ${G.players.filter(p=>isEvil(G,p)&&p!==me&&G.alive[p]).map(p=>
+                     esc(p) + (G.nightPicks[p] ? ' → ' + esc(G.nightPicks[p]) : ' (thinking)')).join(' · ')}</p>` : ''}
+            ${mine ? `<p style="margin-top:8px">You chose <b>${esc(mine)}</b>.
+                 <a href="#" onclick="nightPick(null);return false" style="color:var(--violet)">change</a></p>`
+              : `<div class="grid">${targets.filter(p=>p!==me||G.doctorOf===me).map(p=>
+                   `<button class="seat" onclick="nightPick('${jss(p)}')">${esc(p)}</button>`).join('')}</div>`}
+            ${lastEvil ? `<div class="eyebrow" style="margin-top:16px">Or turn one of them instead</div>
+              <p class="faint" style="font-size:13px">You are the last one. Nobody dies tonight if you do.</p>
+              <div class="grid">${goods(G).map(p=>
+                `<button class="seat" onclick="recruitPick('${jss(p)}')">${esc(p)}</button>`).join('')}</div>` : ''}
+          </div>`
+        : `<div class="panel center"><p class="faint" style="margin:0">Nothing for you to do but tap.
+             Which is exactly what everyone else's screen says too.</p></div>`}
+      <div class="panel"><div class="eyebrow">Done</div>
+        ${nightActors(G).map(p=>`<div class="row"><span>${esc(p) === me ? esc(p) : 'someone'}</span>
+          <span class="${(isEvil(G,p)?G.nightPicks[p]:p===G.seerOf?G.seerPick:G.doctorPick)?'tick':'dot'}">${
+            (isEvil(G,p)?G.nightPicks[p]:p===G.seerOf?G.seerPick:G.doctorPick)?'✓':'…'}</span></div>`).join('')}
+        <p class="faint" style="font-size:12.5px;margin:8px 0 0">Names are hidden here on purpose.</p>
+      </div>`;
+    return;
+  }
+
+  if (G.phase==='morning'){
+    speakFor('morning');
+    const iDied = me && G.victim === me;
+    const iSurvived = me && G.attacked === me && !G.victim;
+    const iWasRecruited = me && G.recruited === me;
+    app.innerHTML = `
+      ${iDied ? `<div class="death">
+          <p class="big">You were ${esc(TH().verb)}.</p>
+          <p class="sub">Hold your phone up. That is how they find out.</p>
+        </div>`
+      : iSurvived ? `<div class="survive">
+          <p class="big">They came for you.</p>
+          <p class="sub">${G.savedBy === 'doctor' ? 'Somebody protected you.'
+            : 'Your shield held — and it is spent now.'} Nobody else knows.</p>
+        </div>`
+      : iWasRecruited ? `<div class="death" style="background:radial-gradient(circle at 50% 30%, #2A1636, #0A0509 70%);border-color:rgba(198,164,255,.6)">
+          <p class="big" style="color:var(--violet)">You have been turned.</p>
+          <p class="sub">You are one of ${esc(TH().evils.toLowerCase())} now. Say nothing.</p>
+        </div>`
+      : `<div class="panel center">
+          <div class="eyebrow">Morning ${G.round}</div>
+          ${G.victim ? `<p style="font-family:'Space Grotesk',sans-serif;font-size:clamp(20px,6vw,30px);margin:10px 0 0">
+               Somebody did not survive.</p>
+             <p class="faint">Look around. One phone in this room is telling its owner.</p>`
+            : `<p style="font-family:'Space Grotesk',sans-serif;font-size:clamp(20px,6vw,30px);margin:10px 0 0;color:var(--green)">
+                 Everybody woke up.</p>
+               <p class="faint">Which is its own kind of information.</p>`}
+        </div>`}
+      ${G.seerOf === me && G.seerResult && G.seerResult.round === G.round
+        ? `<div class="secret"><div class="eyebrow">🔮 What you saw</div>
+             <p style="margin-top:6px"><b>${esc(G.seerResult.who)}</b> is
+               <b style="color:${G.seerResult.evil?'var(--red)':'var(--green)'}">${
+                 G.seerResult.evil ? esc(TH().evil) : esc(TH().good)}</b>.</p></div>` : ''}
+      <div class="panel">
+        ${G.victim ? `<p class="faint center" style="margin:0 0 10px">When they have shown you,
+           carry on.</p>` : ''}
+        <button class="btn full" onclick="toDay()">Open the day</button>
+        ${narratorHTML()}
+      </div>` + whoAmIHTML();
+    /* No table here on purpose. It marks the dead, which would put the victim's
+       name on all six screens and take away the one moment this game is built
+       around — the room working it out from somebody holding up a phone. It
+       comes back the moment the day opens. */
+    return;
+  }
+
+  if (G.phase==='day'){
+    const iVote = me && G.alive[me];
+    const voted = iVote ? G.votes[me] : null;
+    const canLantern = me && hasTok(G,me,'lantern') && !G.usedLantern[me] && G.alive[me];
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Day ${G.round}</div>
+        <p class="faint" style="font-size:15px;margin-top:8px">Talk it out. Then everybody votes at
+          once — nobody sees a single vote until the last one is in.</p>
+      </div>
+      ${G.victim ? `<div class="panel center"><p class="faint" style="margin:0">
+          <b style="color:var(--red)">${esc(G.victim)}</b> was ${esc(TH().verb)} in the night.</p></div>` : ''}
+      <div class="panel">
+        ${!me ? '<p class="faint">Pick your seat below to vote.</p>'
+          : !G.alive[me] ? '<p class="faint" style="margin:0">You are out. Watch, and say nothing.</p>'
+          : voted
+            ? `<p style="margin:0">You voted for <b>${esc(voted)}</b>.
+                 <a href="#" onclick="castVote(null);return false" style="color:var(--violet)">change</a></p>`
+            : `<div class="eyebrow">Who goes?</div>
+               <div class="grid">${living(G).map(p=>
+                 `<button class="seat" onclick="castVote('${jss(p)}')">${esc(p)}</button>`).join('')}</div>`}
+        ${me && hasTok(G,me,'dagger') && G.alive[me]
+          ? '<p class="faint" style="font-size:13px;margin-top:10px">🗡️ Your vote counts twice.</p>' : ''}
+        ${canLantern ? `<button class="btn-ghost full" onclick="useLantern()">🏮 Use the Lantern —
+            prove what you are, for good</button>` : ''}
+      </div>
+      <div class="panel"><div class="eyebrow">Votes in</div>
+        ${living(G).map(p=>`<div class="row"><span>${vpAvatar(p)} ${esc(p)}</span>
+          <span class="${G.votes[p]?'tick':'dot'}">${G.votes[p]?'✓ in':'…'}</span></div>`).join('')}
+      </div>` + tableHTML(true) + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='verdict'){
+    const l = G.log[0];
+    const tally = (l && l.tally) || {};
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">The vote</div>
+        ${G.banished
+          ? `<p style="font-family:'Space Grotesk',sans-serif;font-size:clamp(22px,7vw,34px);margin:10px 0 0">
+               ${esc(G.banished)} is out.</p>
+             ${G.revealOnDeath ? `<p class="faint">They were
+               <b style="color:${isEvil(G,G.banished)?'var(--red)':'var(--green)'}">${
+                 isEvil(G,G.banished) ? esc(TH().evil) : esc(TH().good)}</b>.</p>`
+               : '<p class="faint">Nobody will say what they were.</p>'}`
+          : `<p style="font-family:'Space Grotesk',sans-serif;font-size:clamp(20px,6vw,30px);margin:10px 0 0">
+               No agreement.</p><p class="faint">Nobody goes today.</p>`}
+      </div>
+      <div class="panel"><div class="eyebrow">How it fell</div>
+        ${Object.keys(tally).length ? Object.keys(tally).sort((a,b)=>tally[b]-tally[a]).map(p=>{
+          const max = Math.max(...Object.values(tally));
+          return `<div style="margin-top:10px"><div class="row" style="border:none;padding:2px 0">
+            <span>${esc(p)}</span><span class="faint">${tally[p]}</span></div>
+            <div class="bar"><span style="width:${Math.round(tally[p]/max*100)}%"></span></div></div>`;
+        }).join('') : '<p class="faint">Nobody voted.</p>'}
+        <p class="faint" style="font-size:13px;margin-top:12px">Voted:
+          ${living(G).concat(G.banished?[G.banished]:[]).map(p=>
+            G.votes[p] ? esc(p)+' → '+esc(G.votes[p]) : null).filter(Boolean).join(' · ')}</p>
+      </div>
+      <div class="panel"><button class="btn full" onclick="nextNight()">Night falls again</button></div>
+      ` + tableHTML(true) + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='gameover'){
+    const good = G.winner === 'good';
+    if (window.vpMaybeReport) vpMaybeReport(G, 'werewolf', ROOM,
+      G.players.map(p => ({ player:p, score: (isEvil(G,p) === (G.winner==='evil')) ? 1 : 0,
+                            won: isEvil(G,p) === (G.winner==='evil') })));
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">After ${G.round} night${G.round===1?'':'s'}</div>
+        <p class="role ${good?'good':'evil'}">${good ? esc(TH().goods) + ' win' : esc(TH().evils) + ' win'}</p>
+        <p class="faint" style="margin-top:8px">${good
+          ? 'Every last one of them found out.'
+          : 'They could not be outvoted any more.'}</p>
+        <div class="stack">
+          <button class="btn" onclick="playAgain(true)">Play again · same group</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New group</button>
+        </div>
+      </div>
+      <div class="panel"><div class="eyebrow">Everybody</div>
+        ${G.players.map(p=>`<div class="who">
+          <span>${vpAvatar(p)} ${esc(p)}${G.alive[p]?'':' <small>out</small>'}</span>
+          <span class="tag ${isEvil(G,p)?'evil':'good'}">${isEvil(G,p)?esc(TH().evil):esc(TH().good)}${
+            G.recruited===p?' (turned)':''}</span></div>`).join('')}
+      </div>
+      <div class="panel"><div class="eyebrow">What happened</div>
+        ${G.log.slice().reverse().map(x=>`<div class="row"><span class="faint">
+          ${x.kind==='night' ? 'Night '+x.round+': ' + (x.victim ? esc(x.victim)+' taken'
+              : x.attacked ? esc(x.attacked)+' attacked and survived' : 'nobody attacked')
+            : x.kind==='recruit' ? 'Night '+x.round+': '+esc(x.who)+' was turned'
+            : 'Day '+x.round+': ' + (x.banished ? esc(x.banished)+' voted out' : 'no agreement')}
+        </span></div>`).join('')}
+      </div>` + vpFeedbackHTML('Werewolf, Mafia & Traitors');
+    return;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+function newRoomCode(){ const r=new Uint32Array(4); crypto.getRandomValues(r);
+  let c=''; for(let i=0;i<4;i++) c+=CODE_ALPHABET[r[i]%CODE_ALPHABET.length]; return c; }
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false, pollTimer = null, curRate = 0;
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+function pollRate(){ return ['night','day','reveal'].includes(G && G.phase) ? 1100 : 2500; }
+function schedulePoll(){
+  const want = pollRate(); if (want===curRate) return;
+  curRate = want; if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{ await poll(); schedulePoll(); }, want);
+}
+function enterRoom(){
+  if (!me && G) me = vpRecallSeat(GAME_ID, ROOM, G.players);
+  joined=true; history.replaceState(null,'',inviteURL());
+  renderRoomBar(); render(); schedulePoll(); }
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } curRate=0;
+  vpForgetSeat(GAME_ID, ROOM);
+  joined=false; ROOM=''; G=null; me=null; pending=null; peeked=false;
+  history.replaceState(null,'',location.pathname);
+  $('roombar').innerHTML=''; $('crumb').textContent=''; setErr(''); renderLobby();
+}
+async function createRoom(){
+  setErr('');
+  const btn=$('createBtn'); if(btn){ btn.disabled=true; btn.textContent='Creating…'; }
+  try {
+    for (let i=0;i<5;i++){
+      ROOM=newRoomCode();
+      if (await loadState()) continue;
+      G=structuredClone(FRESH);
+      if (!(await saveState(G))) continue;
+      enterRoom(); return;
+    }
+    ROOM=''; setErr('Could not find a free code. Please try again.');
+  } catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); }
+  if ($('createBtn')){ $('createBtn').disabled=false; $('createBtn').textContent='Create a game'; }
+}
+async function joinRoom(raw){
+  setErr('');
+  const c=cleanCode(raw);
+  if (c.length<4){ setErr('Enter the 4-character code.'); return; }
+  ROOM=c;
+  let s; try { s=await loadState(); }
+  catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM=''; renderLobby('No game found with code '+c+'. Check the code, or start a new one.'); return; }
+  G = hydrate(s); stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+function copyInvite(){
+  const url=inviteURL();
+  const done=()=>{ const b=$('copyBtn'); if(!b)return; b.textContent='Link copied';
+    setTimeout(()=>{ if($('copyBtn')) $('copyBtn').textContent='Copy invite link'; },1600); };
+  const fb=()=>{ const f=$('inviteField'); if(f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done,fb);
+  else fb();
+}
+function renderRoomBar(){
+  $('roombar').innerHTML = `<div class="roombar">
+      <div class="rb-top"><span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span></div>
+      <input type="text" id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div></div>`;
+}
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game and send the link to
+        everyone playing. Roles are dealt to phones, the night is read aloud by one of them, and
+        <b style="color:var(--ink)">nobody has to sit out to moderate</b>.</p>
+      <button class="btn full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input type="text" id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') joinRoom(e.target.value); });
+}
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM); else renderLobby();
+})();
+</script>
+</body>
+</html>
