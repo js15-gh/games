@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>One Word — everyone gives a clue, and matching clues cancel</title>
+<meta name="description" content="A co-operative word game. Everyone writes one clue for the same secret word — but any two clues that match are thrown away before the guesser sees them. Free, no app, 3–8 people on their own phones.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#1A1113; --panel:#261A1D; --line:rgba(242,121,91,.24);
+    --coral:#F2795B; --ink:#F6EDE9; --faint:#A78C86; --red:#E4606D; --green:#6FCF97;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:600px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:28px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.05em;
+       font-size:clamp(30px,8vw,48px); margin:4px 0 0; }
+  h1 .s { color:var(--coral); }
+  .eyebrow { color:var(--coral); letter-spacing:.22em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:20px 18px; margin-top:14px; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px;
+         padding:9px 0; border-bottom:1px solid rgba(246,237,233,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:9px; margin-top:12px; }
+  input { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+          color:var(--ink); padding:13px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:9px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--coral); outline-offset:2px; }
+  .btn-coral { background:var(--coral); color:#1E1012; border:none; padding:14px 20px;
+               font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid rgba(167,140,134,.45);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:12px 10px; font-size:15px; }
+  .seat.on { background:var(--coral); border-color:var(--coral); color:#1E1012; font-weight:700; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:9px; margin-top:14px; }
+
+  .word { font-family:'Space Grotesk',sans-serif; font-size:clamp(30px,9vw,48px);
+          color:var(--coral); line-height:1.1; }
+  .clues { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; }
+  .cl { border:1px solid var(--line); border-radius:10px; padding:10px 14px;
+        font-family:'Space Grotesk',sans-serif; font-size:19px; }
+  .cl .who { display:block; font-family:'Karla',sans-serif; font-size:11px;
+             color:var(--faint); margin-top:2px; letter-spacing:.04em; }
+  .cl.dead { border-style:dashed; border-color:rgba(167,140,134,.45);
+             color:var(--faint); text-decoration:line-through; }
+  .tally { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:12px; }
+  .pip { width:22px; height:26px; border-radius:4px; border:1px solid var(--line); }
+  .pip.win  { background:var(--green); border-color:var(--green); }
+  .pip.miss { background:transparent; border-style:dashed; opacity:.55; }
+  .pip.burn { background:rgba(228,96,109,.25); border-color:var(--red); }
+  .tick { color:var(--green); } .dot { color:var(--faint); }
+  .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(34px,11vw,62px); line-height:1; }
+
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+             padding:13px 15px; margin-top:14px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Space Grotesk',sans-serif; letter-spacing:.2em; font-size:26px; color:var(--coral); }
+  .linkfield { font-size:13px; margin-top:9px; padding:9px 10px; color:var(--faint); }
+  .rb-actions { display:flex; gap:8px; margin-top:9px; } .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:18px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover { color:var(--coral); }
+  details summary { color:var(--coral); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>ONE <span class="s">WORD</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script src="feedback.js"></script>
+<script src="group.js"></script>
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "oneword";
+
+/* Three tiers, so a table with children in it can stay on words children can
+   actually clue. "Mixed" draws from the first two, "Tricky" from all three. */
+const WORDS = {
+  easy: ['Elephant','Rainbow','Pizza','Beach','Doctor','Guitar','Winter','Cricket','Mango','Balloon',
+    'Tiger','Bicycle','Kitchen','Rocket','Butterfly','Chocolate','Umbrella','Pencil','Garden','Train',
+    'Monkey','Sandwich','Mountain','Clock','Bridge','Camera','Dolphin','Pillow','Football','Candle',
+    'Ladder','Jungle','Penguin','Bucket','Whistle','Sunflower','Diamond','Kite','Robot','Volcano',
+    'Snowman','Circus','Feather','Tunnel','Anchor','Lantern','Puppy','Mirror','Basket','Fountain',
+    'Bakery','Compass','Hammer','Trumpet','Igloo','Parrot','Wallet','Tractor','Dentist','Zebra',
+    'Rickshaw','Samosa','Peacock','Temple','Firework','Blanket','Island','Postman','Kettle','Marble'],
+  mixed: ['Gravity','Rumour','Souvenir','Deadline','Rehearsal','Traffic','Monsoon','Ceremony','Passport',
+    'Loyalty','Alphabet','Detective','Recipe','Fossil','Orchestra','Harvest','Blueprint','Referee',
+    'Vaccine','Aquarium','Antique','Hostel','Migration','Bargain','Cathedral','Skeleton','Marathon',
+    'Currency','Reunion','Telescope','Wilderness','Portrait','Ritual','Sculpture','Landslide','Auction',
+    'Barber','Chandelier','Eclipse','Glacier','Hurricane','Inventor','Jigsaw','Lullaby','Museum',
+    'Nursery','Origami','Parade','Quilt','Satellite','Tattoo','Umpire','Vineyard','Windmill','Yacht',
+    'Zodiac','Applause','Basement','Cactus','Dragon','Empire','Ferry','Laboratory','Dowry','Pilgrim',
+    'Courtyard','Sermon','Trapeze','Almanac','Tribunal','Aviary'],
+  tricky: ['Paradox','Nuance','Threshold','Alibi','Momentum','Etiquette','Silhouette','Vertigo','Legacy',
+    'Symmetry','Mirage','Bureaucracy','Nomad','Turbulence','Sabotage','Whimsy','Quarantine','Serendipity',
+    'Pilgrimage','Insomnia','Camouflage','Anonymity','Renaissance','Metaphor','Equator','Catalyst','Fable',
+    'Hierarchy','Illusion','Jury','Kaleidoscope','Labyrinth','Mosaic','Nemesis','Oasis','Pendulum','Quirk',
+    'Ricochet','Stalemate','Taboo','Utopia','Vigil','Wanderlust','Zenith','Ambush','Cipher','Dilemma',
+    'Echo','Fugitive','Grudge','Hoax','Karma','Solitude','Verdict','Prophecy','Exile','Ransom','Requiem']
+};
+const TIERS = [
+  { key:'easy',   name:'Easy',   pools:['easy'] },
+  { key:'mixed',  name:'Mixed',  pools:['easy','mixed'] },
+  { key:'tricky', name:'Tricky', pools:['easy','mixed','tricky'] },
+];
+const poolFor = (tier) => (TIERS.find(t=>t.key===tier) || TIERS[1]).pools
+  .reduce((a,k)=>a.concat(WORDS[k]), []);
+
+const FRESH = { phase:'setup', players:[], cards:13, tier:'mixed',
+                round:0, guesser:null, secret:null, used:[],
+                clues:{}, guess:null, outcome:null, burned:false,
+                won:0, log:[], _sessionEnd:null };
+
+let G = null, me = null, stamp = 0, pending = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* For a value that lands INSIDE an inline handler rather than in text. The
+   browser HTML-decodes an attribute before the JS in it is parsed, so esc()'s
+   &#39; comes back as a bare quote and ends the string early — which is how a
+   player called D'Souza ends up with a button that silently does nothing.
+   \u escapes survive HTML decoding and mean the right thing to the parser. */
+const jss = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\u0027')
+  .replace(/"/g, '\\u0022').replace(/&/g, '\\u0026').replace(/[\r\n]+/g, ' ');
+function setErr(m){ $('err').textContent = m || ''; }
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() }) });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey(), p_state: next }) });
+  if (!r.ok) throw new Error('save '+r.status);
+  try { return (await r.json()) === true; } catch { return true; }
+}
+async function commit(fn){
+  for (let a=0; a<4; a++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = hydrate(fresh); stamp = Math.max(stamp, fresh._stamp||0); render(); }
+  }
+  return false;
+}
+async function mutate(fn){
+  try { if (await commit(fn)){ setErr(''); return; } } catch {}
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;
+}
+async function poll(){
+  if (!joined) return;
+  try {
+    if (pending){ const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn; }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch { if (!G){ G = structuredClone(FRESH); render(); } }
+}
+
+/* ── matching ────────────────────────────────────────────────
+   The whole point of the game is that identical clues are thrown away, and
+   the whole point of doing it on a phone is that nobody has to compare cards
+   or argue about whether "cat" and "cats" count as the same. They do.        */
+const norm = (s) => String(s).toLowerCase().trim()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')     // café -> cafe
+  .replace(/[^a-z0-9]/g, '');
+/* Rather than stem — which turns "bus" into "bu" and breaks more than it
+   fixes — compare the two forms directly in both directions. */
+function same(a, b){
+  a = norm(a); b = norm(b);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const variants = (w) => [w, w + 's', w + 'es', w.replace(/y$/, 'ies')];
+  return variants(a).includes(b) || variants(b).includes(a);
+}
+/* A clue is dead if it matches ANY other clue, or the secret word itself. */
+function deadClues(clues, secret){
+  const names = Object.keys(clues);
+  const dead = {};
+  for (const p of names){
+    if (same(clues[p], secret)) dead[p] = true;
+    for (const q of names){
+      if (p !== q && same(clues[p], clues[q])) dead[p] = true;
+    }
+  }
+  return dead;
+}
+const livingClues = (g) => {
+  const dead = deadClues(g.clues, g.secret);
+  return Object.keys(g.clues).filter(p => !dead[p]);
+};
+
+// ── round machinery ──
+function nextWord(g){
+  const pool = poolFor(g.tier).filter(w => !(g.used || []).includes(w));
+  const from = pool.length ? pool : poolFor(g.tier);
+  return from[Math.floor(Math.random() * from.length)];
+}
+function dealRound(g){
+  g.guesser = g.players[(g.round - 1) % g.players.length];
+  g.secret = nextWord(g);
+  g.used = (g.used || []).concat([g.secret]);
+  g.clues = {}; g.guess = null; g.outcome = null; g.burned = false;
+  g.phase = 'clue';
+  return g;
+}
+function startGame(){
+  if (G.players.length < 3){ setErr('One Word needs at least 3 — a guesser and two clue-givers.'); return; }
+  setErr('');
+  mutate(g=>{
+    g.round = 1; g.won = 0; g.log = []; g.used = []; g._sessionEnd = null;
+    return dealRound(g);
+  });
+}
+
+function addPlayer(){
+  const el=$('nameInput'); const n=el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if (G.players.length>=8){ setErr('Eight is plenty — more and every clue cancels.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{ g.players.push(n); return g; });
+}
+function removePlayer(n){
+  mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; });
+  if (me===n) me=null;
+}
+function setCards(n){ mutate(g=>{ g.cards=n; return g; }); }
+function setTier(k){ mutate(g=>{ g.tier=k; return g; }); }
+
+function submitClue(){
+  if (!me || me === G.guesser) return;
+  const el = $('clueInput'); const raw = el.value.trim();
+  if (!raw) return;
+  if (/\s/.test(raw)){ setErr('One word only.'); return; }
+  if (raw.length > 24){ setErr('One word, and a real one.'); return; }
+  setErr(''); el.value = '';
+  mutate(g=>{
+    g.clues[me] = raw;
+    const givers = g.players.filter(p => p !== g.guesser);
+    if (givers.every(p => g.clues[p])) g.phase = 'reveal';
+    return g;
+  });
+}
+function guess(){
+  const el = $('guessInput'); const raw = (el ? el.value : '').trim();
+  if (!raw) return;
+  setErr('');
+  mutate(g=>{
+    g.guess = raw;
+    g.outcome = same(raw, g.secret) ? 'right' : 'wrong';
+    return settle(g);
+  });
+}
+function passRound(){
+  mutate(g=>{ g.guess = null; g.outcome = 'pass'; return settle(g); });
+}
+/* Getting it wrong costs the card AND burns the next one — that penalty is
+   what stops the table from guessing wildly, so it is worth keeping. */
+function settle(g){
+  if (g.outcome === 'right') g.won += 1;
+  const spent = g.round + (g.outcome === 'wrong' ? 1 : 0);
+  g.burned = g.outcome === 'wrong' && spent <= g.cards;
+  g.log = [{ round:g.round, secret:g.secret, guesser:g.guesser, guess:g.guess,
+             outcome:g.outcome, clues:structuredClone(g.clues),
+             dead:deadClues(g.clues, g.secret) }].concat(g.log).slice(0, 25);
+  g.phase = 'result';
+  return g;
+}
+/* The table can overrule the app. Judging whether "sea" is close enough to
+   "ocean" is a conversation, not a string comparison. */
+function overrule(){
+  mutate(g=>{
+    if (g.outcome === 'right'){ g.won -= 1; g.outcome = 'wrong'; }
+    else { g.won += 1; g.outcome = 'right'; }
+    if (g.log[0]) g.log[0].outcome = g.outcome;
+    g.burned = g.outcome === 'wrong' && (g.round + 1) <= g.cards;
+    return g;
+  });
+}
+function nextRound(){
+  mutate(g=>{
+    const spent = g.round + (g.log[0] && g.log[0].outcome === 'wrong' ? 1 : 0);
+    if (spent >= g.cards){
+      g.phase = 'gameover';
+      if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
+      return g;
+    }
+    g.round = spent + 1;
+    return dealRound(g);
+  });
+}
+function playAgain(keep){
+  me = keep ? me : null;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep){ n.players=g.players; n.cards=g.cards; n.tier=g.tier; }
+    return n;
+  });
+}
+function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+
+// ── render ──
+function whoAmIHTML(){
+  if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
+      You are <b style="color:var(--ink)">${esc(me)}</b> ·
+      <a href="#" onclick="me=null;render();return false" style="color:var(--coral)">not you?</a></p></div>`;
+  return `<div class="panel"><div class="eyebrow">Which one are you?</div>
+      <p class="faint" style="font-size:14px;margin-top:6px">The word shows only on the phones of
+         people who are not guessing.</p>
+      <div class="grid">${G.players.map(p=>
+        `<button class="seat" onclick="me='${jss(p)}';render()">${esc(p)}</button>`).join('')}</div></div>`;
+}
+function waitingHTML(){
+  const givers = G.players.filter(p => p !== G.guesser);
+  return `<div class="panel"><div class="eyebrow">Clues in</div>
+    ${givers.map(p=>`<div class="row"><span>${esc(p)}</span>
+      <span class="${G.clues[p]?'tick':'dot'}">${G.clues[p]?'✓ in':'…'}</span></div>`).join('')}</div>`;
+}
+function tallyHTML(){
+  const pips = [];
+  for (const l of G.log.slice().reverse()){
+    pips.push(`<div class="pip ${l.outcome==='right'?'win':'miss'}"
+      title="${esc(l.secret)}"></div>`);
+    if (l.outcome === 'wrong') pips.push('<div class="pip burn" title="burnt"></div>');
+  }
+  const spent = pips.length;
+  for (let i = spent; i < G.cards; i++) pips.push('<div class="pip"></div>');
+  return `<div class="tally">${pips.slice(0, G.cards).join('')}</div>
+    <p class="faint center" style="font-size:13px;margin-top:8px">${G.won} of ${G.cards} won</p>`;
+}
+function cluesHTML(clues, dead, hideDead){
+  const entries = Object.keys(clues);
+  if (!entries.length) return '';
+  return `<div class="clues">${entries.map(p=>{
+    if (dead[p] && hideDead) return '';
+    return `<div class="cl ${dead[p]?'dead':''}">${esc(clues[p])}<span class="who">${esc(p)}</span></div>`;
+  }).join('')}</div>`;
+}
+
+function render(){
+  if (!configured()){ $('app').innerHTML='<div class="panel"><p class="faint">Supabase is not configured.</p></div>'; return; }
+  const app = $('app');
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
+    : G.phase==='gameover' ? 'Game over'
+    : `Card ${G.round} of ${G.cards} · ${G.won} won`;
+
+  if (G.phase==='setup'){
+    const had=$('nameInput'); const keep=had?had.value:'';
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Players (3–8)</div>
+        <div style="display:flex;gap:8px;margin:12px 0">
+          <input id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-coral" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.players.length ? G.players.map(p=>`<div class="row"><span>${esc(p)}</span>
+          <button class="btn-ghost" onclick="removePlayer('${jss(p)}')">Remove</button></div>`).join('')
+          : '<p class="faint" style="font-style:italic">Nobody yet.</p>'}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Cards to play</div>
+        <div class="grid">${[7,13,20].map(n=>
+          `<button class="seat ${G.cards===n?'on':''}" onclick="setCards(${n})">${n}</button>`).join('')}</div>
+        <div class="eyebrow" style="margin-top:18px">Words</div>
+        <div class="grid">${TIERS.map(t=>
+          `<button class="seat ${G.tier===t.key?'on':''}" onclick="setTier('${t.key}')">${t.name}</button>`).join('')}</div>
+        <p class="faint" style="font-size:13px;margin-top:8px">Easy stays on words a child can clue.</p>
+        <button class="btn-coral full" style="margin-top:18px" onclick="startGame()">Turn over the first card</button>
+      </div>
+      <div class="panel"><details><summary>How to play</summary>
+        <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
+          <p>You are all on the same side. Each round one player guesses, and
+             <b style="color:var(--ink)">everyone else sees a secret word</b> and writes
+             <b style="color:var(--ink)">one word</b> as a clue.</p>
+          <p>Then the catch: <b style="color:var(--ink)">any two clues that match cancel each
+             other out</b> and the guesser never sees them. So the obvious clue is usually the
+             worthless one. This phone does the comparing, including plurals, so nobody has to
+             argue about it.</p>
+          <p>A right guess wins the card. A wrong one loses it <i>and</i> burns the next card, so
+             passing is a real option. Play through the deck and see how many you win.</p>
+          <p>The app judges the guess, but you can overrule it — whether "sea" is close enough to
+             "ocean" is your table's business, not a string comparison's.</p>
+        </div></details></div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase==='clue'){
+    const iGuess = me === G.guesser;
+    const mine = me ? G.clues[me] : null;
+    app.innerHTML = tallyHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">${esc(G.guesser)} is guessing</div>
+        ${!me ? '<p class="faint" style="margin-top:10px">Pick your seat below.</p>'
+          : iGuess
+            ? `<p class="faint" style="margin-top:12px">Look away. The others are writing clues for
+                 a word you are not allowed to see yet.</p>`
+            : `<p class="faint" style="margin:12px 0 4px">The word is</p>
+               <p class="word">${esc(G.secret)}</p>`}
+      </div>
+      ${me && !iGuess ? (mine
+        ? `<div class="panel center"><p style="margin:0">Your clue:
+             <b style="font-family:'Space Grotesk',sans-serif;font-size:19px">${esc(mine)}</b></p>
+           <p class="faint" style="font-size:14px;margin-top:6px">You can change it until everyone is in.</p>
+           <button class="btn-ghost full" onclick="mutate(g=>{delete g.clues['${jss(me)}'];return g})">Change it</button></div>`
+        : `<div class="panel">
+             <div class="eyebrow">Your one-word clue</div>
+             <div style="display:flex;gap:8px;margin-top:12px">
+               <input id="clueInput" placeholder="One word" autocomplete="off" spellcheck="false">
+               <button class="btn-coral" onclick="submitClue()">Send</button>
+             </div>
+             <p class="faint" style="font-size:13px;margin-top:8px">If someone else writes the same
+                thing, both are thrown away. The obvious clue is rarely the useful one.</p>
+           </div>`) : ''}
+      ` + waitingHTML() + whoAmIHTML();
+    const ci = $('clueInput');
+    if (ci) ci.addEventListener('keydown', e=>{ if(e.key==='Enter') submitClue(); });
+    return;
+  }
+
+  if (G.phase==='reveal'){
+    const iGuess = me === G.guesser;
+    const dead = deadClues(G.clues, G.secret);
+    const deadCount = Object.keys(dead).length;
+    const alive = livingClues(G);
+    app.innerHTML = tallyHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">Clues for ${esc(G.guesser)}</div>
+        ${alive.length
+          ? cluesHTML(Object.fromEntries(alive.map(p=>[p, G.clues[p]])), {}, false)
+          : '<p class="faint" style="margin-top:12px;font-style:italic">Every single clue cancelled. There is nothing to go on.</p>'}
+        ${deadCount ? `<p class="faint" style="font-size:13px;margin-top:10px">${deadCount}
+           clue${deadCount===1?'':'s'} cancelled${iGuess?'':' — shown below'}.</p>` : ''}
+      </div>
+      ${!iGuess && deadCount ? `<div class="panel center">
+        <div class="eyebrow">Cancelled</div>
+        ${cluesHTML(Object.fromEntries(Object.keys(dead).map(p=>[p, G.clues[p]])), dead, false)}
+        <p class="faint" style="font-size:13px;margin-top:8px">The guesser cannot see these.</p>
+      </div>` : ''}
+      ${iGuess ? `<div class="panel">
+        <div class="eyebrow">Your guess</div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <input id="guessInput" placeholder="The word" autocomplete="off" spellcheck="false">
+          <button class="btn-coral" onclick="guess()">Guess</button>
+        </div>
+        <button class="btn-ghost full" onclick="passRound()">Pass — lose the card, burn nothing</button>
+      </div>` : `<div class="panel center"><p class="faint" style="margin:0">Waiting for
+          <b style="color:var(--ink)">${esc(G.guesser)}</b>. Say nothing.</p></div>`}
+      ` + whoAmIHTML();
+    const gi = $('guessInput');
+    if (gi){ gi.addEventListener('keydown', e=>{ if(e.key==='Enter') guess(); }); gi.focus(); }
+    return;
+  }
+
+  if (G.phase==='result'){
+    const dead = deadClues(G.clues, G.secret);
+    const right = G.outcome === 'right';
+    const label = right ? 'Got it' : G.outcome === 'pass' ? 'Passed' : 'Missed';
+    app.innerHTML = tallyHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">${label}</div>
+        <p class="word" style="color:${right?'var(--green)':'var(--coral)'}">${esc(G.secret)}</p>
+        ${G.guess ? `<p class="faint">${esc(G.guesser)} said <b style="color:var(--ink)">${esc(G.guess)}</b>.</p>`
+                  : `<p class="faint">${esc(G.guesser)} passed.</p>`}
+        ${G.burned ? '<p class="faint" style="color:var(--red)">A wrong guess burns the next card too.</p>' : ''}
+        ${cluesHTML(G.clues, dead, false)}
+        <p class="faint" style="font-size:13px;margin-top:8px">Struck-through clues cancelled.</p>
+      </div>
+      <div class="panel">
+        <button class="btn-coral full" onclick="nextRound()">Next card</button>
+        <button class="btn-ghost full" onclick="overrule()">${right
+          ? "Actually, that was wrong" : "Actually, count it"}</button>
+        <button class="btn-ghost full" onclick="backToSetup()">Change players or settings</button>
+      </div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='gameover'){
+    const pct = G.won / G.cards;
+    const verdict = pct === 1 ? 'Perfect. Nobody gets a perfect game.'
+      : pct >= .85 ? 'Extraordinary. You think alike and differently at the same time.'
+      : pct >= .7  ? 'Very good. That is a table that knows each other.'
+      : pct >= .5  ? 'Respectable. The cancelling is brutal and you beat half of it.'
+      : pct >= .3  ? 'Middling — too many of you had the same idea.'
+      : 'Rough. Try being the second-most obvious person at the table.';
+    if (window.vpMaybeReport) vpMaybeReport(G, 'oneword', ROOM,
+      G.players.map(p => ({ player:p, score:G.won, won: G.won === G.cards })));
+    app.innerHTML = `
+      <div class="panel center">
+        <div class="eyebrow">Final score</div>
+        <p class="big" style="color:var(--coral)">${G.won} <span class="faint" style="font-size:24px">/ ${G.cards}</span></p>
+        <p class="faint" style="margin-top:10px">${verdict}</p>
+        <div class="stack">
+          <button class="btn-coral" onclick="playAgain(true)">Play again · same group</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New group</button>
+        </div>
+      </div>
+      <div class="panel"><div class="eyebrow">Every card</div>
+        ${G.log.slice().reverse().map(l=>`<div class="row">
+          <span class="${l.outcome==='right'?'tick':'faint'}">${esc(l.secret)}</span>
+          <span class="faint">${l.outcome==='right' ? '✓' :
+            l.outcome==='pass' ? 'passed' : esc(l.guess||'—')}</span></div>`).join('')}
+      </div>` + vpFeedbackHTML('One Word');
+    return;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+function newCode(){ const r=new Uint32Array(4); crypto.getRandomValues(r);
+  let c=''; for(let i=0;i<4;i++) c+=CODE_ALPHABET[r[i]%CODE_ALPHABET.length]; return c; }
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false, pollTimer = null, curRate = 0;
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+function pollRate(){ return ['clue','reveal'].includes(G && G.phase) ? 1100 : 2500; }
+function schedulePoll(){
+  const want = pollRate(); if (want===curRate) return;
+  curRate = want; if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{ await poll(); schedulePoll(); }, want);
+}
+function enterRoom(){ joined=true; history.replaceState(null,'',inviteURL());
+  renderRoomBar(); render(); schedulePoll(); }
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } curRate=0;
+  joined=false; ROOM=''; G=null; me=null; pending=null;
+  history.replaceState(null,'',location.pathname);
+  $('roombar').innerHTML=''; $('crumb').textContent=''; setErr(''); renderLobby();
+}
+async function createRoom(){
+  setErr('');
+  const btn=$('createBtn'); if(btn){ btn.disabled=true; btn.textContent='Creating…'; }
+  try {
+    for (let i=0;i<5;i++){
+      ROOM=newCode();
+      if (await loadState()) continue;
+      G=structuredClone(FRESH);
+      if (!(await saveState(G))) continue;
+      enterRoom(); return;
+    }
+    ROOM=''; setErr('Could not find a free code. Please try again.');
+  } catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); }
+  if ($('createBtn')){ $('createBtn').disabled=false; $('createBtn').textContent='Create a game'; }
+}
+async function joinRoom(raw){
+  setErr('');
+  const c=cleanCode(raw);
+  if (c.length<4){ setErr('Enter the 4-character code.'); return; }
+  ROOM=c;
+  let s; try { s=await loadState(); }
+  catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM=''; renderLobby('No game found with code '+c+'. Check the code, or start a new one.'); return; }
+  G = hydrate(s); stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+function copyInvite(){
+  const url=inviteURL();
+  const done=()=>{ const b=$('copyBtn'); if(!b)return; b.textContent='Link copied';
+    setTimeout(()=>{ if($('copyBtn')) $('copyBtn').textContent='Copy invite link'; },1600); };
+  const fb=()=>{ const f=$('inviteField'); if(f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done,fb);
+  else fb();
+}
+function renderRoomBar(){
+  $('roombar').innerHTML = `<div class="roombar">
+      <div class="rb-top"><span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span></div>
+      <input id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div></div>`;
+}
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game and send the link to
+        everyone playing. Each phone shows only what that player is allowed to see.</p>
+      <button class="btn-coral full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-coral" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') joinRoom(e.target.value); });
+}
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM); else renderLobby();
+})();
+</script>
+</body>
+</html>
