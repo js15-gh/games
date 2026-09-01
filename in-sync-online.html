@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Sync — play your cards in order without saying a word</title>
+<meta name="description" content="A co-operative nerve game. Everyone holds secret numbers and the table must play them lowest to highest — with no talking, no counting, no signals. Free, no app, on your own phones.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0B1418; --panel:#122027; --line:rgba(96,214,199,.24);
+    --teal:#60D6C7; --ink:#E9F2F1; --faint:#7C939A; --red:#E4606D; --gold:#E8C36B;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:600px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:28px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.06em;
+       font-size:clamp(30px,8vw,50px); margin:4px 0 0; }
+  h1 .s { color:var(--teal); }
+  .eyebrow { color:var(--teal); letter-spacing:.22em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:20px 18px; margin-top:14px; }
+  .row { display:flex; justify-content:space-between; align-items:center;
+         padding:9px 0; border-bottom:1px solid rgba(233,242,241,.08); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:9px; margin-top:12px; }
+  input { flex:1; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+          color:var(--ink); padding:13px 14px; font-size:17px; width:100%; }
+  button { cursor:pointer; border-radius:9px; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--teal); outline-offset:2px; }
+  .btn-teal { background:var(--teal); color:#08151a; border:none; padding:14px 20px;
+              font-size:15px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid rgba(124,147,154,.4);
+               color:var(--faint); padding:10px 14px; font-size:13px; }
+  .seat { background:transparent; border:1px solid var(--line); color:var(--ink);
+          padding:12px 10px; font-size:15px; }
+  .seat.on { background:var(--teal); border-color:var(--teal); color:#08151a; font-weight:700; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:18px; }
+  .center { text-align:center; }
+  .stack { display:grid; gap:9px; margin-top:14px; }
+
+  .lives { display:flex; justify-content:center; gap:10px; margin-top:12px; }
+  .life { width:34px; height:5px; border-radius:99px; background:var(--teal); }
+  .life.gone { background:transparent; border-top:1px dashed var(--faint); opacity:.5; height:0; }
+  .mycard { font-family:'Space Grotesk',sans-serif; font-size:clamp(64px,20vw,110px);
+            line-height:1; color:var(--teal); }
+  .played { display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:12px; }
+  .chip { border:1px solid var(--line); border-radius:9px; padding:7px 12px;
+          font-family:'Space Grotesk',sans-serif; font-size:19px; }
+  .chip .who { display:block; font-family:'Karla',sans-serif; font-size:11px;
+               color:var(--faint); margin-top:2px; }
+  .chip.bad { border-color:var(--red); color:var(--red); }
+  .level { font-family:'Space Grotesk',sans-serif; font-size:20px; }
+  .holding { font-size:15px; color:var(--faint); margin-top:8px; }
+
+  .roombar { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+             padding:13px 15px; margin-top:14px; }
+  .rb-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .roomcode { font-family:'Space Grotesk',sans-serif; letter-spacing:.2em; font-size:26px; color:var(--teal); }
+  .linkfield { font-size:13px; margin-top:9px; padding:9px 10px; color:var(--faint); }
+  .rb-actions { display:flex; gap:8px; margin-top:9px; } .rb-actions button { flex:1; }
+  .homelink { display:inline-block; margin-top:18px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover { color:var(--teal); }
+  details summary { color:var(--teal); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:24px; color:var(--faint); font-size:12px; letter-spacing:.2em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>IN <span class="s">SYNC</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="roombar"></div>
+  <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
+  <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
+</div>
+
+<script src="feedback.js"></script>
+<script src="group.js"></script>
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+const GAME_ID = "insync";
+
+// Level N deals N cards to each player. Lives start at the table size, which
+// keeps a big group from being punished for having more cards in play.
+const FRESH = { phase:'setup', players:[], level:1, maxLevel:8, lives:3, startLives:3,
+                hands:{}, played:[], missed:[], cleared:0, _sessionEnd:null };
+
+let G = null, me = null, stamp = 0, pending = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setErr(m){ $('err').textContent = m || ''; }
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
+const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
+
+async function loadState(){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_get`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey() }) });
+  if (!r.ok) throw new Error('load '+r.status);
+  return await r.json();
+}
+async function saveState(next){
+  if (!ROOM) throw new Error('no room');
+  next._stamp = ++stamp;
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
+    method:'POST', headers: HDRS(), body: JSON.stringify({ p_id: roomKey(), p_state: next }) });
+  if (!r.ok) throw new Error('save '+r.status);
+  try { return (await r.json()) === true; } catch { return true; }
+}
+async function commit(fn){
+  for (let a=0; a<4; a++){
+    const next = fn(structuredClone(G));
+    G = next; render();
+    if (await saveState(next)) return true;
+    const fresh = await loadState();
+    if (fresh){ G = hydrate(fresh); stamp = Math.max(stamp, fresh._stamp||0); render(); }
+  }
+  return false;
+}
+async function mutate(fn){
+  try { if (await commit(fn)){ setErr(''); return; } } catch {}
+  setErr("Couldn't sync — your move may not be visible to others yet. It will retry.");
+  pending = fn;
+}
+async function poll(){
+  if (!joined) return;
+  try {
+    if (pending){ const fn = pending; pending = null;
+      if (await commit(fn)) setErr(''); else pending = fn; }
+    const s = await loadState();
+    if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
+      const changed = JSON.stringify(s) !== JSON.stringify(G);
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
+      if (changed) render();
+    } else if (!G){ G = structuredClone(FRESH); render(); }
+  } catch { if (!G){ G = structuredClone(FRESH); render(); } }
+}
+
+// ── game ──
+function deal(g){
+  const pool = Array.from({length:100},(_,i)=>i+1);
+  for (let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+  g.hands = {}; g.played = []; g.missed = [];
+  let k = 0;
+  for (const p of g.players){
+    g.hands[p] = pool.slice(k, k + g.level).sort((a,b)=>a-b);
+    k += g.level;
+  }
+  return g;
+}
+const stillOut = (g) => g.players.reduce((n,p)=>n + (g.hands[p]||[]).length, 0);
+const lowestOut = (g) => {
+  let lo = Infinity;
+  for (const p of g.players) for (const c of (g.hands[p]||[])) if (c < lo) lo = c;
+  return lo === Infinity ? null : lo;
+};
+
+function addPlayer(){
+  const el=$('nameInput'); const n=el.value.trim();
+  if (!n) return;
+  if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if (G.players.length>=8){ setErr('Eight minds is plenty.'); return; }
+  setErr(''); el.value='';
+  mutate(g=>{ g.players.push(n); return g; });
+}
+function removePlayer(n){
+  mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; });
+  if (me===n) me=null;
+}
+function setMaxLevel(n){ mutate(g=>{ g.maxLevel=n; return g; }); }
+function setLives(n){ mutate(g=>{ g.lives=n; g.startLives=n; return g; }); }
+
+function startGame(){
+  if (G.players.length < 2){ setErr('In Sync needs at least 2 players.'); return; }
+  setErr('');
+  mutate(g=>{
+    g.level=1; g.cleared=0; g.lives=g.startLives; g._sessionEnd=null;
+    deal(g); g.phase='playing';
+    return g;
+  });
+}
+// The whole game is this one function: play your lowest, and anything lower
+// still in someone's hand is a mistake that costs a life.
+function playLowest(){
+  if (!me) return;
+  mutate(g=>{
+    const hand = g.hands[me] || [];
+    if (!hand.length) return g;
+    const card = hand[0];
+    const skipped = [];
+    for (const p of g.players){
+      if (p === me) continue;
+      for (const c of (g.hands[p]||[])) if (c < card) skipped.push({ player:p, card:c });
+    }
+    g.hands[me] = hand.slice(1);
+    for (const s of skipped) g.hands[s.player] = (g.hands[s.player]||[]).filter(c=>c!==s.card);
+    g.played = g.played.concat(
+      skipped.sort((a,b)=>a.card-b.card).map(s=>({ player:s.player, card:s.card, bad:true })),
+      [{ player:me, card, bad:false }]);
+    if (skipped.length){
+      g.missed = g.missed.concat(skipped.map(s=>s.card));
+      g.lives = Math.max(0, g.lives - 1);   // one life per slip, however many were skipped
+    }
+    if (g.lives <= 0){
+      g.phase = 'lost';
+      if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
+    } else if (stillOut(g) === 0){
+      g.cleared += 1;
+      if (g.level >= g.maxLevel){
+        g.phase = 'won';
+        if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
+      } else g.phase = 'levelend';
+    }
+    return g;
+  });
+}
+function nextLevel(){
+  mutate(g=>{ g.level += 1; deal(g); g.phase='playing'; return g; });
+}
+function playAgain(keep){
+  me = keep ? me : null;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (keep){ n.players=g.players; n.maxLevel=g.maxLevel; n.lives=g.startLives; n.startLives=g.startLives; }
+    return n;
+  });
+}
+function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+
+// ── render ──
+function livesHTML(){
+  let h='';
+  for (let i=0;i<G.startLives;i++) h += `<div class="life ${i<G.lives?'':'gone'}"></div>`;
+  return `<div class="lives">${h}</div>`;
+}
+function playedHTML(){
+  if (!G.played.length) return '<p class="faint" style="font-style:italic;margin-top:10px">Nothing played yet. Whoever feels they hold the lowest number goes first.</p>';
+  return `<div class="played">${G.played.map(c=>
+    `<div class="chip ${c.bad?'bad':''}">${c.card}<span class="who">${esc(c.player)}${c.bad?' ✕':''}</span></div>`).join('')}</div>`;
+}
+function whoAmIHTML(){
+  if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
+      You are <b style="color:var(--ink)">${esc(me)}</b> ·
+      <a href="#" onclick="me=null;render();return false" style="color:var(--teal)">not you?</a></p></div>`;
+  return `<div class="panel"><div class="eyebrow">Which one are you?</div>
+      <p class="faint" style="font-size:14px;margin-top:6px">Your numbers show only on your own phone.</p>
+      <div class="grid">${G.players.map(p=>
+        `<button class="seat" onclick="me='${esc(p)}';render()">${esc(p)}</button>`).join('')}</div></div>`;
+}
+
+function render(){
+  if (!configured()){ $('app').innerHTML='<div class="panel"><p class="faint">Supabase is not configured.</p></div>'; return; }
+  const app = $('app');
+  $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
+    : (G.phase==='won'||G.phase==='lost') ? 'Game over'
+    : `Level ${G.level} of ${G.maxLevel} · ${stillOut(G)} still out there`;
+
+  if (G.phase==='setup'){
+    const had=$('nameInput'); const keep=had?had.value:'';
+    app.innerHTML = `
+      <div class="panel">
+        <div class="eyebrow">Players (2–8)</div>
+        <div style="display:flex;gap:8px;margin:12px 0">
+          <input id="nameInput" placeholder="Player name" value="${esc(keep)}">
+          <button class="btn-teal" onclick="addPlayer()">Add</button>
+        </div>
+        ${G.players.length ? G.players.map(p=>`<div class="row"><span>${esc(p)}</span>
+          <button class="btn-ghost" onclick="removePlayer('${esc(p)}')">Remove</button></div>`).join('')
+          : '<p class="faint" style="font-style:italic">Nobody yet.</p>'}
+      </div>
+      <div class="panel">
+        <div class="eyebrow">Levels to survive</div>
+        <div class="grid">${[5,8,10,12].map(n=>
+          `<button class="seat ${G.maxLevel===n?'on':''}" onclick="setMaxLevel(${n})">${n}</button>`).join('')}</div>
+        <div class="eyebrow" style="margin-top:18px">Lives</div>
+        <div class="grid">${[2,3,4,5].map(n=>
+          `<button class="seat ${G.startLives===n?'on':''}" onclick="setLives(${n})">${n}</button>`).join('')}</div>
+        <button class="btn-teal full" style="margin-top:18px" onclick="startGame()">Begin level 1</button>
+      </div>
+      <div class="panel"><details><summary>How to play</summary>
+        <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
+          <p>Everyone is dealt secret numbers between 1 and 100 — one each at level 1, two each at
+             level 2, and so on. Together you must play them all
+             <b style="color:var(--ink)">in ascending order</b>.</p>
+          <p><b style="color:var(--ink)">Nobody may speak.</b> No counting down, no "I've got a low
+             one", no faces, no tapping the table. Only waiting.</p>
+          <p>When you believe you hold the lowest number left anywhere, play it. If somebody was
+             holding something lower, it is discarded too and the table loses a life.</p>
+          <p>Clear every level and you win. It sounds impossible. It stops being impossible around
+             level three, which is the strange part.</p>
+        </div></details></div>`;
+    $('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+    return;
+  }
+
+  if (G.phase==='playing'){
+    const mine = me ? (G.hands[me]||[]) : [];
+    app.innerHTML = livesHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">The pile — lowest first</div>
+        ${playedHTML()}
+      </div>
+      ${me ? `<div class="panel center">
+        <div class="eyebrow">Your numbers</div>
+        ${mine.length ? `<div class="mycard">${mine[0]}</div>
+          ${mine.length>1 ? `<p class="holding">then ${mine.slice(1).join(', ')}</p>` : ''}
+          <button class="btn-teal full" onclick="playLowest()">Play ${mine[0]}</button>
+          <p class="faint" style="font-size:13px;margin-top:8px">Only when you're sure nobody is
+             holding anything lower. Say nothing.</p>`
+        : '<p class="faint" style="margin-top:14px">Your hand is empty. Sit tight and try not to react.</p>'}
+      </div>` : ''}
+      <div class="panel">
+        <p class="faint center" style="font-size:14px;margin:0">${stillOut(G)} number${stillOut(G)===1?'':'s'} still in hands.</p>
+        <button class="btn-ghost full" onclick="backToSetup()">Change players or settings</button>
+      </div>` + whoAmIHTML();
+    return;
+  }
+
+  if (G.phase==='levelend'){
+    app.innerHTML = livesHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">Level ${G.level} cleared</div>
+        <p class="level" style="margin-top:10px">In sync.</p>
+        <p class="faint">${G.lives} ${G.lives===1?'life':'lives'} left. Level ${G.level+1} deals
+           ${G.level+1} card${G.level+1===1?'':'s'} each.</p>
+        <button class="btn-teal full" onclick="nextLevel()">Deal level ${G.level+1}</button>
+      </div>` + playedPanel();
+    return;
+  }
+
+  if (G.phase==='won' || G.phase==='lost'){
+    const won = G.phase === 'won';
+    if (window.vpMaybeReport) vpMaybeReport(G, 'insync', ROOM,
+      G.players.map(p => ({ player:p, score:G.cleared||0, won })));
+    app.innerHTML = livesHTML() + `
+      <div class="panel center">
+        <div class="eyebrow">${won ? 'All levels cleared' : 'Out of lives'}</div>
+        <p style="font-family:'Space Grotesk',sans-serif;font-size:clamp(26px,7vw,40px);margin:10px 0 0;
+           color:${won?'var(--teal)':'var(--red)'}">${won ? 'IN SYNC' : 'OUT OF SYNC'}</p>
+        <p class="faint" style="margin-top:8px">You cleared ${G.cleared}
+           level${G.cleared===1?'':'s'} together.</p>
+        <div class="stack">
+          <button class="btn-teal" onclick="playAgain(true)">Play again · same group</button>
+          <button class="btn-ghost" onclick="playAgain(false)">New group</button>
+        </div>
+      </div>` + playedPanel() + vpFeedbackHTML('In Sync');
+    return;
+  }
+}
+function playedPanel(){
+  return `<div class="panel center"><div class="eyebrow">Last level</div>${playedHTML()}</div>`;
+}
+
+// ════════════════════════════════════════════════════════════
+//  ROOM CODES
+// ════════════════════════════════════════════════════════════
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const cleanCode = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+function newCode(){ const r=new Uint32Array(4); crypto.getRandomValues(r);
+  let c=''; for(let i=0;i<4;i++) c+=CODE_ALPHABET[r[i]%CODE_ALPHABET.length]; return c; }
+let ROOM = cleanCode(new URLSearchParams(location.search).get('room'));
+let joined = false, pollTimer = null, curRate = 0;
+const roomKey   = () => GAME_ID + '-' + ROOM;
+const inviteURL = () => location.origin + location.pathname + '?room=' + ROOM;
+// The tension is the point, so poll fast while cards are in hands.
+function pollRate(){ return (G && G.phase==='playing') ? 900 : 2500; }
+function schedulePoll(){
+  const want = pollRate(); if (want===curRate) return;
+  curRate = want; if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async ()=>{ await poll(); schedulePoll(); }, want);
+}
+function enterRoom(){ joined=true; history.replaceState(null,'',inviteURL());
+  renderRoomBar(); render(); schedulePoll(); }
+function leaveRoom(){
+  if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } curRate=0;
+  joined=false; ROOM=''; G=null; me=null; pending=null;
+  history.replaceState(null,'',location.pathname);
+  $('roombar').innerHTML=''; $('crumb').textContent=''; setErr(''); renderLobby();
+}
+async function createRoom(){
+  setErr('');
+  const btn=$('createBtn'); if(btn){ btn.disabled=true; btn.textContent='Creating…'; }
+  try {
+    for (let i=0;i<5;i++){
+      ROOM=newCode();
+      if (await loadState()) continue;
+      G=structuredClone(FRESH);
+      if (!(await saveState(G))) continue;
+      enterRoom(); return;
+    }
+    ROOM=''; setErr('Could not find a free code. Please try again.');
+  } catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); }
+  if ($('createBtn')){ $('createBtn').disabled=false; $('createBtn').textContent='Create a game'; }
+}
+async function joinRoom(raw){
+  setErr('');
+  const c=cleanCode(raw);
+  if (c.length<4){ setErr('Enter the 4-character code.'); return; }
+  ROOM=c;
+  let s; try { s=await loadState(); }
+  catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
+  if (!s){ ROOM=''; renderLobby('No game found with code '+c+'. Check the code, or start a new one.'); return; }
+  G = hydrate(s); stamp = Math.max(stamp, s._stamp || 0);
+  enterRoom();
+}
+function copyInvite(){
+  const url=inviteURL();
+  const done=()=>{ const b=$('copyBtn'); if(!b)return; b.textContent='Link copied';
+    setTimeout(()=>{ if($('copyBtn')) $('copyBtn').textContent='Copy invite link'; },1600); };
+  const fb=()=>{ const f=$('inviteField'); if(f){ f.focus(); f.select(); } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done,fb);
+  else fb();
+}
+function renderRoomBar(){
+  $('roombar').innerHTML = `<div class="roombar">
+      <div class="rb-top"><span class="eyebrow">Game code</span>
+        <span class="roomcode">${esc(ROOM)}</span></div>
+      <input id="inviteField" class="linkfield" readonly value="${esc(inviteURL())}"
+             onclick="this.select()" aria-label="Invite link">
+      <div class="rb-actions">
+        <button class="btn-ghost" id="copyBtn" onclick="copyInvite()">Copy invite link</button>
+        <button class="btn-ghost" onclick="leaveRoom()">Leave</button>
+      </div></div>`;
+}
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a new game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Create a game and send the link to
+        everyone playing. Then stop talking.</p>
+      <button class="btn-teal full" id="createBtn" onclick="createRoom()">Create a game</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join a game</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Someone already made one? Enter their code.</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input id="codeInput" placeholder="Code" maxlength="6" autocapitalize="characters"
+               autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.24em">
+        <button class="btn-teal" onclick="joinRoom($('codeInput').value)">Join</button>
+      </div>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e=>{ if(e.key==='Enter') joinRoom(e.target.value); });
+}
+(async function boot(){
+  if (!configured()){ render(); return; }
+  if (ROOM) await joinRoom(ROOM); else renderLobby();
+})();
+</script>
+</body>
+</html>
