@@ -133,8 +133,11 @@
       <div class="ben"><b>Play as a group</b><span>Same friends every week?
         <a href="group.html">Make a group</a> — your rooms keep their codes and the standings carry
         from one night to the next.</span></div>
-      <div class="ben"><b>Plan a party ahead <span class="soon">Coming</span></b>
-        <span>Pick the evening's games and players in advance and share one link.</span></div>
+      <div class="ben"><b>One link for the whole evening</b><span>Start a
+        <a href="lobby.html">lobby</a>, add everyone once, and every game you open puts the same
+        people straight into their seats.</span></div>
+      <div class="ben"><b>A puzzle every day</b><span>Sixteen words, four groups, the same one for
+        everybody. <a href="daily-puzzle.html">Today's puzzle</a>.</span></div>
     </div>
 
     <div class="finder">
@@ -153,6 +156,8 @@
       <li>They <b>share the link</b> — everyone else opens it, or types the code in.</li>
       <li>Everyone plays <b>on their own phone</b>, in the same room, on the same live game.</li>
     </ol>
+    <p class="faint" style="max-width:640px">Playing more than one game tonight? Start a
+      <a href="lobby.html">lobby</a> instead and do the names once.</p>
 
     <h2>Ideas for the occasion</h2>
     <ul class="links">
@@ -160,7 +165,9 @@
       <li><a href="sangeet-wedding-games.html">Sangeet &amp; wedding games</a></li>
       <li><a href="kitty-party-games.html">Kitty party games</a></li>
       <li><a href="games-at-the-airport.html">Games at the airport</a></li>
+      <li><a href="lobby.html">Tonight's lobby</a></li>
       <li><a href="group.html">Groups &amp; standings</a></li>
+      <li><a href="daily-puzzle.html">The daily puzzle</a></li>
       <li><a href="games-for-kids.html">Games for kids, by age</a></li>
       <li><a href="antakshari-rules.html">Antakshari rules</a></li>
       <li><a href="tambola-rules.html">Tambola rules</a></li>
@@ -334,11 +341,14 @@ const FILTERS = [
       ['travel','Travelling'], ['kids','With kids'] ] },
 ];
 
-const state = { q:'', type:null, age:null, occasions:null };
+const state = { q:'', type:null, age:null, occasions:null, family:false };
 const esc = s => String(s).replace(/[&<>"']/g,
   c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function matches(g){
+  // family mode is about the game's own content, so it is the age rating that
+  // decides — not a separate list somebody has to remember to update
+  if (state.family && g.age > 10) return false;
   if (state.type && g.type !== state.type) return false;
   // an age filter means "suitable for a child this age", so keep anything at or below it
   if (state.age && g.age > +state.age) return false;
@@ -356,8 +366,20 @@ function renderFilters(){
     <div class="chips">
       ${f.opts.map(([v,label]) => `<button class="chip ${state[f.key]===v?'on':''}"
          onclick="toggle('${f.key}','${v}')">${label}</button>`).join('')}
-    </div>`).join('');
+    </div>`).join('')
+    + `<div class="grouplabel">Children in the room</div>
+       <div class="chips">
+         <button class="chip ${state.family?'on':''}" onclick="toggleFamily()">Family mode</button>
+       </div>`;
 }
+/* One switch rather than a per-game list somebody has to remember to update:
+   the age rating a game already carries is what decides. */
+function toggleFamily(){
+  state.family = !state.family;
+  try { localStorage.setItem('vp:family', state.family ? '1' : '0'); } catch {}
+  renderFilters(); renderTiles();
+}
+try { state.family = localStorage.getItem('vp:family') === '1'; } catch {}
 function renderTiles(){
   const list = GAMES.filter(matches);
   document.getElementById('count').textContent =

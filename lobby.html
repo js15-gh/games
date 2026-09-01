@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Tonight's Lobby — one room, one set of names, every game</title>
+<meta name="description" content="Set up your players once, then launch any Vela Parties game with everyone already seated. Scores from the whole evening in one place.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎪</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#8C7C68;
+    --marigold:#E08A1E; --magenta:#B5246B; --green:#2E7D4F; --red:#C0392B;
+  }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:640px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:24px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.05em;
+       font-size:clamp(26px,7vw,40px); margin:4px 0 0; }
+  h1 .s { color:var(--magenta); }
+  .eyebrow { color:var(--marigold); letter-spacing:.2em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:18px 16px; margin-top:14px; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:10px;
+         padding:10px 0; border-bottom:1px solid var(--line); }
+  .row:last-child { border-bottom:none; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:9px; margin-top:12px; }
+  input[type=text] { flex:1; background:#FFFDF9; border:1px solid var(--line); border-radius:8px;
+          color:var(--ink); padding:12px 13px; font-size:16px; width:100%; }
+  button { cursor:pointer; border-radius:9px; font-family:'Karla',system-ui,sans-serif; }
+  button:focus-visible, input:focus-visible { outline:2px solid var(--magenta); outline-offset:2px; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:13px 18px;
+         font-size:15px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+  .btn[disabled] { opacity:.35; cursor:default; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+               padding:10px 13px; font-size:13px; }
+  .full { width:100%; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .err { color:var(--red); text-align:center; font-size:14px; min-height:20px; }
+  .center { text-align:center; }
+  .code { font-family:'Space Grotesk',sans-serif; letter-spacing:.22em; font-size:30px;
+          color:var(--magenta); }
+  .gtile { display:block; width:100%; text-align:left; background:#FFFDF9;
+           border:1px solid var(--line); border-radius:11px; padding:12px 13px; }
+  .gtile b { display:block; font-size:15px; }
+  .gtile span { font-size:12.5px; color:var(--faint); }
+  .host { color:var(--green); font-size:11px; letter-spacing:.14em; text-transform:uppercase; }
+  .away { color:var(--faint); font-size:11px; letter-spacing:.14em; text-transform:uppercase; }
+  .live { color:var(--marigold); font-size:11px; letter-spacing:.14em; text-transform:uppercase; }
+  .score { font-family:'Space Grotesk',sans-serif; font-size:19px; }
+  .homelink { display:inline-block; margin-top:16px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  .homelink:hover { color:var(--magenta); }
+  details summary { color:var(--magenta); cursor:pointer; font-size:14px; }
+  footer { text-align:center; padding-top:22px; color:var(--faint); font-size:12px; }
+  @media (max-width:430px){ .row { flex-wrap:wrap; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>TONIGHT'S <span class="s">LOBBY</span></h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="app"><p class="faint center" style="margin-top:50px">Reading the lobby…</p></div>
+  <footer>One room, one set of names, every game · <a href="./" style="color:var(--faint)">Vela Parties</a></footer>
+</div>
+
+<script src="group.js"></script>
+<script src="vp.js"></script>
+<script>
+/* A lobby is the shared room the spec asks for: names entered once, then any
+ * game launched with everybody already seated.
+ *
+ * It is stored as a group hub row, so the scoreboard, the reporting and the
+ * retention rules all come from machinery that already works. The difference
+ * from a permanent group is what happens at launch: a lobby PRE-SEEDS the
+ * roster into the game's own state, which is the whole point — nobody types
+ * six names into a seventh game at eleven o'clock at night.
+ *
+ * THE HOST. This is the one place host-authority belongs, so this is the one
+ * place it is used. Someone has to decide what is played next, and it should
+ * not be whoever taps first. If the host's phone goes quiet for two minutes,
+ * anybody can take over — a stalled lobby costs nothing, unlike a stalled
+ * hand, which is precisely why the games themselves stay leaderless.
+ */
+const GAMES = [
+  { id:'tambola',   file:'tambola-housie-online.html',       name:'Tambola',              who:'2–30' },
+  { id:'charades',  file:'dumb-charades-online.html',        name:'Dumb Charades',        who:'4–20' },
+  { id:'jeopardy',  file:'bollywood-jeopardy-online.html',   name:'Bollywood Jeopardy',   who:'2–20' },
+  { id:'antakshari',file:'antakshari-online.html',           name:'Antakshari',           who:'2–4 teams' },
+  { id:'judgement', file:'judgement-card-game-online.html',  name:'Judgement',            who:'3–7' },
+  { id:'kaalitiri', file:'kaali-tiri-online.html',           name:'Kaali Tiri',           who:'4–10' },
+  { id:'ito',       file:'ito-game-online.html',             name:'Ito',                  who:'2–10' },
+  { id:'insync',    file:'in-sync-online.html',              name:'In Sync',              who:'2–8' },
+  { id:'outsider',  file:'the-outsider-online.html',         name:'The Outsider',         who:'3–12' },
+  { id:'oneword',   file:'one-word-online.html',             name:'One Word',             who:'3–8' },
+  { id:'dial',      file:'the-dial-online.html',             name:'The Dial',             who:'4–12' },
+  { id:'cipher',    file:'cipher-online.html',               name:'Cipher',               who:'4–12' },
+  { id:'clover',    file:'clover-online.html',               name:'Clover',               who:'2–8' },
+  { id:'facedown',  file:'face-down-online.html',            name:'Face Down',            who:'3–8' },
+  { id:'fibbers',   file:'fibbers-online.html',              name:'Fibbers',              who:'3–8' },
+  { id:'mostlikely',file:'most-likely-online.html',          name:'Most Likely To',       who:'3–16' },
+  { id:'thisorthat',file:'this-or-that-online.html',         name:'This or That',         who:'3–16' },
+  { id:'twotruths', file:'two-truths-online.html',           name:'Two Truths and a Lie', who:'3–12' },
+  { id:'traitors',  file:'traitors-vote-online.html',        name:'The Round Table',      who:'3–20' },
+];
+const gameById = (id) => GAMES.find(g => g.id === id);
+
+const HOST_QUIET = 120000;    // two minutes without a heartbeat and the chair is open
+const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const jss = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\u0027')
+  .replace(/"/g, '\\u0022').replace(/&/g, '\\u0026').replace(/[\r\n]+/g, ' ');
+function setErr(m){ $('err').textContent = m || ''; }
+
+const clean = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+function newCode(n){ const r = new Uint32Array(n); crypto.getRandomValues(r);
+  let c=''; for (let i=0;i<n;i++) c += ALPHABET[r[i] % ALPHABET.length]; return c; }
+
+let CODE = clean(new URLSearchParams(location.search).get('lobby'));
+let HUB = null, me = null, timer = null;
+
+const lobbyURL = () => location.origin + location.pathname + '?lobby=' + CODE;
+
+/* Host-authority, with the escape hatch that makes it safe: anyone may claim
+   the chair once the current host has gone quiet. */
+function hostIsQuiet(hub){
+  if (!hub.host) return true;
+  const seen = (hub._seen || {})[hub.host];
+  return !seen || (Date.now() - seen) > HOST_QUIET;
+}
+const iAmHost = () => HUB && me && HUB.host === me;
+
+async function save(fn){
+  for (let a = 0; a < 4; a++){
+    let fresh;
+    try { fresh = await vpGroupGet(CODE); } catch { setErr("Couldn't reach the lobby."); return false; }
+    if (!fresh){ setErr('This lobby has gone.'); return false; }
+    const next = fn(fresh);
+    if (!next) return false;
+    next._stamp = (fresh._stamp || 0) + 1;
+    next.standings = vpRecomputeStandings(next);
+    try { if (await vpGroupSave(CODE, next)){ HUB = next; render(); return true; } }
+    catch { setErr("Couldn't reach the lobby."); return false; }
+  }
+  setErr('Somebody else was writing at the same moment. Try again.');
+  return false;
+}
+
+async function createLobby(){
+  const btn = $('createBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Creating…'; }
+  setErr('');
+  try {
+    for (let i = 0; i < 5; i++){
+      CODE = newCode(6);
+      if (await vpGroupGet(CODE)) continue;
+      const hub = { name:'Tonight', members:[], history:[], standings:{},
+                    roster:[], launched:[], host:null, _seen:{}, _stamp:1, _lobby:true };
+      if (!(await vpGroupSave(CODE, hub))) continue;
+      HUB = hub; enter(); return;
+    }
+    setErr('Could not find a free code. Please try again.');
+  } catch { setErr("Couldn't reach the lobby service. Check your connection."); }
+  if ($('createBtn')){ $('createBtn').disabled = false; $('createBtn').textContent = 'Start a lobby'; }
+}
+async function joinLobby(raw){
+  const c = clean(raw);
+  if (c.length < 4){ setErr('Enter the lobby code.'); return; }
+  setErr('');
+  let hub;
+  try { hub = await vpGroupGet(c); } catch { setErr("Couldn't reach the lobby service."); return; }
+  if (!hub){ setErr('No lobby with code ' + c + '.'); return; }
+  CODE = c; HUB = hub; enter();
+}
+function enter(){
+  history.replaceState(null, '', lobbyURL());
+  me = me || vpRecallSeat('lobby', CODE, HUB.roster || []);
+  render();
+  if (!timer) timer = setInterval(poll, 2500);
+}
+async function poll(){
+  if (!CODE) return;
+  if (me) vpRememberSeat('lobby', CODE, me);
+  if (me && vpBeatDue()){
+    const t = Date.now(); vpMarkBeat();
+    await save(h => { h._seen = h._seen || {}; h._seen[me] = t; return h; });
+    return;
+  }
+  try {
+    const fresh = await vpGroupGet(CODE);
+    if (fresh && (fresh._stamp || 0) >= (HUB._stamp || 0)){
+      const changed = JSON.stringify(fresh) !== JSON.stringify(HUB);
+      HUB = fresh;
+      if (!me) me = vpRecallSeat('lobby', CODE, HUB.roster || []);
+      if (changed) render();
+    }
+  } catch {}
+}
+
+function addPlayer(){
+  const el = $('nameInput'); const n = el.value.trim();
+  if (!n) return;
+  if ((HUB.roster || []).some(p => p.toLowerCase() === n.toLowerCase())){ setErr('That name is taken.'); return; }
+  if ((HUB.roster || []).length >= 20){ setErr('Twenty is as many as any of these games take.'); return; }
+  setErr(''); el.value = '';
+  save(h => { h.roster = (h.roster || []).concat([n]);
+              if (!h.host) h.host = n;                  // the first person in gets the chair
+              return h; });
+}
+function removePlayer(n){
+  save(h => {
+    h.roster = (h.roster || []).filter(p => p !== n);
+    if (h.host === n) h.host = h.roster[0] || null;
+    return h;
+  });
+  if (me === n){ me = null; vpForgetSeat('lobby', CODE); }
+}
+function sit(n){ me = n; vpRememberSeat('lobby', CODE, n); render(); }
+function claimHost(){
+  save(h => {
+    if (!hostIsQuiet(h) && h.host !== me){ setErr('The host is still here.'); return null; }
+    h.host = me; return h;
+  });
+}
+
+/* Launching is the whole point: the room is created with the roster already
+   in it, so nobody types six names into a seventh game at eleven at night. */
+async function launch(gameId){
+  const g = gameById(gameId);
+  if (!g) return;
+  if (!iAmHost()){ setErr('Only the host starts a game. You can take over if they have gone quiet.'); return; }
+  const roster = (HUB.roster || []).slice();
+  if (roster.length < 2){ setErr('Add the players first.'); return; }
+  setErr('');
+  const btn = $('launch-' + gameId); if (btn){ btn.disabled = true; btn.textContent = 'Opening…'; }
+  let room = null;
+  for (let i = 0; i < 5; i++){
+    const code = newCode(4);
+    const id = g.id + '-' + code;
+    try {
+      if (await vpRoomGet(id)) continue;
+      // the shape every game's hydrate() fills in the rest of
+      const seeded = { phase:'setup', players:roster, _group:CODE, _stamp:1 };
+      if (!(await vpRoomSave(id, seeded))) continue;
+      room = code; break;
+    } catch { break; }
+  }
+  if (!room){ setErr("Couldn't open that game. Try again.");
+    if (btn){ btn.disabled = false; btn.textContent = 'Start'; } return; }
+  await save(h => {
+    h.launched = [{ game:g.id, room, at:new Date().toISOString(), by:me }]
+      .concat(h.launched || []).slice(0, 40);
+    return h;
+  });
+  location.href = g.file + '?room=' + room;
+}
+
+// ── render ──
+function playersHTML(){
+  const roster = HUB.roster || [];
+  const away = vpAway(HUB, roster);
+  return `<div class="panel">
+    <div class="eyebrow">Everyone playing</div>
+    <div style="display:flex;gap:8px;margin:12px 0">
+      <input type="text" id="nameInput" placeholder="Add a name">
+      <button class="btn" onclick="addPlayer()">Add</button>
+    </div>
+    ${roster.length ? roster.map(p => `<div class="row">
+        <span>${vpAvatar(p)} ${esc(p)}
+          ${HUB.host === p ? '<span class="host">host</span>' : ''}
+          ${away.includes(p) ? '<span class="away">away</span>' : ''}
+          ${me === p ? '<span class="live">you</span>' : ''}</span>
+        <span style="display:flex;gap:6px">
+          ${me === p ? '' : `<button class="btn-ghost" onclick="sit('${jss(p)}')">I'm ${esc(p)}</button>`}
+          <button class="btn-ghost" onclick="removePlayer('${jss(p)}')">Remove</button>
+        </span></div>`).join('')
+      : '<p class="faint" style="font-style:italic">Nobody yet. Add everyone once and every game will know them.</p>'}
+    ${me && HUB.host !== me && hostIsQuiet(HUB)
+      ? `<button class="btn-ghost full" onclick="claimHost()">${HUB.host
+          ? esc(HUB.host) + ' has gone quiet — take over' : 'Take the chair'}</button>` : ''}
+  </div>`;
+}
+function gamesHTML(){
+  const n = (HUB.roster || []).length;
+  return `<div class="panel">
+    <div class="eyebrow">Start a game</div>
+    <p class="faint" style="font-size:13.5px;margin-top:6px">${
+      iAmHost() ? 'Everyone here is put straight into it — no names to type again.'
+      : HUB.host ? esc(HUB.host) + ' is choosing. Their pick opens on your phone too.'
+      : 'Nobody has the chair yet.'}</p>
+    <div class="grid">${GAMES.map(g => `
+      <button class="gtile" id="launch-${g.id}" onclick="launch('${g.id}')" ${iAmHost()&&n>=2?'':'disabled'}
+        style="${iAmHost()&&n>=2?'':'opacity:.45;cursor:default'}">
+        <b>${esc(g.name)}</b><span>${esc(g.who)}</span></button>`).join('')}</div>
+  </div>`;
+}
+function launchedHTML(){
+  const L = HUB.launched || [];
+  if (!L.length) return '';
+  return `<div class="panel">
+    <div class="eyebrow">Tonight so far</div>
+    ${L.map(l => {
+      const g = gameById(l.game);
+      const done = (HUB.history || []).some(h => h.sid && h.sid.startsWith(l.room + ':'));
+      return `<div class="row">
+        <span>${esc(g ? g.name : l.game)} <span class="faint">· ${esc(l.room)}</span>
+          ${done ? '<span class="host">finished</span>' : '<span class="live">in progress</span>'}</span>
+        <a class="btn-ghost" href="${esc(g ? g.file : '#')}?room=${esc(l.room)}"
+           style="text-decoration:none">${done ? 'Look' : 'Join'}</a></div>`;
+    }).join('')}
+  </div>`;
+}
+function standingsHTML(){
+  const s = HUB.standings || {};
+  const names = Object.keys(s);
+  if (!names.length) return '';
+  const order = names.sort((a,b) => (s[b].won - s[a].won) || (s[b].played - s[a].played));
+  return `<div class="panel">
+    <div class="eyebrow">The evening</div>
+    ${order.map(p => `<div class="row">
+      <span>${vpAvatar(p)} ${esc(p)}</span>
+      <span class="faint">${s[p].played} played · <b class="score" style="color:var(--magenta)">${s[p].won}</b> won</span>
+      </div>`).join('')}
+    <details style="margin-top:10px"><summary>Points by game</summary>
+      <p class="faint" style="font-size:13px;margin-top:8px">Points only compare within one game —
+         a Judgement night is worth a few hundred and an Ito night about four.</p>
+      ${order.map(p => `<div style="margin-top:8px"><b>${esc(p)}</b>
+        <div class="faint" style="font-size:13px">${Object.keys(s[p].byGame || {}).map(gid => {
+          const g = gameById(gid);
+          return (g ? esc(g.name) : esc(gid)) + ' ' + s[p].byGame[gid].points;
+        }).join(' · ') || 'nothing yet'}</div></div>`).join('')}
+    </details>
+  </div>`;
+}
+
+function render(){
+  if (!CODE || !HUB){ renderStart(); return; }
+  $('crumb').textContent = 'Lobby ' + CODE;
+  $('app').innerHTML = `
+    <div class="panel center">
+      <div class="eyebrow">Lobby code</div>
+      <p class="code">${esc(CODE)}</p>
+      <input type="text" readonly value="${esc(lobbyURL())}" onclick="this.select()"
+             style="font-size:13px;color:var(--faint);margin-top:8px" aria-label="Lobby link">
+      <button class="btn-ghost full" onclick="copyLink()" id="copyBtn">Copy the lobby link</button>
+      <p class="faint" style="font-size:13px;margin-top:8px">Send this once. It works all evening,
+         for every game.</p>
+    </div>
+    ${playersHTML()}
+    ${me ? gamesHTML() : `<div class="panel center"><p class="faint" style="margin:0">
+        Tap your own name above so the games know which phone is yours.</p></div>`}
+    ${launchedHTML()}
+    ${standingsHTML()}
+    <div class="panel"><details><summary>What a lobby is for</summary>
+      <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
+        <p>Without one, every game means a new code and everybody's names typed in again. Here you
+           do it <b style="color:var(--ink)">once</b>, and every game you start puts the same people
+           straight into their seats.</p>
+        <p>Whoever starts the lobby holds the chair and picks the games. If their phone goes quiet
+           for a couple of minutes anybody else can take over — nothing is ever stuck waiting on
+           one person.</p>
+        <p>Scores from the whole evening collect at the bottom. If you want to keep them week after
+           week, use a <a href="group.html" style="color:var(--magenta)">group</a> instead.</p>
+      </div></details></div>`;
+  const ni = $('nameInput');
+  if (ni) ni.addEventListener('keydown', e => { if (e.key === 'Enter') addPlayer(); });
+}
+function copyLink(){
+  const done = () => { const b = $('copyBtn'); if (!b) return; b.textContent = 'Copied';
+    setTimeout(()=>{ if($('copyBtn')) $('copyBtn').textContent = 'Copy the lobby link'; }, 1600); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(lobbyURL()).then(done, done);
+  else done();
+}
+function renderStart(){
+  $('crumb').textContent = '';
+  $('app').innerHTML = `
+    <div class="panel">
+      <div class="eyebrow">Start a lobby</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Add everyone once, then start any
+        game with the whole room already seated. One link for the whole evening.</p>
+      <button class="btn full" id="createBtn" onclick="createLobby()">Start a lobby</button>
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Join one</div>
+      <p class="faint" style="line-height:1.6;margin-top:10px">Somebody already started one?</p>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input type="text" id="codeInput" placeholder="Lobby code" maxlength="6"
+               autocapitalize="characters" autocomplete="off" spellcheck="false"
+               style="text-transform:uppercase;letter-spacing:.22em">
+        <button class="btn" onclick="joinLobby($('codeInput').value)">Join</button>
+      </div>
+    </div>
+    <div class="panel center">
+      <p class="faint" style="font-size:14px;margin:0">Want scores kept week after week instead?
+        <a href="group.html" style="color:var(--magenta)">Make a group.</a></p>
+    </div>`;
+  $('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') joinLobby(e.target.value); });
+}
+
+(async function boot(){
+  if (CODE) await joinLobby(CODE); else renderStart();
+})();
+</script>
+</body>
+</html>
