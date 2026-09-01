@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your group — Vela Parties</title>
+<meta name="description" content="A permanent page for a group that plays together: your own game codes that keep working, and a scoreboard that carries from one night to the next.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎪</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#FFF6E9; --panel:#FFFFFF; --line:rgba(178,110,38,.26);
+    --gold:#B4661C; --goldDim:#8A5A2B; --ink:#2B1220; --faint:#6E5560;
+    --magenta:#C2185B; --green:#1B7F5A;
+  }
+  * { box-sizing:border-box; font-family:'EB Garamond',Georgia,serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:760px; margin:0 auto; padding:0 16px 48px; }
+  .homelink { display:inline-block; margin-top:20px; color:var(--faint); text-decoration:none;
+              font-family:'Cinzel',serif; font-size:12px; letter-spacing:.18em; text-transform:uppercase; }
+  .homelink:hover { color:var(--gold); }
+  header { text-align:center; padding:32px 8px 4px; }
+  .banner { height:6px; border-radius:99px; margin:0 auto 22px; max-width:200px;
+            background:linear-gradient(90deg,#CC5F16,var(--magenta),#A9761A); }
+  .eyebrow { color:var(--gold); letter-spacing:.24em; font-size:12px;
+             text-transform:uppercase; font-family:'Cinzel',serif; }
+  h1 { font-family:'Cinzel',serif; font-weight:700; letter-spacing:.04em;
+       font-size:clamp(26px,5.5vw,42px); margin:8px 0 0; }
+  h2 { font-family:'Cinzel',serif; letter-spacing:.14em; text-transform:uppercase;
+       font-size:13px; color:var(--gold); margin:0 0 4px; font-weight:600; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+           padding:18px 18px; margin-top:14px; box-shadow:0 1px 2px rgba(43,18,32,.05); }
+  p, li { color:var(--faint); line-height:1.65; font-size:17px; }
+  b { color:var(--ink); font-weight:600; }
+  a { color:var(--gold); }
+  input, select { background:var(--bg); border:1px solid var(--line); border-radius:8px;
+                  color:var(--ink); padding:11px 13px; font-size:17px; width:100%;
+                  font-family:'EB Garamond',Georgia,serif; }
+  input:focus-visible, select:focus-visible, button:focus-visible {
+                  outline:2px solid var(--gold); outline-offset:1px; }
+  button { cursor:pointer; border-radius:8px; font-family:'EB Garamond',Georgia,serif; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:12px 18px;
+         font-size:15px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+         font-family:'Cinzel',serif; }
+  .btn.alt { background:var(--gold); }
+  .btn:hover { filter:brightness(1.08); }
+  .ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+           padding:9px 13px; font-size:14px; }
+  .ghost:hover { border-color:var(--gold); color:var(--gold); }
+  .full { width:100%; margin-top:12px; }
+  .rowline { display:flex; justify-content:space-between; align-items:center; gap:10px;
+             padding:9px 0; border-bottom:1px solid rgba(43,18,32,.09); }
+  .rowline:last-child { border-bottom:none; }
+  .inline { display:flex; gap:8px; margin-top:10px; }
+  .err { color:var(--magenta); text-align:center; font-size:15px; min-height:20px; }
+  .center { text-align:center; }
+  .faint { color:var(--faint); }
+  .code { font-family:'Cinzel',serif; letter-spacing:.24em; font-size:26px; color:var(--gold); }
+  .linkfield { font-size:13px; color:var(--faint); margin-top:8px; }
+  .tbl { width:100%; border-collapse:collapse; margin-top:8px; font-size:16px; }
+  .tbl th { text-align:left; color:var(--gold); font-size:11px; letter-spacing:.14em;
+            text-transform:uppercase; font-weight:700; padding:6px 4px;
+            font-family:'Cinzel',serif; }
+  .tbl td { padding:8px 4px; border-top:1px solid rgba(43,18,32,.09); color:var(--ink); }
+  .tbl td.n { text-align:center; width:64px; color:var(--faint); }
+  .tbl tr:first-child td { border-top:none; }
+  .roomcard { display:flex; justify-content:space-between; align-items:center; gap:10px;
+              padding:12px 0; border-bottom:1px solid rgba(43,18,32,.09); }
+  .roomcard:last-child { border-bottom:none; }
+  .roomcard .who { font-family:'Cinzel',serif; font-size:16px; color:var(--ink); }
+  .roomcard .sub { font-size:14px; color:var(--faint); }
+  .pill { font-family:'Cinzel',serif; letter-spacing:.16em; font-size:14px; color:var(--gold);
+          border:1px solid var(--line); border-radius:99px; padding:4px 12px; }
+  .sess { display:flex; justify-content:space-between; gap:10px; padding:7px 0;
+          border-bottom:1px solid rgba(43,18,32,.07); font-size:15px; color:var(--faint); }
+  @media (max-width:430px){
+    .roomcard { flex-direction:column; align-items:stretch; gap:8px; }
+    .roomcard > div:last-child { justify-content:flex-start; flex-wrap:wrap; }
+    .inline { flex-wrap:wrap; }
+    .code { font-size:22px; letter-spacing:.18em; }
+  }
+  footer { text-align:center; padding-top:34px; color:var(--goldDim); font-size:13px; }
+  footer a { color:var(--goldDim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← Vela Parties</a>
+  <header>
+    <div class="banner"></div>
+    <div class="eyebrow" id="crumb">Your group</div>
+    <h1 id="title">Groups</h1>
+  </header>
+  <p class="err" id="err"></p>
+  <div id="app"><p class="faint center" style="margin-top:50px">Loading…</p></div>
+  <footer><p><a href="./">All games</a> · <a href="privacy.html">Privacy</a></p></footer>
+</div>
+
+<script src="group.js"></script>
+<script>
+// Games that can be added to a group. Only those reporting a per-player result
+// are listed for now; the rest join once their reporting is wired.
+const GAMES = [
+  { id:'judgement', file:'judgement-card-game-online.html', name:'Judgement',   reports:true  },
+  { id:'kaalitiri', file:'kaali-tiri-online.html',          name:'Kaali Tiri',  reports:true  },
+  { id:'tambola',   file:'tambola-housie-online.html',      name:'Tambola',     reports:false },
+  { id:'antakshari',file:'antakshari-online.html',          name:'Antakshari',  reports:false },
+  { id:'jeopardy',  file:'bollywood-jeopardy-online.html',  name:'Bollywood Jeopardy', reports:false },
+  { id:'charades',  file:'dumb-charades-online.html',       name:'Dumb Charades', reports:false },
+  { id:'ito',       file:'ito-game-online.html',            name:'Ito',         reports:false },
+  { id:'traitors',  file:'traitors-vote-online.html',       name:'The Round Table', reports:false },
+];
+const byId = (i) => GAMES.find(g => g.id === i) || { name:i, file:'./' };
+
+const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // no I/O/0/1
+const code = (n) => {
+  const r = new Uint32Array(n); crypto.getRandomValues(r);
+  let s = ''; for (let i=0;i<n;i++) s += ALPHABET[r[i] % ALPHABET.length];
+  return s;
+};
+const clean = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s==null?'':s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const setErr = (m) => { $('err').textContent = m || ''; };
+
+let CODE = clean(new URLSearchParams(location.search).get('g'));
+let HUB = null;
+const hubURL = () => location.origin + location.pathname + '?g=' + CODE;
+
+async function pull(){
+  try { HUB = await vpGroupGet(CODE); } catch { HUB = null; }
+  return HUB;
+}
+// Every write goes through here: re-read, re-apply, save. Same shape as the
+// games' commit(), for the same reason — two phones can be on this page.
+async function edit(fn, label){
+  for (let a=0; a<5; a++){
+    let hub;
+    try { hub = await vpGroupGet(CODE); } catch { setErr("Couldn't reach the service."); return false; }
+    if (!hub){ setErr('That group no longer exists.'); return false; }
+    const next = fn(structuredClone(hub));
+    if (!next) return false;
+    next._stamp = (hub._stamp || 0) + 1;
+    try { if (await vpGroupSave(CODE, next)){ HUB = next; render(); setErr(''); return true; } }
+    catch { setErr("Couldn't save that."); return false; }
+  }
+  setErr('Too many people editing at once — try again.');
+  return false;
+}
+
+// ── actions ──
+async function createGroup(){
+  const name = ($('gname').value || '').trim();
+  if (!name){ setErr('Give the group a name.'); return; }
+  setErr('');
+  const btn = $('createBtn'); btn.disabled = true; btn.textContent = 'Creating…';
+  for (let i=0;i<5;i++){
+    const c = code(6);
+    try {
+      if (await vpGroupGet(c)) continue;                       // taken, try again
+      const hub = { kind:'group', name, created:new Date().toISOString(),
+                    members:[], rooms:[], standings:{}, history:[], _stamp:1 };
+      if (!(await vpGroupSave(c, hub))) continue;
+      CODE = c; HUB = hub;
+      history.replaceState(null, '', hubURL());
+      render(); return;
+    } catch { setErr("Couldn't reach the service. Try again."); break; }
+  }
+  btn.disabled = false; btn.textContent = 'Create the group';
+}
+async function openGroup(raw){
+  const c = clean(raw);
+  if (c.length !== 6){ setErr('Group codes are six characters.'); return; }
+  setErr('');
+  CODE = c;
+  const hub = await pull();
+  if (!hub){ CODE=''; renderLobby('No group with code ' + c + '.'); return; }
+  history.replaceState(null, '', hubURL());
+  render();
+}
+function addMember(){
+  const el = $('mname'); const n = (el.value||'').trim();
+  if (!n) return;
+  if ((HUB.members||[]).some(m => m.toLowerCase() === n.toLowerCase())){ setErr('Already in the group.'); return; }
+  el.value = '';
+  edit(h => { h.members = (h.members||[]).concat(n); h.standings = vpRecomputeStandings(h); return h; });
+}
+function removeMember(n){
+  edit(h => { h.members = (h.members||[]).filter(m => m !== n);
+              h.standings = vpRecomputeStandings(h); return h; });
+}
+// Creates the room row first, so the code is real before it appears on the page.
+async function addRoom(){
+  const g = byId($('gpick').value);
+  const label = ($('glabel').value || '').trim() || g.name;
+  setErr('');
+  const btn = $('addRoomBtn'); btn.disabled = true; btn.textContent = 'Creating…';
+  try {
+    for (let i=0;i<5;i++){
+      const rc = code(4);
+      const id = g.id + '-' + rc;
+      if (await vpRoomGet(id)) continue;
+      // a fresh room that knows which group it belongs to
+      if (!(await vpRoomSave(id, { _group: CODE, phase:'setup', _stamp:1 }))) continue;
+      await edit(h => { h.rooms = (h.rooms||[]).concat({ game:g.id, code:rc, label }); return h; });
+      $('glabel').value = '';
+      break;
+    }
+  } catch { setErr("Couldn't create that room."); }
+  btn.disabled = false; btn.textContent = 'Add';
+}
+function removeRoom(gid, rc){
+  edit(h => { h.rooms = (h.rooms||[]).filter(r => !(r.game===gid && r.code===rc)); return h; });
+}
+function copy(text, btn){
+  const done = () => { const t = btn.textContent; btn.textContent = 'Copied';
+                       setTimeout(()=>btn.textContent = t, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(text).then(done, ()=>{});
+}
+
+// ── render ──
+function standingsHTML(){
+  const s = HUB.standings || {};
+  const rows = Object.keys(s).sort((a,b)=>(s[b].points||0)-(s[a].points||0));
+  if (!rows.length) return `<p class="faint" style="margin:8px 0 0">No games recorded yet.
+    Play one of the rooms below and the result lands here.</p>`;
+  return `<table class="tbl">
+    <tr><th>Player</th><th style="text-align:center">Played</th>
+        <th style="text-align:center">Won</th><th style="text-align:center">Points</th></tr>
+    ${rows.map(p=>`<tr><td>${esc(p)}</td><td class="n">${s[p].played||0}</td>
+      <td class="n">${s[p].won||0}</td><td class="n">${s[p].points||0}</td></tr>`).join('')}
+  </table>`;
+}
+function roomsHTML(){
+  const rooms = HUB.rooms || [];
+  if (!rooms.length) return '<p class="faint" style="margin:8px 0 0">No rooms yet. Add one below — its code stays the same every time you play.</p>';
+  return rooms.map(r => {
+    const g = byId(r.game);
+    const url = location.origin + location.pathname.replace(/group\.html$/, '') + g.file + '?room=' + r.code;
+    return `<div class="roomcard">
+      <div><div class="who">${esc(r.label)}</div>
+        <div class="sub">${esc(g.name)} · code ${esc(r.code)}${g.reports?'':' · scores not recorded yet'}</div></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <a class="pill" href="${esc(url)}">Open</a>
+        <button class="ghost" onclick="copy('${esc(url)}', this)">Link</button>
+        <button class="ghost" onclick="removeRoom('${esc(r.game)}','${esc(r.code)}')">Remove</button>
+      </div></div>`;
+  }).join('');
+}
+function historyHTML(){
+  const h = HUB.history || [];
+  if (!h.length) return '';
+  return `<div class="panel"><h2>Recent nights</h2>
+    ${h.slice(0,12).map(s=>{
+      const win = (s.results||[]).filter(r=>r.won).map(r=>r.player);
+      const when = new Date(s.at).toLocaleDateString(undefined,{day:'numeric',month:'short'});
+      return `<div class="sess"><span>${esc(when)} · ${esc(byId(s.game).name)}</span>
+        <span>${win.length ? esc(win.join(', ')) : '—'}</span></div>`;
+    }).join('')}
+    ${h.length>12?`<p class="faint" style="font-size:14px;margin:10px 0 0">…and ${h.length-12} more.</p>`:''}
+  </div>`;
+}
+
+function renderLobby(msg){
+  if (msg) setErr(msg);
+  $('title').textContent = 'Groups';
+  $('crumb').textContent = 'For people who play together often';
+  $('app').innerHTML = `
+    <div class="panel">
+      <h2>What a group is for</h2>
+      <p>If the same friends or family play regularly, a group gives you
+         <b>game codes that keep working</b> — the same Judgement table every week, rather than a
+         new code each time — and a <b>scoreboard that carries between nights</b>.</p>
+      <p class="faint" style="font-size:15px">No account and no password. The link is the key, so
+         keep it somewhere your group can find it — a pinned WhatsApp message works well.</p>
+    </div>
+    <div class="panel">
+      <h2>Start a group</h2>
+      <div class="inline">
+        <input id="gname" placeholder="Sunday Crew, The Sharmas, Office lot…" autocomplete="off">
+      </div>
+      <button class="btn full" id="createBtn" onclick="createGroup()">Create the group</button>
+    </div>
+    <div class="panel">
+      <h2>Open an existing group</h2>
+      <div class="inline">
+        <input id="gopen" placeholder="Six-character code" maxlength="6"
+               autocapitalize="characters" autocomplete="off" spellcheck="false"
+               style="text-transform:uppercase;letter-spacing:.2em">
+        <button class="btn alt" onclick="openGroup($('gopen').value)">Open</button>
+      </div>
+    </div>`;
+  const el = $('gopen'); if (el) el.addEventListener('keydown', e => { if (e.key==='Enter') openGroup(e.target.value); });
+  const gn = $('gname'); if (gn) gn.addEventListener('keydown', e => { if (e.key==='Enter') createGroup(); });
+}
+
+function render(){
+  if (!CODE || !HUB){ renderLobby(); return; }
+  $('title').textContent = HUB.name || 'Your group';
+  $('crumb').textContent = 'Group ' + CODE;
+  $('app').innerHTML = `
+    <div class="panel center">
+      <h2>Group code</h2>
+      <div class="code">${esc(CODE)}</div>
+      <input class="linkfield" readonly value="${esc(hubURL())}" onclick="this.select()"
+             aria-label="Group link">
+      <button class="ghost full" onclick="copy('${esc(hubURL())}', this)">Copy the group link</button>
+      <p class="faint" style="font-size:14px;margin:10px 0 0">Anyone with this link can open the
+        group, add rooms and see the standings. Share it with your group, not publicly.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Standings</h2>
+      ${standingsHTML()}
+    </div>
+
+    <div class="panel">
+      <h2>Your rooms</h2>
+      ${roomsHTML()}
+      <div class="inline" style="margin-top:14px">
+        <select id="gpick" aria-label="Game">
+          ${GAMES.map(g=>`<option value="${g.id}">${esc(g.name)}${g.reports?'':' (no scores yet)'}</option>`).join('')}
+        </select>
+      </div>
+      <div class="inline">
+        <input id="glabel" placeholder="What you call it — optional" autocomplete="off">
+        <button class="btn alt" id="addRoomBtn" onclick="addRoom()">Add</button>
+      </div>
+      <p class="faint" style="font-size:14px;margin:10px 0 0">A room keeps its code, so the same
+        link works every week. Judgement and Kaali Tiri report their scores here automatically;
+        the others will follow.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Members</h2>
+      ${(HUB.members||[]).length
+        ? (HUB.members||[]).map(m=>`<div class="rowline"><span>${esc(m)}</span>
+            <button class="ghost" onclick="removeMember('${esc(m)}')">Remove</button></div>`).join('')
+        : '<p class="faint" style="margin:8px 0 0">Nobody added yet — people are also added automatically the first time they appear in a result.</p>'}
+      <div class="inline">
+        <input id="mname" placeholder="Add a player" autocomplete="off">
+        <button class="btn alt" onclick="addMember()">Add</button>
+      </div>
+    </div>
+
+    ${historyHTML()}
+
+    <div class="panel">
+      <p class="faint" style="font-size:14px;margin:0">A group is kept as long as it is used. If
+        nothing here is touched for three months it is removed, along with its rooms.</p>
+    </div>`;
+  const mn = $('mname'); if (mn) mn.addEventListener('keydown', e => { if (e.key==='Enter') addMember(); });
+}
+
+(async function boot(){
+  if (CODE){
+    const hub = await pull();
+    if (!hub){ CODE=''; renderLobby('No group with that code.'); return; }
+    render();
+  } else renderLobby();
+})();
+</script>
+</body>
+</html>

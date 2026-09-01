@@ -97,6 +97,7 @@
 </div>
 
 <script src="feedback.js"></script>
+<script src="group.js"></script>
 <script>
 const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
@@ -131,6 +132,10 @@ const FRESH = { phase:'setup', players:[], decks:1, minBid:130, partnersWanted:1
                 scores:{}, lastTrick:null, handResult:null };
 
 let G = null, me = null, stamp = 0, pending = null;
+
+// A room row may have been created elsewhere — the group page writes only the
+// group marker — so fill any missing fields from FRESH before using it.
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -175,7 +180,7 @@ async function poll(){
     const s = await loadState();
     if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
       const changed = JSON.stringify(s) !== JSON.stringify(G);
-      G = s; stamp = Math.max(stamp, s._stamp||0);
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
       if (changed) render();
     } else if (!G){ G = structuredClone(FRESH); render(); }
   } catch { if (!G){ G = structuredClone(FRESH); render(); } }
@@ -376,7 +381,11 @@ function scoreHand(g){
 }
 function nextHand(){
   mutate(g=>{
-    if (g.hand + 1 >= g.handsToPlay){ g.phase='done'; return g; }
+    if (g.hand + 1 >= g.handsToPlay){
+      g.phase='done';
+      if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
+      return g;
+    }
     g.hand += 1; g.dealer = (g.dealer+1) % g.players.length;
     dealHand(g);
     return g;
@@ -620,6 +629,8 @@ function render(){
   if (G.phase === 'done'){
     const best = Math.max(...G.players.map(p=>G.scores[p]||0));
     const win = G.players.filter(p=>(G.scores[p]||0)===best);
+    if (window.vpMaybeReport) vpMaybeReport(G, 'kaalitiri', ROOM,
+      G.players.map(p => ({ player:p, score:G.scores[p]||0, won:win.includes(p) })));
     app.innerHTML = `
       <div class="panel center">
         <div class="eyebrow">That's the last hand</div>
@@ -687,7 +698,7 @@ async function joinRoom(raw){
   let s; try { s=await loadState(); }
   catch { ROOM=''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
   if (!s){ ROOM=''; renderLobby('No game found with code '+c+'. Check the code, or start a new one.'); return; }
-  G=s; stamp=Math.max(stamp,s._stamp||0); enterRoom();
+  G=hydrate(s); stamp=Math.max(stamp,s._stamp||0); enterRoom();
 }
 function copyInvite(){
   const url=inviteURL();
