@@ -167,12 +167,18 @@
   <section class="howto">
     <h2>How to play Kaali Tiri</h2>
     <ol>
-      <li>Points, not tricks: the 3♠ is worth 30, every 5 is worth 5, and each ten, jack, queen, king and ace is worth 10.</li>
+      <li>Points, not tricks: the 3♠ is worth 30, every 5 is worth 5, and each ten, jack, queen, king and ace is worth 10 — 250 in a deck.</li>
       <li>The highest bidder calls a partner card — but nobody is told who holds it.</li>
       <li>Partners are revealed only when the called card is actually played. If you were not watching, that is your problem.</li>
     </ol>
     <h3>An example</h3>
     <div class="eg"><p style="margin:0">You bid <b>160</b> and call the <b>ace of hearts</b> as your partner card. Somebody at the table is now on your side and neither of you knows it. Three tricks later the ace appears — and everyone finds out at the same moment who has been helping whom.</p></div>
+    <h3>How the bidding works</h3>
+    <div class="eg"><p style="margin:0">After the deal, bidding starts to the dealer's left and
+      goes round in steps of <b>10</b>. Your phone shows you <b>how many points are in your own
+      hand</b>, which is the sum you would otherwise be squinting at. Pass and you are out of that
+      auction; when one bidder is left, they take the contract. If everyone passes, the deal is
+      thrown in and dealt again.</p></div>
     <p class="facts">4–10 players · about 40–60 minutes · suggested from age 12 · free, no sign-up, plays in any browser.</p>
   </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
@@ -549,7 +555,7 @@ function render(){
   const app = $('app');
   $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
     : G.phase==='done' ? 'Final scores'
-    : `Hand ${G.hand+1} of ${G.handsToPlay}${G.trump?' · trump '+SUIT_CH[G.trump]:''}`;
+    : `Deal ${G.hand+1} of ${G.handsToPlay}${G.trump?' · trump '+SUIT_CH[G.trump]:''}`;
 
   if (G.phase === 'setup'){
     const had=$('nameInput'); const keep=had?had.value:'';
@@ -583,11 +589,14 @@ function render(){
         <div class="grid">${[1,2,3].map(n=>
           `<button class="seat ${G.partnersWanted===n?'on':''}" onclick="setPartners(${n})">${n}</button>`).join('')}</div>
 
-        <div class="eyebrow" style="margin-top:18px">Hands to play</div>
+        <div class="eyebrow" style="margin-top:18px">How long a game</div>
         <div class="grid">${[2,4,6,8].map(n=>
-          `<button class="seat ${G.handsToPlay===n?'on':''}" onclick="setHands(${n})">${n}</button>`).join('')}</div>
+          `<button class="seat ${G.handsToPlay===n?'on':''}" onclick="setHands(${n})">${n} deals</button>`).join('')}</div>
+        <p class="faint" style="font-size:14px;margin-top:8px">Everyone is dealt a hand every time —
+          this is just how many times you play before the final scores. Reckon on eight to ten
+          minutes a deal.</p>
 
-        <button class="btn-gold full" style="margin-top:18px" onclick="startGame()">Deal the first hand</button>
+        <button class="btn-gold full" style="margin-top:18px" onclick="startGame()">Start — deal everyone in</button>
       </div>
       <div class="panel"><details><summary>How to play</summary>
         <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
@@ -707,7 +716,7 @@ function render(){
     const r = G.handResult;
     app.innerHTML = `
       <div class="panel center">
-        <div class="eyebrow">Hand ${G.hand+1} — ${r.made ? 'bid made' : 'bid missed'}</div>
+        <div class="eyebrow">Deal ${G.hand+1} — ${r.made ? 'bid made' : 'bid missed'}</div>
         <p style="font-family:'Bitter',serif;font-size:clamp(22px,6vw,34px);margin:8px 0 0;
            color:${r.made?'var(--green)':'var(--red)'}">${r.got} / ${r.bid}</p>
         <p class="faint" style="font-size:15px;margin-top:6px">The bidding side was
@@ -718,7 +727,7 @@ function render(){
           : `Everyone else scores <b style="color:var(--gold)">${r.award}</b> each.`}</p>
         ${scoreTable()}
         <button class="btn-gold full" style="margin-top:14px" onclick="nextHand()">
-          ${G.hand+1 >= G.handsToPlay ? 'See the final scores' : 'Deal hand '+(G.hand+2)}</button>
+          ${G.hand+1 >= G.handsToPlay ? 'See the final scores' : 'Deal ' + (G.hand+2) + ' of ' + G.handsToPlay}</button>
       </div>`;
     return;
   }
@@ -730,7 +739,7 @@ function render(){
       G.players.map(p => ({ player:p, score:G.scores[p]||0, won:win.includes(p) })));
     app.innerHTML = `
       <div class="panel center">
-        <div class="eyebrow">That's the last hand</div>
+        <div class="eyebrow">That's the last deal</div>
         <p style="font-family:'Bitter',serif;font-size:clamp(22px,6vw,36px);margin:8px 0 0">
           ${win.length>1 ? "IT’S A TIE" : esc(win[0]) + " WINS"}</p>
         <table class="tbl" style="margin-top:12px">
