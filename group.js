@@ -30,15 +30,26 @@
   }
 
   // Derived, never incremented — see the note at the top.
+  //
+  // Points are kept PER GAME as well as in total, because a single total is
+  // meaningless across games with different scales: a Judgement night is worth
+  // a few hundred, an Ito night is worth about four. Played and won compare
+  // across games; points only compare within one.
   function recompute(hub){
     const s = {};
-    for (const p of (hub.members || [])) s[p] = { played:0, won:0, points:0 };
+    const touch = (p) => (s[p] = s[p] || { played:0, won:0, points:0, byGame:{} });
+    for (const p of (hub.members || [])) touch(p);
     for (const h of (hub.history || [])){
       for (const r of (h.results || [])){
-        if (!s[r.player]) s[r.player] = { played:0, won:0, points:0 };
-        s[r.player].played += 1;
-        if (r.won) s[r.player].won += 1;
-        s[r.player].points += (r.score || 0);
+        if (!r || !r.player) continue;
+        const e = touch(r.player);
+        e.played += 1;
+        if (r.won) e.won += 1;
+        e.points += (r.score || 0);
+        const g = (e.byGame[h.game] = e.byGame[h.game] || { played:0, won:0, points:0 });
+        g.played += 1;
+        if (r.won) g.won += 1;
+        g.points += (r.score || 0);
       }
     }
     return s;

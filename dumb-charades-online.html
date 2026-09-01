@@ -97,6 +97,7 @@
 </div>
 
 <script src="feedback.js"></script>
+<script src="group.js"></script>
 <script>
 const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
@@ -138,6 +139,10 @@ let me = null;      // this device's identity (local)
 let stamp = 0;
 let pending = null;
 let tick = null;    // local 1s countdown repaint
+
+// A room row may have been created by the group page, which writes only the
+// group marker, so fill any missing fields from FRESH before using it.
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -196,7 +201,7 @@ async function poll(){
     const s = await loadState();
     if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
       const changed = JSON.stringify(s) !== JSON.stringify(G);
-      G = s; stamp = Math.max(stamp, s._stamp||0);
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
       if (changed) render();
     } else if (!G){ G = structuredClone(FRESH); render(); }
   } catch {
@@ -327,6 +332,7 @@ function nextTurn(){
     if (wasB) g.round += 1;
     g.film = null; g.endsAt = null;
     g.phase = (g.round > g.rounds) ? 'gameover' : 'ready';
+    if (g.phase === 'gameover' && !g._sessionEnd) g._sessionEnd = new Date().toISOString();
     return g;
   });
 }
@@ -528,6 +534,9 @@ function render(){
 
   if (G.phase === 'gameover'){
     const win = G.scores.A === G.scores.B ? null : (G.scores.A > G.scores.B ? 'A' : 'B');
+    if (window.vpMaybeReport) vpMaybeReport(G, 'charades', ROOM,
+      ['A','B'].flatMap(t => (G.teams[t]||[]).map(p =>
+        ({ player:p, score:G.scores[t]||0, won: win === null ? false : t === win }))));
     app.innerHTML = `
       <div class="panel center">
         <div class="eyebrow">That's a wrap</div>
@@ -632,7 +641,7 @@ async function joinRoom(raw){
   try { s = await loadState(); }
   catch { ROOM = ''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
   if (!s){ ROOM = ''; renderLobby('No game found with code ' + c + '. Check the code, or start a new one.'); return; }
-  G = s; stamp = Math.max(stamp, s._stamp || 0);
+  G = hydrate(s); stamp = Math.max(stamp, s._stamp || 0);
   enterRoom();
 }
 

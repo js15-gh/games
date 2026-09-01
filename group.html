@@ -104,12 +104,12 @@
 const GAMES = [
   { id:'judgement', file:'judgement-card-game-online.html', name:'Judgement',   reports:true  },
   { id:'kaalitiri', file:'kaali-tiri-online.html',          name:'Kaali Tiri',  reports:true  },
-  { id:'tambola',   file:'tambola-housie-online.html',      name:'Tambola',     reports:false },
-  { id:'antakshari',file:'antakshari-online.html',          name:'Antakshari',  reports:false },
-  { id:'jeopardy',  file:'bollywood-jeopardy-online.html',  name:'Bollywood Jeopardy', reports:false },
-  { id:'charades',  file:'dumb-charades-online.html',       name:'Dumb Charades', reports:false },
-  { id:'ito',       file:'ito-game-online.html',            name:'Ito',         reports:false },
-  { id:'traitors',  file:'traitors-vote-online.html',       name:'The Round Table', reports:false },
+  { id:'tambola',   file:'tambola-housie-online.html',      name:'Tambola',     reports:true },
+  { id:'antakshari',file:'antakshari-online.html',          name:'Antakshari',  reports:true },
+  { id:'jeopardy',  file:'bollywood-jeopardy-online.html',  name:'Bollywood Jeopardy', reports:true },
+  { id:'charades',  file:'dumb-charades-online.html',       name:'Dumb Charades', reports:true },
+  { id:'ito',       file:'ito-game-online.html',            name:'Ito',         reports:true },
+  { id:'traitors',  file:'traitors-vote-online.html',       name:'The Round Table', reports:true },
 ];
 const byId = (i) => GAMES.find(g => g.id === i) || { name:i, file:'./' };
 
@@ -224,15 +224,34 @@ function copy(text, btn){
 // ── render ──
 function standingsHTML(){
   const s = HUB.standings || {};
-  const rows = Object.keys(s).sort((a,b)=>(s[b].points||0)-(s[a].points||0));
+  const rows = Object.keys(s).sort((a,b)=>
+    (s[b].won||0)-(s[a].won||0) || (s[b].played||0)-(s[a].played||0) || a.localeCompare(b));
   if (!rows.length) return `<p class="faint" style="margin:8px 0 0">No games recorded yet.
     Play one of the rooms below and the result lands here.</p>`;
+  const pct = (e) => e.played ? Math.round(e.won / e.played * 100) + '%' : '—';
   return `<table class="tbl">
     <tr><th>Player</th><th style="text-align:center">Played</th>
-        <th style="text-align:center">Won</th><th style="text-align:center">Points</th></tr>
+        <th style="text-align:center">Won</th><th style="text-align:center">Rate</th></tr>
     ${rows.map(p=>`<tr><td>${esc(p)}</td><td class="n">${s[p].played||0}</td>
-      <td class="n">${s[p].won||0}</td><td class="n">${s[p].points||0}</td></tr>`).join('')}
-  </table>`;
+      <td class="n">${s[p].won||0}</td><td class="n">${pct(s[p])}</td></tr>`).join('')}
+  </table>
+  ${byGameHTML(s, rows)}`;
+}
+// Points live here rather than in the table above, because totalling them across
+// games would compare a Judgement score with a count of Tambola prizes.
+function byGameHTML(s, rows){
+  const games = [...new Set(rows.flatMap(p => Object.keys(s[p].byGame || {})))];
+  if (!games.length) return '';
+  return `<details style="margin-top:12px"><summary>Points by game</summary>
+    ${games.map(gid => `<div style="margin-top:10px">
+      <div class="eyebrow" style="font-size:11px">${esc(byId(gid).name)}</div>
+      ${rows.filter(p => s[p].byGame && s[p].byGame[gid])
+            .sort((a,b)=>(s[b].byGame[gid].points||0)-(s[a].byGame[gid].points||0))
+            .map(p=>{ const g = s[p].byGame[gid];
+              return `<div class="sess"><span>${esc(p)}</span>
+                <span>${g.points} pts · ${g.won}/${g.played} won</span></div>`; }).join('')}
+    </div>`).join('')}
+  </details>`;
 }
 function roomsHTML(){
   const rooms = HUB.rooms || [];
@@ -330,8 +349,7 @@ function render(){
         <button class="btn alt" id="addRoomBtn" onclick="addRoom()">Add</button>
       </div>
       <p class="faint" style="font-size:14px;margin:10px 0 0">A room keeps its code, so the same
-        link works every week. Judgement and Kaali Tiri report their scores here automatically;
-        the others will follow.</p>
+        link works every week, and every game reports its result here when it finishes.</p>
     </div>
 
     <div class="panel">

@@ -107,6 +107,7 @@
 </div>
 
 <script src="feedback.js"></script>
+<script src="group.js"></script>
 <script>
 const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
@@ -137,6 +138,10 @@ let me = null;      // this device's identity (local)
 let stamp = 0;
 let pending = null;
 let flash = '';
+
+// A room row may have been created by the group page, which writes only the
+// group marker, so fill any missing fields from FRESH before using it.
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -195,7 +200,7 @@ async function poll(){
     const s = await loadState();
     if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
       const changed = JSON.stringify(s) !== JSON.stringify(G);
-      G = s; stamp = Math.max(stamp, s._stamp||0);
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
       if (changed) render();
     } else if (!G){ G = structuredClone(FRESH); render(); }
   } catch {
@@ -351,7 +356,13 @@ function claim(key){
   }
   setErr('');
   flash = `${me} takes ${PRIZES.find(x=>x.key===key).label}!`;
-  mutate(g=>{ if (!g.prizes[key]) g.prizes[key] = me; return g; });
+  mutate(g=>{
+    if (!g.prizes[key]) g.prizes[key] = me;
+    // every prize gone means the game is over, so stamp the finish once
+    if (Object.values(g.prizes).every(v=>v) && !g._sessionEnd)
+      g._sessionEnd = new Date().toISOString();
+    return g;
+  });
 }
 function newGame(keep){
   me = keep ? me : null;
@@ -481,6 +492,12 @@ function render(){
         <button class="btn-ghost full" style="margin-top:0" onclick="newGame(true)">New game · same players</button>
         <button class="btn-ghost full" onclick="backToSetup()">Change players</button>
       </div>` + (allGone ? vpFeedbackHTML('Tambola') : '');
+    if (allGone && window.vpMaybeReport){
+      const won = {};
+      Object.values(G.prizes).forEach(p => { if (p) won[p] = (won[p]||0) + 1; });
+      vpMaybeReport(G, 'tambola', ROOM, G.players.map(p =>
+        ({ player:p, score:won[p]||0, won: G.prizes.full === p })));
+    }
     return;
   }
 }
@@ -554,7 +571,7 @@ async function joinRoom(raw){
   try { s = await loadState(); }
   catch { ROOM = ''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
   if (!s){ ROOM = ''; renderLobby('No game found with code ' + c + '. Check the code, or start a new one.'); return; }
-  G = s; stamp = Math.max(stamp, s._stamp || 0);
+  G = hydrate(s); stamp = Math.max(stamp, s._stamp || 0);
   enterRoom();
 }
 

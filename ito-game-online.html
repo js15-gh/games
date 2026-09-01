@@ -91,6 +91,7 @@
 </div>
 
 <script src="feedback.js"></script>
+<script src="group.js"></script>
 <script>
 // ════════════════════════════════════════════════════════════
 //  SETUP — paste your two Supabase values between the quotes.
@@ -234,6 +235,10 @@ let peek = false;   // local
 let stamp = 0;
 let pending = null;
 
+// A room row may have been created by the group page, which writes only the
+// group marker, so fill any missing fields from FRESH before using it.
+const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function setErr(m){ $('err').textContent = m || ''; }
@@ -292,7 +297,7 @@ async function poll(){
     const s = await loadState();
     if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
       const changed = JSON.stringify(s) !== JSON.stringify(G);
-      G = s; stamp = Math.max(stamp, s._stamp||0);
+      G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
       if (changed) render();
     } else if (!G){ G = structuredClone(FRESH); render(); }
   } catch {
@@ -366,7 +371,10 @@ function playCard(){
     skipped.forEach(p=>g.played.push({name:p, number:g.hands[p], auto:true}));
     g.played.push({name:who, number:myNum, auto:false});
     g.lives = Math.max(0, g.lives - skipped.length);
-    if (g.lives<=0) g.phase='gameover';
+    if (g.lives<=0){
+      g.phase='gameover';
+      if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
+    }
     else if (g.played.length===g.players.length) g.phase='roundend';
     return g;
   });
@@ -515,6 +523,10 @@ function render(){
 
   if (G.phase==='gameover'){
     const hidden = unplayed(G).sort((a,b)=>G.hands[a]-G.hands[b]);
+    // co-operative: the thread always snaps eventually, so no one wins —
+    // the number of rounds the table cleared together is the real result
+    if (window.vpMaybeReport) vpMaybeReport(G, 'ito', ROOM,
+      G.players.map(p => ({ player:p, score:G.cleared||0, won:false })));
     app.innerHTML = themePanel() +
       `<div class="panel"><div class="eyebrow">The thread — lowest first</div>${threadHTML()}</div>
        <div class="panel center">
@@ -602,7 +614,7 @@ async function joinRoom(raw){
   try { s = await loadState(); }
   catch { ROOM = ''; setErr("Couldn't reach the game service. Check your connection and try again."); return; }
   if (!s){ ROOM = ''; renderLobby('No game found with code ' + c + '. Check the code, or start a new one.'); return; }
-  G = s; stamp = Math.max(stamp, s._stamp || 0);
+  G = hydrate(s); stamp = Math.max(stamp, s._stamp || 0);
   enterRoom();
 }
 
