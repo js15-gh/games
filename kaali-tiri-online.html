@@ -125,7 +125,7 @@ const rankVal = (c) => RANKS.indexOf(rankOf(c)) + 2;
 const isKaali = (c) => face(c) === '3S';
 
 const FRESH = { phase:'setup', players:[], decks:1, minBid:130, partnersWanted:1,
-                handsToPlay:4, threeTop:true, hand:0, dealer:0, removed:[], hands:{},
+                handsToPlay:4, hand:0, dealer:0, removed:[], hands:{},
                 bids:{}, passed:[], turn:0, highBid:0, highBidder:null, trump:'',
                 partnerCards:[], revealed:[], trick:[], led:'', captured:{},
                 scores:{}, lastTrick:null, handResult:null };
@@ -210,20 +210,19 @@ function legalCards(hand, led){
   const has = hand.filter(c => suitOf(c) === led);
   return has.length ? has : [...hand];
 }
-// With the house rule on, the 3♠ is the top trump whatever the trump suit is.
-function beats(a, b, led, trump, threeTop){
-  const ta = threeTop && isKaali(a), tb = threeTop && isKaali(b);
-  if (ta && !tb) return true;
-  if (tb && !ta) return false;
+// The 3♠ carries 30 points but no special rank — it is an ordinary spade, and a
+// 4♠ beats it. Some write-ups online claim it is the top trump; it is not played
+// that way here.
+function beats(a, b, led, trump){
   const sa = suitOf(a), sb = suitOf(b);
   if (sa === trump && sb !== trump) return true;
   if (sb === trump && sa !== trump) return false;
   if (sa !== sb) return false;              // off-suit discard cannot win
   return rankVal(a) > rankVal(b);
 }
-function trickWinner(trick, led, trump, threeTop){
+function trickWinner(trick, led, trump){
   let best = trick[0];
-  for (const p of trick) if (p !== best && beats(p.card, best.card, led, trump, threeTop)) best = p;
+  for (const p of trick) if (p !== best && beats(p.card, best.card, led, trump)) best = p;
   return best.name;
 }
 const trickPoints = (trick) => trick.reduce((s,p)=>s+cardPoints(p.card), 0);
@@ -261,7 +260,6 @@ function setDecks(d){ mutate(g=>{ g.decks=d; g.minBid = 130*d; return g; }); }
 function setMinBid(b){ mutate(g=>{ g.minBid=b; return g; }); }
 function setPartners(n){ mutate(g=>{ g.partnersWanted=n; return g; }); }
 function setHands(n){ mutate(g=>{ g.handsToPlay=n; return g; }); }
-function toggleThreeTop(){ mutate(g=>{ g.threeTop=!g.threeTop; return g; }); }
 
 function startGame(){
   if (G.players.length < 4){ setErr('Kaali Tiri wants at least 4 players.'); return; }
@@ -346,7 +344,7 @@ function playCard(card){
     // a partner is revealed the moment their called card hits the table
     if (g.partnerCards.includes(face(card)) && !g.revealed.includes(p)) g.revealed.push(p);
     if (g.trick.length === g.players.length){
-      const w = trickWinner(g.trick, g.led, g.trump, g.threeTop);
+      const w = trickWinner(g.trick, g.led, g.trump);
       g.captured[w] = (g.captured[w]||[]).concat(g.trick.map(x=>x.card));
       g.lastTrick = { cards:[...g.trick], winner:w, pts:trickPoints(g.trick) };
       g.phase = 'trickend';
@@ -390,7 +388,7 @@ function playAgain(keep){
     const n = structuredClone(FRESH);
     if (keep){ n.players=g.players; n.decks=g.decks; n.minBid=g.minBid;
                n.partnersWanted=g.partnersWanted; n.handsToPlay=g.handsToPlay;
-               n.threeTop=g.threeTop; g.players.forEach(p=>n.scores[p]=0); }
+               g.players.forEach(p=>n.scores[p]=0); }
     return n;
   });
 }
@@ -483,18 +481,14 @@ function render(){
         <div class="grid">${[2,4,6,8].map(n=>
           `<button class="seat ${G.handsToPlay===n?'on':''}" onclick="setHands(${n})">${n}</button>`).join('')}</div>
 
-        <div class="eyebrow" style="margin-top:18px">3♠ beats every trump</div>
-        <p class="faint" style="font-size:14px;margin-top:6px">Some tables play the kaali tiri as the
-          highest card in the game, not just the most valuable. Your table's call.</p>
-        <div class="grid">
-          <button class="seat ${G.threeTop?'on':''}" onclick="toggleThreeTop()">${G.threeTop?'Yes':'No'}</button>
-        </div>
         <button class="btn-gold full" style="margin-top:18px" onclick="startGame()">Deal the first hand</button>
       </div>
       <div class="panel"><details><summary>How to play</summary>
         <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
           <p>Points live in the cards: <b style="color:var(--ink)">3♠ is 30</b>, every 10, J, Q, K and
              A is 10, and every 5 is 5 — ${250*G.decks} in all.</p>
+          <p>The 3♠ is worth the most but <b style="color:var(--ink)">is not the highest card</b> —
+             it is an ordinary spade, and a 4♠ beats it.</p>
           <p>Bid how many points you think you can take. The highest bidder picks trump and calls a
              card; whoever holds it is secretly on their side.</p>
           <p><b style="color:var(--ink)">Partners are only revealed when they play the called card.</b>
@@ -581,7 +575,7 @@ function render(){
       <div class="panel center">
         <div class="trumpbar"><span class="faint" style="font-size:13px">TRUMP</span>
           <span class="suit" style="color:${G.trump==='H'||G.trump==='D'?'var(--red)':'var(--ink)'}">${SUIT_CH[G.trump]}</span>
-          ${G.threeTop?'<span class="faint" style="font-size:13px">· 3♠ beats all</span>':''}</div>
+</div>
         <div class="eyebrow" style="margin-top:8px">${ended ? 'Trick complete'
           : (myTurn ? 'Your turn' : esc(up)+' to play')}${G.led&&!ended?` · ${SUIT_CH[G.led]} led`:''}</div>
         <div class="trick">${(t.cards||[]).map(x=>

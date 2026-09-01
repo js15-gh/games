@@ -14,8 +14,8 @@
  * With neither set the panel simply doesn't render, so nothing half-working
  * ships to players.
  */
-window.VP_FEEDBACK_ENDPOINT = '';          // e.g. 'https://formspree.io/f/xxxxxxx'
-window.VP_FEEDBACK_EMAIL    = '';          // e.g. 'hello@velaparties.com'
+window.VP_FEEDBACK_ENDPOINT = 'https://formspree.io/f/mqpkppdz';
+window.VP_FEEDBACK_EMAIL    = '';          // mailto fallback, unused while the endpoint is set
 
 (function(){
   const on = () => !!(window.VP_FEEDBACK_ENDPOINT || window.VP_FEEDBACK_EMAIL);
