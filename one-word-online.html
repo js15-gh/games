@@ -88,6 +88,7 @@
 
 <script src="feedback.js"></script>
 <script src="group.js"></script>
+<script src="vp.js"></script>
 <script>
 const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
@@ -178,6 +179,13 @@ async function mutate(fn){
 }
 async function poll(){
   if (!joined) return;
+  // a seat outlives a refresh, a locked screen and a second tap on the invite
+  if (!me && G && (G.players||[]).length) me = vpRecallSeat(GAME_ID, ROOM, G.players);
+  if (me) vpRememberSeat(GAME_ID, ROOM, me);
+  if (me && G && vpBeatDue()){
+    const t = Date.now(); vpMarkBeat();          // decided out here — see vp.js
+    mutate(g => vpStampSeen(g, me, t));
+  }
   try {
     if (pending){ const fn = pending; pending = null;
       if (await commit(fn)) setErr(''); else pending = fn; }
@@ -561,10 +569,12 @@ function schedulePoll(){
   curRate = want; if (pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(async ()=>{ await poll(); schedulePoll(); }, want);
 }
-function enterRoom(){ joined=true; history.replaceState(null,'',inviteURL());
+function enterRoom(){
+  if (!me && G) me = vpRecallSeat(GAME_ID, ROOM, G.players); joined=true; history.replaceState(null,'',inviteURL());
   renderRoomBar(); render(); schedulePoll(); }
 function leaveRoom(){
   if (pollTimer){ clearInterval(pollTimer); pollTimer=null; } curRate=0;
+  vpForgetSeat(GAME_ID, ROOM);
   joined=false; ROOM=''; G=null; me=null; pending=null;
   history.replaceState(null,'',location.pathname);
   $('roombar').innerHTML=''; $('crumb').textContent=''; setErr(''); renderLobby();
