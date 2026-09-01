@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Search — thirty-eight themes, a new grid every time</title>
+<meta name="description" content="A word search you never run out of: pick a theme, tap the first and last letter of a word to find it. Easy mode keeps words across and down only. Free, no sign-up, plays on any phone.">
+<link rel="canonical" href="https://velaparties.com/word-search.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Word Search">
+<meta property="og:description" content="A word search you never run out of: pick a theme, tap the first and last letter of a word to find it. Easy mode keeps words across and down only.">
+<meta property="og:url" content="https://velaparties.com/word-search.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Word Search">
+<meta name="twitter:description" content="A word search you never run out of: thirty-eight themes, a new grid every time.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Game", "name": "Word Search", "url": "https://velaparties.com/word-search.html",
+      "description": "A generated word search with thirty-eight themes, from four-by-four simple to a full thirteen-by-thirteen grid.",
+      "genre": "Word puzzle", "inLanguage": "en", "isAccessibleForFree": true,
+      "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 1 },
+      "publisher": { "@type": "Organization", "name": "Vela Parties", "url": "https://velaparties.com/" } },
+    { "@type": "BreadcrumbList", "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Vela Parties", "item": "https://velaparties.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Word Search", "item": "https://velaparties.com/word-search.html" } ] }
+  ]
+}
+</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#736451;
+          --marigold:#E08A1E; --magenta:#B5246B; --green:#2E7D4F; --red:#C0392B; }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:22px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.06em;
+       font-size:clamp(26px,7vw,40px); margin:4px 0 0; }
+  h1 .s { color:var(--magenta); }
+  .eyebrow { color:var(--marigold); letter-spacing:.2em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:18px 16px; margin-top:14px; }
+  .faint { color:var(--faint); }
+  .center { text-align:center; }
+  button { cursor:pointer; border-radius:10px; font-family:'Karla',system-ui,sans-serif; }
+  button:focus-visible { outline:2px solid var(--magenta); outline-offset:2px; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:13px 18px;
+         font-size:15px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+               padding:11px 14px; font-size:13px; }
+  .btn-ghost.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .full { width:100%; margin-top:10px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(104px,1fr)); gap:8px; margin-top:12px; }
+  .lvl { background:#F6EFE3; border:1px solid var(--line); border-radius:10px; padding:11px 8px;
+         font-size:13.5px; text-align:center; color:var(--ink); }
+  .lvl.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .lvl small { display:block; color:var(--faint); font-size:11px; margin-top:2px; }
+  .lvl.on small { color:#D9CEBF; }
+
+  .board { display:grid; gap:2px; margin:14px auto 0; width:100%;
+           max-width:min(94vw,460px); aspect-ratio:1; }
+  .sq { display:flex; align-items:center; justify-content:center; background:#F9F3E8;
+        border:1px solid transparent; border-radius:5px; padding:0;
+        font-family:'Space Grotesk',sans-serif; color:var(--ink);
+        font-size:clamp(10px,3.6vw,19px); line-height:1; }
+  .sq.pick { background:var(--marigold); color:#fff; }
+  .sq.found { background:#D8EEDF; color:var(--green); font-weight:700; }
+  .sq.hint { outline:2px dashed var(--magenta); outline-offset:-2px; }
+
+  .words { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; justify-content:center; }
+  .w { border:1px solid var(--line); border-radius:99px; padding:6px 12px; font-size:13.5px;
+       background:#FBF6EC; }
+  .w.got { color:var(--green); border-color:var(--green); text-decoration:line-through;
+           background:#EEF7F1; }
+  .stats { display:flex; justify-content:space-between; margin-top:12px; font-size:14px; }
+  .stats b { font-family:'Space Grotesk',sans-serif; font-size:18px; display:block; }
+  .flash { min-height:20px; font-weight:700; font-size:14px; margin-top:8px; text-align:center; }
+  .flash.bad { color:var(--red); } .flash.good { color:var(--green); }
+  .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(32px,11vw,54px); line-height:1;
+         color:var(--magenta); }
+  .tools { display:flex; gap:7px; margin-top:10px; } .tools button { flex:1; }
+  .homelink { display:inline-block; margin-top:16px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  .homelink:hover { color:var(--magenta); }
+  footer { text-align:center; padding-top:22px; color:var(--faint); font-size:12px; }
+  footer a { color:var(--faint); }
+
+  .howto { max-width:100%; margin-top:28px; }
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>WORD <span class="s">SEARCH</span></h1>
+  </header>
+  <div id="app"><p class="faint center" style="margin-top:50px">Hiding some words…</p></div>
+
+  <section class="howto">
+    <h2>How to play Word Search</h2>
+    <ol>
+      <li>Every word in the list is hidden somewhere in the grid. Find one and it gets crossed off.</li>
+      <li><b>Tap the first letter, then tap the last letter.</b> No dragging — dragging on a phone scrolls the page instead, which is why most word searches are annoying on one.</li>
+      <li>Words run in straight lines. On <b>Easy</b> that means across and down only; on <b>Standard</b> and <b>Tricky</b> they can also go diagonally and backwards.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">The theme is <b>Fruit</b> and one of the words is
+      <b>MANGO</b>. You spot an <b>M</b> in the third row and think you can see the rest running
+      down-right. Tap the <b>M</b>, then tap the <b>O</b> five squares along that diagonal — if the
+      letters between them spell MANGO, the whole line turns green and the word is crossed off the
+      list. Tap the wrong square and nothing is lost; just tap again.</p></div>
+    <p class="facts">On your own · 3–10 minutes · suggested from age 6 on Easy · free, no sign-up, plays in any browser.</p>
+  </section>
+  <footer>On your own, any time · <a href="./">Vela Parties</a></footer>
+</div>
+
+<script>
+/* Grids are generated from the same themed categories the daily puzzle uses,
+ * so a new theme costs nothing but a few words in a JSON file.
+ *
+ * Two things are worth stating because they are what makes a word search good
+ * or unusable on a phone:
+ *
+ * 1. SELECTION IS TAP-TAP, NOT DRAG. Dragging across a grid on a touch screen
+ *    scrolls the page. Every phone word search that insists on dragging is
+ *    fighting the browser; tapping the first and last letter is unambiguous
+ *    and needs no gesture handling at all.
+ *
+ * 2. FILLER LETTERS ARE DRAWN FROM THE THEME'S OWN LETTERS, not from a
+ *    uniform alphabet. Uniform filler makes the hidden words stand out,
+ *    because real words are full of E and A and the filler is full of Q and Z.
+ */
+const STORE = 'vp:wordsearch:';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function todayKey(d){
+  d = d || new Date();
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
+function seedFrom(str){
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function rng(seed){
+  let a = seed >>> 0;
+  return function(){
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const shuffled = (arr, rand) => {
+  const a = arr.slice();
+  for (let i = a.length-1; i > 0; i--){ const j = Math.floor(rand()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+};
+
+const EASY_DIRS = [[0,1],[1,0]];
+const ALL_DIRS  = [[0,1],[1,0],[1,1],[1,-1],[0,-1],[-1,0],[-1,-1],[-1,1]];
+
+const LEVELS = [
+  { key:'easy',     name:'Easy',     size:9,  count:6,  mix:1, dirs:EASY_DIRS, hint:'Across and down · from age 6' },
+  { key:'standard', name:'Standard', size:11, count:8,  mix:1, dirs:ALL_DIRS,  hint:'Any direction · from age 9' },
+  { key:'tricky',   name:'Tricky',   size:13, count:10, mix:2, dirs:ALL_DIRS,  hint:'Two themes mixed together' },
+];
+const levelOf = (k) => LEVELS.find(l => l.key === k) || LEVELS[1];
+
+const clean = (w) => String(w).toUpperCase().replace(/[^A-Z]/g, '');
+/* A category is usable if it has enough single words that fit the grid.
+   Multi-word entries are DROPPED, not squashed: "Banana leaf" cleaned into
+   BANANALEAF is not a word anybody is going to look for, and a list full of
+   run-together phrases reads like a bug. */
+function usableWords(cat, size){
+  return cat.items.filter(w => !/\s/.test(w)).map(clean)
+            .filter(w => w.length >= 3 && w.length <= size);
+}
+
+/* Placement: try every word in the hardest order (longest first), and retry
+   the whole grid if one will not go. Overlaps are allowed only where the
+   letters already agree. */
+function buildGrid(words, size, dirs, rand){
+  for (let attempt = 0; attempt < 60; attempt++){
+    const g = new Array(size*size).fill('');
+    const placed = [];
+    let ok = true;
+    for (const w of words.slice().sort((a,b)=>b.length-a.length)){
+      let done = false;
+      const starts = shuffled(Array.from({length:size*size},(_,k)=>k), rand);
+      const ds = shuffled(dirs, rand);
+      outer:
+      for (const s of starts){
+        const r0 = (s/size)|0, c0 = s%size;
+        for (const [dr,dc] of ds){
+          const rEnd = r0 + dr*(w.length-1), cEnd = c0 + dc*(w.length-1);
+          if (rEnd < 0 || rEnd >= size || cEnd < 0 || cEnd >= size) continue;
+          let fits = true;
+          for (let k = 0; k < w.length; k++){
+            const cell = g[(r0+dr*k)*size + (c0+dc*k)];
+            if (cell && cell !== w[k]){ fits = false; break; }
+          }
+          if (!fits) continue;
+          const path = [];
+          for (let k = 0; k < w.length; k++){
+            const idx = (r0+dr*k)*size + (c0+dc*k);
+            g[idx] = w[k]; path.push(idx);
+          }
+          placed.push({ word:w, path });
+          done = true;
+          break outer;
+        }
+      }
+      if (!done){ ok = false; break; }
+    }
+    if (!ok) continue;
+
+    // filler drawn from the theme's own letters, so the hidden words do not
+    // stand out against a wall of X and Q
+    const pool = words.join('').split('');
+    for (let i = 0; i < g.length; i++)
+      if (!g[i]) g[i] = pool[Math.floor(rand()*pool.length)];
+    return { size, grid:g, placed };
+  }
+  return null;
+}
+
+// ── state ──
+let PACK = null, level = 'standard', theme = null, mode = 'random';
+let P = null, found = [], pickA = -1, startedAt = 0, timer = null, done = false, hinted = [];
+
+function readBest(){ try { return JSON.parse(localStorage.getItem(STORE+'best')||'{}'); } catch { return {}; } }
+function saveBest(k, s){
+  try { const b = readBest(); if (!b[k] || s < b[k]){ b[k]=s; localStorage.setItem(STORE+'best', JSON.stringify(b)); return true; } }
+  catch {}
+  return false;
+}
+const fmt = (s) => Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+
+/* A theme is offered only if it can actually supply its share of the words —
+   which is per-theme, so a mixed level needs half as many from each. */
+function categories(){
+  const L = levelOf(level);
+  const need = Math.ceil(L.count / (L.mix || 1));
+  return PACK.categories.filter(c => usableWords(c, L.size).length >= need);
+}
+function newPuzzle(){
+  const L = levelOf(level);
+  const rand = mode === 'daily'
+    ? rng(seedFrom('wordsearch:' + todayKey() + ':' + level))
+    : rng((Math.random()*4294967296) >>> 0);
+  const pool = categories();
+  if (!pool.length){ P = null; render(); return; }        // never index into nothing
+  const mix = Math.min(L.mix || 1, pool.length);
+  const per = Math.ceil(L.count / mix);
+  const first = (theme && pool.find(c=>c.id===theme)) || pool[Math.floor(rand()*pool.length)];
+  const chosen = [first];
+  for (const c of shuffled(pool, rand)){
+    if (chosen.length >= mix) break;
+    if (!chosen.includes(c)) chosen.push(c);
+  }
+  const words = [...new Set(chosen.flatMap(c =>
+    shuffled(usableWords(c, L.size), rand).slice(0, per)))].slice(0, L.count);
+  P = buildGrid(words, L.size, L.dirs, rand);
+  if (!P) P = buildGrid(words.slice(0, Math.max(4, words.length - 2)), L.size, L.dirs, rand);
+  if (P){ P.theme = chosen.map(c=>c.name).join(' & '); P.themeId = first.id; }
+  found = []; pickA = -1; done = false; hinted = [];
+  startedAt = Date.now();
+  if (timer) clearInterval(timer);
+  timer = setInterval(()=>{ const el=$('clock'); if (el && !done)
+    el.textContent = fmt(Math.floor((Date.now()-startedAt)/1000)); }, 500);
+  render();
+}
+function setLevel(k){ level = k; theme = null; newPuzzle(); }
+function setTheme(id){ theme = id || null; newPuzzle(); }
+function setMode(m){ mode = m; newPuzzle(); }
+
+/* Two taps define a line. Anything not on one of the eight straight lines is
+   simply not a selection — no error, no penalty, tap again. */
+function lineBetween(a, b, size){
+  const r1 = (a/size)|0, c1 = a%size, r2 = (b/size)|0, c2 = b%size;
+  const dr = Math.sign(r2-r1), dc = Math.sign(c2-c1);
+  const len = Math.max(Math.abs(r2-r1), Math.abs(c2-c1)) + 1;
+  if (Math.abs(r2-r1) && Math.abs(c2-c1) && Math.abs(r2-r1) !== Math.abs(c2-c1)) return null;
+  const path = [];
+  for (let k = 0; k < len; k++) path.push((r1+dr*k)*size + (c1+dc*k));
+  return path;
+}
+function tap(i){
+  if (done) return;
+  if (pickA < 0){ pickA = i; flash(''); render(); return; }
+  if (pickA === i){ pickA = -1; render(); return; }
+  const path = lineBetween(pickA, i, P.size);
+  pickA = -1;
+  if (!path){ render(); flash('bad', 'Words run in straight lines.'); return; }
+  const s = path.map(k => P.grid[k]).join('');
+  const rev = s.split('').reverse().join('');
+  const hit = P.placed.find(p => !found.includes(p.word) && (p.word === s || p.word === rev));
+  let msg = null;
+  if (hit){
+    found.push(hit.word);
+    msg = ['good', hit.word];
+    if (found.length === P.placed.length){
+      done = true;
+      if (timer){ clearInterval(timer); timer = null; }
+      window.__secs = Math.floor((Date.now()-startedAt)/1000);
+      window.__isBest = saveBest(level, window.__secs);
+    }
+  } else {
+    msg = ['bad', 'Not one of them.'];
+  }
+  render();                       // rebuilds #flash, so the message goes in after
+  if (msg) flash(msg[0], msg[1]);
+}
+function hint(){
+  if (done) return;
+  const left = P.placed.filter(p => !found.includes(p.word));
+  if (!left.length) return;
+  hinted = left[0].path.slice(0, 1);
+  render();
+  flash('good', 'One of them starts here.');
+  setTimeout(()=>{ hinted = []; render(); }, 2500);
+}
+function reveal(){
+  if (done) return;
+  found = P.placed.map(p=>p.word);
+  done = true;
+  if (timer){ clearInterval(timer); timer = null; }
+  window.__secs = null; window.__isBest = false;
+  render();
+}
+let ft = null;
+function flash(kind, text){
+  const f = $('flash'); if (!f) return;
+  f.className = 'flash ' + (kind||''); f.textContent = text || '';
+  if (ft) clearTimeout(ft);
+  if (text) ft = setTimeout(()=>{ const g=$('flash'); if(g){g.textContent='';g.className='flash';} }, 1600);
+}
+
+// ── render ──
+function render(){
+  if (!P){ $('app').innerHTML = `<div class="panel center"><p class="faint">Couldn't build a grid.
+      <button class="btn full" onclick="newPuzzle()">Try again</button></p></div>`; return; }
+  const L = levelOf(level);
+  const foundCells = new Set();
+  P.placed.filter(p=>found.includes(p.word)).forEach(p=>p.path.forEach(k=>foundCells.add(k)));
+  const best = readBest()[level];
+  $('crumb').textContent = (mode==='daily' ? todayKey()+' · ' : '') + P.theme;
+
+  $('app').innerHTML = `
+    ${done ? `<div class="panel center">
+        <div class="eyebrow">${window.__secs === null ? 'All of them' : (window.__isBest ? 'A new best' : 'Found them all')}</div>
+        ${window.__secs === null ? '<p class="faint" style="margin-top:8px">Shown for you. Try another.</p>'
+          : `<p class="big">${fmt(window.__secs)}</p>
+             <p class="faint">${best && !window.__isBest ? 'Your best is ' + fmt(best) + '.' : 'Nicely done.'}</p>`}
+        <button class="btn full" onclick="newPuzzle()">Another one</button>
+      </div>` : ''}
+    <div class="panel">
+      <p class="faint center" style="margin:0;font-size:14px">Hidden in the grid:
+        <b style="color:var(--ink)">${esc(P.theme)}</b>.</p>
+      <div class="board" style="grid-template-columns:repeat(${P.size},1fr)">
+        ${P.grid.map((ch,i)=>{
+          const cls = [ foundCells.has(i)?'found':'', i===pickA?'pick':'', hinted.includes(i)?'hint':'' ]
+            .filter(Boolean).join(' ');
+          return `<button class="sq ${cls}" onclick="tap(${i})">${ch}</button>`;
+        }).join('')}
+      </div>
+      <div class="flash" id="flash"></div>
+      <div class="words">${P.placed.map(p=>
+        `<span class="w ${found.includes(p.word)?'got':''}">${esc(p.word)}</span>`).join('')}</div>
+      ${done ? '' : `<div class="stats">
+        <span class="faint">Left<b>${P.placed.length - found.length}</b></span>
+        <span class="faint">Time<b id="clock">0:00</b></span>
+        <span class="faint">Best<b>${best?fmt(best):'—'}</b></span>
+      </div>
+      <div class="tools">
+        <button class="btn-ghost" onclick="hint()">Give me a hint</button>
+        <button class="btn-ghost" onclick="reveal()">Show them all</button>
+      </div>`}
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Difficulty</div>
+      <div class="grid">${LEVELS.map(l=>
+        `<button class="lvl ${level===l.key?'on':''}" onclick="setLevel('${l.key}')">${l.name}<small>${l.hint}</small></button>`).join('')}</div>
+      <div class="eyebrow" style="margin-top:16px">Which puzzle</div>
+      <div class="grid">
+        <button class="lvl ${mode==='daily'?'on':''}" onclick="setMode('daily')">Today's<small>same for everyone</small></button>
+        <button class="lvl ${mode==='random'?'on':''}" onclick="setMode('random')">Random<small>as many as you like</small></button>
+      </div>
+      <div class="eyebrow" style="margin-top:16px">Theme</div>
+      <div class="grid">
+        <button class="lvl ${!theme?'on':''}" onclick="setTheme(null)">Surprise me</button>
+        ${categories().map(c=>
+          `<button class="lvl ${theme===c.id?'on':''}" onclick="setTheme('${c.id}')">${esc(c.name)}</button>`).join('')}
+      </div>
+    </div>`;
+}
+
+(async function boot(){
+  try {
+    const r = await fetch('content/connections.json', { cache:'no-cache' });
+    PACK = await r.json();
+  } catch {
+    $('app').innerHTML = `<div class="panel center"><p class="faint">Couldn't load the word list.
+      Check your connection and reload.</p></div>`;
+    return;
+  }
+  newPuzzle();
+})();
+</script>
+</body>
+</html>

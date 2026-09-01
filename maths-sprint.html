@@ -308,18 +308,20 @@ function submit(){
   const v = value();
   if (v === null) return;
   const right = Math.abs(v - cur.a) < 1e-9;
+  let msg;
   if (right){
     score++; streak++;
     if (streak % 3 === 0) heat = Math.min(1, heat + 0.12);
-    flash('good', pick(['Yes','Right','Got it','Correct']));
+    msg = ['good', pick(['Yes','Right','Got it','Correct'])];
   } else {
     if (wrong.length < 12) wrong.push({ q:cur.q, yours:v, right:cur.a });
     streak = 0;
     heat = Math.max(0, heat - 0.08);
-    flash('bad', 'It was ' + cur.a);
+    msg = ['bad', 'It was ' + cur.a];
   }
   next();
-  render();
+  render();                       // rebuilds #flash, so the message goes in after
+  flash(msg[0], msg[1]);
 }
 let flashTimer = null;
 function flash(kind, text){

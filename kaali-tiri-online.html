@@ -170,6 +170,7 @@
       <li>Points, not tricks: the 3♠ is worth 30, every 5 is worth 5, and each ten, jack, queen, king and ace is worth 10 — 250 in a deck.</li>
       <li>The highest bidder calls a partner card — but nobody is told who holds it.</li>
       <li>Partners are revealed only when the called card is actually played. If you were not watching, that is your problem.</li>
+      <li>A deal ends when the cards run out. Then you tally it, the running scores carry on, and you deal again — <b>for as long as you feel like</b>. There is no fixed number of deals to agree beforehand.</li>
     </ol>
     <h3>An example</h3>
     <div class="eg"><p style="margin:0">You bid <b>160</b> and call the <b>ace of hearts</b> as your partner card. Somebody at the table is now on your side and neither of you knows it. Three tricks later the ace appears — and everyone finds out at the same moment who has been helping whom.</p></div>
@@ -215,7 +216,7 @@ const rankVal = (c) => RANKS.indexOf(rankOf(c)) + 2;
 const isKaali = (c) => face(c) === '3S';
 
 const FRESH = { phase:'setup', players:[], decks:1, minBid:130, partnersWanted:1,
-                handsToPlay:4, hand:0, dealer:0, removed:[], hands:{},
+                hand:0, dealer:0, removed:[], hands:{},
                 bids:{}, passed:[], turn:0, highBid:0, highBidder:null, trump:'',
                 partnerCards:[], revealed:[], trick:[], led:'', captured:{},
                 scores:{}, lastTrick:null, handResult:null };
@@ -367,7 +368,6 @@ function removePlayer(n){
 function setDecks(d){ mutate(g=>{ g.decks=d; g.minBid = 130*d; return g; }); }
 function setMinBid(b){ mutate(g=>{ g.minBid=b; return g; }); }
 function setPartners(n){ mutate(g=>{ g.partnersWanted=n; return g; }); }
-function setHands(n){ mutate(g=>{ g.handsToPlay=n; return g; }); }
 
 function startGame(){
   if (G.players.length < 4){ setErr('Kaali Tiri wants at least 4 players.'); return; }
@@ -482,15 +482,20 @@ function scoreHand(g){
   g.phase = 'handend';
   return g;
 }
+/* There is no last deal. You keep going until somebody decides to stop, which
+   is why finishing is an explicit act rather than something the game does to
+   you mid-evening. */
 function nextHand(){
   mutate(g=>{
-    if (g.hand + 1 >= g.handsToPlay){
-      g.phase='done';
-      if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
-      return g;
-    }
     g.hand += 1; g.dealer = (g.dealer+1) % g.players.length;
     dealHand(g);
+    return g;
+  });
+}
+function endGame(){
+  mutate(g=>{
+    g.phase = 'done';
+    if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
     return g;
   });
 }
@@ -499,7 +504,7 @@ function playAgain(keep){
   mutate(g=>{
     const n = structuredClone(FRESH);
     if (keep){ n.players=g.players; n.decks=g.decks; n.minBid=g.minBid;
-               n.partnersWanted=g.partnersWanted; n.handsToPlay=g.handsToPlay;
+               n.partnersWanted=g.partnersWanted;
                g.players.forEach(p=>n.scores[p]=0); }
     return n;
   });
@@ -555,7 +560,7 @@ function render(){
   const app = $('app');
   $('crumb').textContent = G.phase==='setup' ? 'Set up the game'
     : G.phase==='done' ? 'Final scores'
-    : `Deal ${G.hand+1} of ${G.handsToPlay}${G.trump?' · trump '+SUIT_CH[G.trump]:''}`;
+    : `Deal ${G.hand+1}${G.trump?' · trump '+SUIT_CH[G.trump]:''}`;
 
   if (G.phase === 'setup'){
     const had=$('nameInput'); const keep=had?had.value:'';
@@ -589,12 +594,8 @@ function render(){
         <div class="grid">${[1,2,3].map(n=>
           `<button class="seat ${G.partnersWanted===n?'on':''}" onclick="setPartners(${n})">${n}</button>`).join('')}</div>
 
-        <div class="eyebrow" style="margin-top:18px">How long a game</div>
-        <div class="grid">${[2,4,6,8].map(n=>
-          `<button class="seat ${G.handsToPlay===n?'on':''}" onclick="setHands(${n})">${n} deals</button>`).join('')}</div>
-        <p class="faint" style="font-size:14px;margin-top:8px">Everyone is dealt a hand every time —
-          this is just how many times you play before the final scores. Reckon on eight to ten
-          minutes a deal.</p>
+        <p class="faint" style="font-size:14px;margin-top:18px">Deal after deal, with the scores
+          carrying on, until somebody calls it. There is nothing to agree in advance.</p>
 
         <button class="btn-gold full" style="margin-top:18px" onclick="startGame()">Start — deal everyone in</button>
       </div>
@@ -608,6 +609,8 @@ function render(){
              card; whoever holds it is secretly on their side.</p>
           <p><b style="color:var(--ink)">Partners are only revealed when they play the called card.</b>
              Nobody announces it — if you weren't paying attention, that's your problem.</p>
+          <p>A deal ends when the cards run out; the scores carry on and you deal again for as long
+             as you like. Stop whenever — the scoreboard is on every screen.</p>
           <p>Make the bid and everyone on the bidding side scores the bid. Fall short and everyone on
              the other side scores ${100*G.decks} each.</p>
         </div></details></div>`;
@@ -726,8 +729,8 @@ function render(){
           ? `Each of them scores <b style="color:var(--gold)">${r.award}</b>.`
           : `Everyone else scores <b style="color:var(--gold)">${r.award}</b> each.`}</p>
         ${scoreTable()}
-        <button class="btn-gold full" style="margin-top:14px" onclick="nextHand()">
-          ${G.hand+1 >= G.handsToPlay ? 'See the final scores' : 'Deal ' + (G.hand+2) + ' of ' + G.handsToPlay}</button>
+        <button class="btn-gold full" style="margin-top:14px" onclick="nextHand()">Deal ${G.hand+2}</button>
+        <button class="btn-ghost full" onclick="endGame()">Stop here — final scores</button>
       </div>`;
     return;
   }
@@ -739,7 +742,7 @@ function render(){
       G.players.map(p => ({ player:p, score:G.scores[p]||0, won:win.includes(p) })));
     app.innerHTML = `
       <div class="panel center">
-        <div class="eyebrow">That's the last deal</div>
+        <div class="eyebrow">${G.hand+1} deal${G.hand?'s':''} played</div>
         <p style="font-family:'Bitter',serif;font-size:clamp(22px,6vw,36px);margin:8px 0 0">
           ${win.length>1 ? "IT’S A TIE" : esc(win[0]) + " WINS"}</p>
         <table class="tbl" style="margin-top:12px">

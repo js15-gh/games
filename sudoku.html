@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudoku — from four-by-four for beginners up to the full nine</title>
+<meta name="description" content="Sudoku that starts small: 4×4 for six-year-olds, 6×6 to build up, then the full 9×9 in three difficulties. Every puzzle has exactly one answer. Free, no sign-up, plays on any phone.">
+<link rel="canonical" href="https://velaparties.com/sudoku.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Vela Parties">
+<meta property="og:title" content="Sudoku">
+<meta property="og:description" content="Sudoku that starts small: 4×4 for six-year-olds, 6×6 to build up, then the full 9×9 in three difficulties. Every puzzle has exactly one answer.">
+<meta property="og:url" content="https://velaparties.com/sudoku.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Sudoku">
+<meta name="twitter:description" content="Sudoku that starts small: 4×4 for beginners up to the full 9×9. Every puzzle has exactly one answer.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Game", "name": "Sudoku", "url": "https://velaparties.com/sudoku.html",
+      "description": "Sudoku from 4×4 for beginners up to the full 9×9, every puzzle with exactly one answer.",
+      "genre": "Logic puzzle", "inLanguage": "en", "isAccessibleForFree": true,
+      "numberOfPlayers": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 1 },
+      "publisher": { "@type": "Organization", "name": "Vela Parties", "url": "https://velaparties.com/" } },
+    { "@type": "BreadcrumbList", "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Vela Parties", "item": "https://velaparties.com/" },
+      { "@type": "ListItem", "position": 2, "name": "Sudoku", "item": "https://velaparties.com/sudoku.html" } ] }
+  ]
+}
+</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔢</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#736451;
+          --marigold:#E08A1E; --magenta:#B5246B; --green:#2E7D4F; --red:#C0392B;
+          --given:#2A2118; --mine:#B5246B; --hl:#FBEFD9; --peer:#FDF6EA; }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:520px; margin:0 auto; padding:0 14px 40px; }
+  header { text-align:center; padding:22px 8px 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.1em;
+       font-size:clamp(26px,7vw,40px); margin:4px 0 0; color:var(--magenta); }
+  .eyebrow { color:var(--marigold); letter-spacing:.2em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:18px 16px; margin-top:14px; }
+  .faint { color:var(--faint); }
+  .center { text-align:center; }
+  button { cursor:pointer; border-radius:10px; font-family:'Karla',system-ui,sans-serif; }
+  button:focus-visible { outline:2px solid var(--magenta); outline-offset:2px; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:13px 18px;
+         font-size:15px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+               padding:11px 14px; font-size:13px; }
+  .full { width:100%; margin-top:10px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:8px; margin-top:12px; }
+  .lvl { background:#F6EFE3; border:1px solid var(--line); border-radius:10px; padding:11px 8px;
+         font-size:13.5px; text-align:center; color:var(--ink); }
+  .lvl.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .lvl small { display:block; color:var(--faint); font-size:11px; margin-top:2px; }
+  .lvl.on small { color:#D9CEBF; }
+
+  /* The board sizes itself off the viewport so nine columns still have a
+     tappable target on a small phone. */
+  .board { display:grid; gap:0; margin:14px auto 0; width:100%;
+           max-width:min(94vw, 460px); aspect-ratio:1; border:2px solid var(--ink);
+           border-radius:6px; overflow:hidden; }
+  .cell { display:flex; align-items:center; justify-content:center; background:var(--panel);
+          border:1px solid var(--line); font-family:'Space Grotesk',sans-serif;
+          font-size:clamp(15px,5.2vw,26px); color:var(--mine); padding:0; line-height:1; }
+  .cell.given { color:var(--given); font-weight:700; background:#FBF6EC; }
+  .cell.sel { background:var(--hl); }
+  .cell.peer { background:var(--peer); }
+  .cell.same { background:#F6E7CE; }
+  .cell.bad { color:var(--red); }
+  .cell.br { border-right:2px solid var(--ink); }
+  .cell.bb { border-bottom:2px solid var(--ink); }
+  .notes { display:grid; grid-template-columns:repeat(3,1fr); width:100%; height:100%;
+           font-family:'Karla',sans-serif; font-size:clamp(7px,2.3vw,11px); color:var(--faint); }
+  .notes span { display:flex; align-items:center; justify-content:center; }
+
+  .pad { display:grid; gap:7px; margin-top:12px; }
+  .key { background:#F6EFE3; border:1px solid var(--line); border-radius:10px; padding:14px 0;
+         font-family:'Space Grotesk',sans-serif; font-size:22px; color:var(--ink); }
+  .key.done { opacity:.35; }
+  .key:active { background:var(--ink); color:#fff; }
+  .tools { display:flex; gap:7px; margin-top:8px; } .tools button { flex:1; }
+  .tools .on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .stats { display:flex; justify-content:space-between; margin-top:10px; font-size:14px; }
+  .stats b { font-family:'Space Grotesk',sans-serif; font-size:18px; display:block; }
+  .big { font-family:'Space Grotesk',sans-serif; font-size:clamp(32px,11vw,54px); line-height:1;
+         color:var(--magenta); }
+  .flash { min-height:20px; font-weight:700; font-size:14px; margin-top:8px; text-align:center; }
+  .flash.bad { color:var(--red); } .flash.good { color:var(--green); }
+  .homelink { display:inline-block; margin-top:16px; color:var(--faint); text-decoration:none;
+              font-size:12px; letter-spacing:.16em; text-transform:uppercase; }
+  .homelink:hover { color:var(--magenta); }
+  footer { text-align:center; padding-top:22px; color:var(--faint); font-size:12px; }
+  footer a { color:var(--faint); }
+
+  .howto { max-width:100%; margin-top:28px; }
+  .howto h2 { font-family:'Space Grotesk',sans-serif; font-size:17px; letter-spacing:.14em;
+              text-transform:uppercase; margin:0 0 10px; color:var(--ink); }
+  .howto h3 { font-size:14px; letter-spacing:.14em; text-transform:uppercase;
+              margin:20px 0 6px; opacity:.85; }
+  .howto ol { padding-left:20px; margin:0; }
+  .howto li, .howto p { color:var(--ink); opacity:.86; line-height:1.7; font-size:15px; }
+  .howto li { margin-bottom:8px; }
+  .howto li b, .howto p b { color:var(--ink); }
+  .howto .eg { border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-top:10px; }
+  .howto .facts { font-size:13.5px; margin-top:14px; opacity:.85; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="homelink" href="./">← All games</a>
+  <header>
+    <div class="eyebrow" id="crumb"></div>
+    <h1>SUDOKU</h1>
+  </header>
+  <div id="app"><p class="faint center" style="margin-top:50px">Making a puzzle…</p></div>
+
+  <section class="howto">
+    <h2>How to play Sudoku</h2>
+    <ol>
+      <li>Fill every empty square with a digit so that <b>each row, each column and each outlined box</b> contains every digit exactly once.</li>
+      <li>Start with the 4×4 if you have never done one — it is the same puzzle with less of it, and a six-year-old can finish one.</li>
+      <li>Every puzzle here has <b>exactly one answer</b>, so you never have to guess. If you are stuck, there is always a square somewhere that only one digit can go in.</li>
+    </ol>
+    <h3>An example</h3>
+    <div class="eg"><p style="margin:0">In a 4×4, look at a row that already has <b>1, 3</b> and
+      <b>4</b>. The empty square must be <b>2</b> — nothing else is left. That is the whole game:
+      find the square with only one possibility, fill it in, and it gives you the next one. Use
+      <b>Notes</b> to pencil in the digits a square could still take when there is more than one.</p></div>
+    <p class="facts">On your own · 3–20 minutes depending on size · suggested from age 6 for the 4×4, 10 for the 9×9 · free, no sign-up, plays in any browser.</p>
+  </section>
+  <footer>On your own, any time · <a href="./">Vela Parties</a></footer>
+</div>
+
+<script>
+/* Puzzles are generated, and every one is checked to have EXACTLY ONE answer
+ * before it is handed over.
+ *
+ * That check is the whole thing. A sudoku with two answers is not a hard
+ * sudoku, it is a broken one: the solver reasons correctly, reaches a point
+ * where logic runs out, guesses, and is told they are wrong. Generating a full
+ * grid and knocking cells out is easy; knocking out only the cells that leave
+ * the answer unique is what makes it a sudoku rather than a grid of holes.
+ *
+ * So: build a complete grid, then remove cells one at a time, and after each
+ * removal count the solutions — putting the cell back the moment the count
+ * reaches two.
+ */
+const STORE = 'vp:sudoku:';
+const $ = (id) => document.getElementById(id);
+
+function todayKey(d){
+  d = d || new Date();
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
+function seedFrom(str){
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function rng(seed){
+  let a = seed >>> 0;
+  return function(){
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const shuffled = (arr, rand) => {
+  const a = arr.slice();
+  for (let i = a.length-1; i > 0; i--){ const j = Math.floor(rand()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+};
+
+/* Box shape per size. 6×6 uses 2 rows by 3 columns, which is what makes it a
+   real sudoku rather than a 6×6 latin square. */
+function boxDims(n){ return n === 4 ? [2,2] : n === 6 ? [2,3] : [3,3]; }
+
+function canPlace(g, n, i, v){
+  const [bh, bw] = boxDims(n);
+  const r = (i / n) | 0, c = i % n;
+  for (let k = 0; k < n; k++){
+    if (g[r*n + k] === v) return false;
+    if (g[k*n + c] === v) return false;
+  }
+  const r0 = r - (r % bh), c0 = c - (c % bw);
+  for (let a = 0; a < bh; a++)
+    for (let b = 0; b < bw; b++)
+      if (g[(r0+a)*n + (c0+b)] === v) return false;
+  return true;
+}
+/* Counts solutions but stops at `limit` — we only ever need to know whether
+   there is more than one, and a full count on an empty grid would not
+   terminate in any useful time. */
+function countSolutions(grid, n, limit){
+  const g = grid.slice();
+  let found = 0;
+  (function go(){
+    if (found >= limit) return;
+    let best = -1, bestOpts = null;
+    for (let i = 0; i < g.length; i++){
+      if (g[i]) continue;
+      const opts = [];
+      for (let v = 1; v <= n; v++) if (canPlace(g, n, i, v)) opts.push(v);
+      if (opts.length === 0) return;                 // dead end
+      if (!bestOpts || opts.length < bestOpts.length){ best = i; bestOpts = opts; }
+      if (opts.length === 1) break;                  // forced — take it now
+    }
+    if (best === -1){ found++; return; }             // no blanks left
+    for (const v of bestOpts){
+      g[best] = v; go(); g[best] = 0;
+      if (found >= limit) return;
+    }
+  })();
+  return found;
+}
+function fullGrid(n, rand){
+  const g = new Array(n*n).fill(0);
+  (function go(i){
+    if (i === g.length) return true;
+    for (const v of shuffled(Array.from({length:n},(_,k)=>k+1), rand)){
+      if (canPlace(g, n, i, v)){ g[i] = v; if (go(i+1)) return true; g[i] = 0; }
+    }
+    return false;
+  })(0);
+  return g;
+}
+/* Remove cells while the answer stays unique. Symmetry is not enforced: it
+   looks tidier but costs givens, and for a child a tidy puzzle they cannot
+   finish is worth nothing. */
+function carve(full, n, keepGivens, rand){
+  const g = full.slice();
+  for (const i of shuffled(Array.from({length:n*n},(_,k)=>k), rand)){
+    const filled = g.filter(Boolean).length;
+    if (filled <= keepGivens) break;
+    const saved = g[i];
+    g[i] = 0;
+    if (countSolutions(g, n, 2) !== 1) g[i] = saved;   // put it straight back
+  }
+  return g;
+}
+
+const SIZES = [
+  { n:4, name:'4 × 4',  hint:'Digits 1–4 · from age 6',  levels:{ gentle:9,  standard:7,  tricky:6  } },
+  { n:6, name:'6 × 6',  hint:'Digits 1–6 · from age 8',  levels:{ gentle:20, standard:16, tricky:13 } },
+  { n:9, name:'9 × 9',  hint:'The full one · from age 10', levels:{ gentle:38, standard:32, tricky:26 } },
+];
+const LEVELS = [ ['gentle','Gentle'], ['standard','Standard'], ['tricky','Tricky'] ];
+const sizeOf = (n) => SIZES.find(s => s.n === n) || SIZES[2];
+
+function makePuzzle(n, level, rand){
+  const full = fullGrid(n, rand);
+  const keep = sizeOf(n).levels[level] || sizeOf(n).levels.standard;
+  const puz = carve(full, n, keep, rand);
+  return { n, level, puzzle: puz, answer: full, givens: puz.map(v => v !== 0) };
+}
+
+// ── state ──
+let size = 6, level = 'gentle', mode = 'daily';
+let P = null, cells = [], notes = [], sel = -1, noteMode = false, helper = true;
+let startedAt = 0, timer = null, done = false, undoStack = [];
+
+function readBest(){ try { return JSON.parse(localStorage.getItem(STORE+'best') || '{}'); } catch { return {}; } }
+function saveBest(key, secs){
+  try { const b = readBest();
+    if (!b[key] || secs < b[key]){ b[key] = secs; localStorage.setItem(STORE+'best', JSON.stringify(b)); return true; } }
+  catch {}
+  return false;
+}
+const bestKey = () => size + ':' + level;
+const fmt = (s) => Math.floor(s/60) + ':' + String(s % 60).padStart(2,'0');
+
+function newPuzzle(){
+  const rand = mode === 'daily'
+    ? rng(seedFrom('sudoku:' + todayKey() + ':' + size + ':' + level))
+    : rng((Math.random()*4294967296) >>> 0);
+  P = makePuzzle(size, level, rand);
+  cells = P.puzzle.slice();
+  notes = P.puzzle.map(() => []);
+  sel = -1; done = false; undoStack = [];
+  startedAt = Date.now();
+  if (timer) clearInterval(timer);
+  timer = setInterval(() => { const el = $('clock'); if (el && !done)
+    el.textContent = fmt(Math.floor((Date.now()-startedAt)/1000)); }, 500);
+  render();
+}
+function setSize(n){ size = n; newPuzzle(); }
+function setLevel(k){ level = k; newPuzzle(); }
+function setMode(m){ mode = m; newPuzzle(); }
+
+function pick(i){ if (done) return; sel = (sel === i ? -1 : i); render(); }
+/* Conflicts are shown against the ROW, COLUMN AND BOX, not against the stored
+   answer — otherwise the helper is quietly telling you which answer is right
+   rather than which rule you have broken. */
+function conflicts(){
+  const n = P.n, bad = new Set();
+  for (let i = 0; i < cells.length; i++){
+    const v = cells[i]; if (!v) continue;
+    const t = cells.slice(); t[i] = 0;
+    if (!canPlace(t, n, i, v)) bad.add(i);
+  }
+  return bad;
+}
+function put(v){
+  if (done || sel < 0 || P.givens[sel]) return;
+  undoStack.push({ i:sel, v:cells[sel], n:notes[sel].slice() });
+  if (noteMode && v){
+    const at = notes[sel].indexOf(v);
+    if (at >= 0) notes[sel].splice(at,1); else notes[sel].push(v);
+    cells[sel] = 0;
+  } else {
+    cells[sel] = cells[sel] === v ? 0 : v;
+    notes[sel] = [];
+  }
+  checkDone();
+  render();
+}
+function erase(){
+  if (done || sel < 0 || P.givens[sel]) return;
+  undoStack.push({ i:sel, v:cells[sel], n:notes[sel].slice() });
+  cells[sel] = 0; notes[sel] = [];
+  render();
+}
+function undo(){
+  const u = undoStack.pop(); if (!u || done) return;
+  cells[u.i] = u.v; notes[u.i] = u.n; sel = u.i;
+  render();
+}
+function checkDone(){
+  if (cells.some(v => !v)) return;
+  if (conflicts().size) return;
+  done = true;
+  if (timer){ clearInterval(timer); timer = null; }
+  const secs = Math.floor((Date.now()-startedAt)/1000);
+  window.__isBest = saveBest(bestKey(), secs);
+  window.__secs = secs;
+}
+function giveUp(){
+  cells = P.answer.slice(); done = true;
+  if (timer){ clearInterval(timer); timer = null; }
+  window.__isBest = false; window.__secs = null;
+  render();
+}
+function toggleNotes(){ noteMode = !noteMode; render(); }
+function toggleHelper(){ helper = !helper; render(); }
+
+document.addEventListener('keydown', e => {
+  if (!P || done) return;
+  if (/^[1-9]$/.test(e.key) && +e.key <= P.n) put(+e.key);
+  else if (e.key === 'Backspace' || e.key === '0') erase();
+});
+
+// ── render ──
+function boardHTML(){
+  const n = P.n, [bh, bw] = boxDims(n);
+  const bad = helper ? conflicts() : new Set();
+  const selVal = sel >= 0 ? cells[sel] : 0;
+  const selR = sel >= 0 ? (sel/n|0) : -1, selC = sel >= 0 ? sel%n : -1;
+  const selBR = selR >= 0 ? selR - selR%bh : -1, selBC = selC >= 0 ? selC - selC%bw : -1;
+  let out = '';
+  for (let i = 0; i < n*n; i++){
+    const r = i/n|0, c = i%n, v = cells[i];
+    const cls = [
+      P.givens[i] ? 'given' : '',
+      i === sel ? 'sel' : (sel >= 0 && (r === selR || c === selC ||
+        (r >= selBR && r < selBR+bh && c >= selBC && c < selBC+bw)) ? 'peer' : ''),
+      (selVal && v === selVal && i !== sel) ? 'same' : '',
+      bad.has(i) ? 'bad' : '',
+      (c % bw === bw-1 && c !== n-1) ? 'br' : '',
+      (r % bh === bh-1 && r !== n-1) ? 'bb' : '',
+    ].filter(Boolean).join(' ');
+    const inner = v ? v
+      : notes[i].length
+        ? `<div class="notes">${Array.from({length:9},(_,k)=>
+             `<span>${notes[i].includes(k+1) ? (k+1) : ''}</span>`).join('')}</div>`
+        : '';
+    out += `<button class="cell ${cls}" onclick="pick(${i})" aria-label="row ${r+1} column ${c+1}">${inner}</button>`;
+  }
+  return `<div class="board" style="grid-template-columns:repeat(${n},1fr)">${out}</div>`;
+}
+function padHTML(){
+  const n = P.n;
+  const left = {};
+  for (let v = 1; v <= n; v++) left[v] = n - cells.filter(x => x === v).length;
+  return `<div class="pad" style="grid-template-columns:repeat(${n <= 4 ? 4 : n <= 6 ? 6 : 5},1fr)">
+    ${Array.from({length:n},(_,k)=>k+1).map(v=>
+      `<button class="key ${left[v] <= 0 ? 'done':''}" onclick="put(${v})">${v}</button>`).join('')}
+  </div>
+  <div class="tools">
+    <button class="btn-ghost ${noteMode?'on':''}" onclick="toggleNotes()">Notes ${noteMode?'on':'off'}</button>
+    <button class="btn-ghost" onclick="erase()">Erase</button>
+    <button class="btn-ghost" onclick="undo()">Undo</button>
+  </div>`;
+}
+
+function render(){
+  if (!P) return;
+  const S = sizeOf(size);
+  const best = readBest()[bestKey()];
+  $('crumb').textContent = (mode === 'daily' ? todayKey() + ' · ' : '') +
+    S.name + ' · ' + (LEVELS.find(l=>l[0]===level)||[])[1];
+  $('app').innerHTML = `
+    ${done ? `<div class="panel center">
+        <div class="eyebrow">${window.__secs === null ? 'The answer' : (window.__isBest ? 'A new best' : 'Solved')}</div>
+        ${window.__secs === null
+          ? '<p class="faint" style="margin-top:8px">Filled in for you. Try another.</p>'
+          : `<p class="big">${fmt(window.__secs)}</p>
+             <p class="faint">${best && !window.__isBest ? 'Your best is ' + fmt(best) + '.' : 'Nicely done.'}</p>`}
+        <button class="btn full" onclick="newPuzzle()">Another one</button>
+      </div>` : ''}
+    <div class="panel">
+      ${boardHTML()}
+      ${done ? '' : `<div class="stats">
+        <span class="faint">Left<b>${cells.filter(v=>!v).length}</b></span>
+        <span class="faint">Time<b id="clock">0:00</b></span>
+        <span class="faint">Best<b>${best ? fmt(best) : '—'}</b></span>
+      </div>` + padHTML() + `
+      <div class="tools">
+        <button class="btn-ghost ${helper?'on':''}" onclick="toggleHelper()">Show clashes</button>
+        <button class="btn-ghost" onclick="giveUp()">Show the answer</button>
+      </div>`}
+    </div>
+    <div class="panel">
+      <div class="eyebrow">Size</div>
+      <div class="grid">${SIZES.map(s=>
+        `<button class="lvl ${size===s.n?'on':''}" onclick="setSize(${s.n})">${s.name}<small>${s.hint}</small></button>`).join('')}</div>
+      <div class="eyebrow" style="margin-top:16px">Difficulty</div>
+      <div class="grid">${LEVELS.map(([k,nm])=>
+        `<button class="lvl ${level===k?'on':''}" onclick="setLevel('${k}')">${nm}</button>`).join('')}</div>
+      <div class="eyebrow" style="margin-top:16px">Which puzzle</div>
+      <div class="grid">
+        <button class="lvl ${mode==='daily'?'on':''}" onclick="setMode('daily')">Today's<small>same for everyone</small></button>
+        <button class="lvl ${mode==='random'?'on':''}" onclick="setMode('random')">Random<small>as many as you like</small></button>
+      </div>
+    </div>`;
+}
+newPuzzle();
+</script>
+</body>
+</html>
