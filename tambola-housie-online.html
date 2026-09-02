@@ -392,20 +392,30 @@ function addPlayer(){
   if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
   if (G.players.length >= 30){ setErr('Thirty tickets is the limit.'); return; }
   setErr(''); el.value='';
-  mutate(g=>{ g.players.push(n); return g; });
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;
+    if (g.players.some(x=>x.toLowerCase()===n.toLowerCase())) return g;
+    if (g.players.length >= 30) return g;
+    g.players.push(n); return g;
+  });
 }
 function removePlayer(n){
   mutate(g=>{
+    if (g.phase !== 'setup') return g;   // never take a live player out mid-game
     g.players = g.players.filter(p=>p!==n);
     delete g.tickets[n]; delete g.marks[n];
     return g;
   });
-  if (me === n) me = null;
+  if (me === n){ me = null; vpForgetSeat(GAME_ID, ROOM); }
 }
 function dealTickets(){
   if (G.players.length < 2){ setErr('Tambola needs at least 2 players.'); return; }
   setErr('');
   mutate(g=>{
+    // both again, against the state actually written: commit() re-runs this
+    // callback on a conflict, and a re-deal mid-game swaps every ticket
+    if (g.phase !== 'setup') return g;
+    if (g.players.length < 2) return g;
     g.tickets = {}; g.marks = {};
     for (const p of g.players){ g.tickets[p] = makeTicket(); g.marks[p] = []; }
     g.called = [];
@@ -415,11 +425,15 @@ function dealTickets(){
   });
 }
 function callNext(){
+  const roll = Math.random();          // rolled ONCE, out here
   mutate(g=>{
+    if (g.phase !== 'playing') return g;
     const remainingNums = [];
     for (let n=1; n<=90; n++) if (!g.called.includes(n)) remainingNums.push(n);
     if (!remainingNums.length) return g;
-    g.called = [...g.called, remainingNums[Math.floor(Math.random()*remainingNums.length)]];
+    // using the roll from outside means a retry picks the same number the
+    // caller has already read out to the room
+    g.called = [...g.called, remainingNums[Math.floor(roll * remainingNums.length)]];
     return g;
   });
 }
@@ -434,6 +448,7 @@ function toggleMark(n){
 function markAllCalled(){
   if (!me) return;
   mutate(g=>{
+    if (!g.tickets[me]) return g;      // a seat with no ticket must not throw
     const mine = new Set(ticketNumbers(g.tickets[me]));
     g.marks[me] = g.called.filter(n => mine.has(n));
     return g;
@@ -454,7 +469,10 @@ function claim(key){
   setErr('');
   flash = `${me} takes ${PRIZES.find(x=>x.key===key).label}!`;
   mutate(g=>{
-    if (!g.prizes[key]) g.prizes[key] = me;
+    if (g.phase !== 'playing') return g;
+    if (!g.tickets[me]) return g;
+    if (!checkClaim(g.tickets[me], g.called, key)) return g;
+    if (!g.prizes[key]) g.prizes[key] = me;   // first write wins the race
     // every prize gone means the game is over, so stamp the finish once
     if (Object.values(g.prizes).every(v=>v) && !g._sessionEnd)
       g._sessionEnd = new Date().toISOString();
@@ -466,6 +484,7 @@ function newGame(keep){
   flash = '';
   mutate(g=>{
     const n = structuredClone(FRESH);
+    if (g._group) n._group = g._group;   // or the group scoreboard loses the room
     if (keep) n.players = g.players;
     return n;
   });
