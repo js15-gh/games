@@ -179,7 +179,7 @@
       <li>Only legal cards can be tapped, and the app says why one is greyed out, so somebody new can learn while playing.</li>
     </ol>
     <h3>An example</h3>
-    <div class="eg"><p style="margin:0">You have seven cards and spades are trumps. You bid <b>2</b>. Take exactly two tricks and you score 10 + 2 = <b>12</b>. Take one, or three, and you score <b>nothing</b> — which is why deliberately losing a trick you could win is often the right move.</p></div>
+    <div class="eg"><p style="margin:0">You have seven cards and diamonds are trumps — the biggest hand of the round ladder. You bid <b>2</b>. Take exactly two tricks and you score 10 + 2 = <b>12</b>. Take one, or three, and you score <b>nothing</b> — which is why deliberately losing a trick you could win is often the right move.</p></div>
     <p class="facts">3–7 players · about 30–50 minutes · suggested from age 12 · free, no sign-up, plays in any browser.</p>
   </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
@@ -353,21 +353,37 @@ function addPlayer(){
   if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
   if (G.players.length >= 7){ setErr('Seven is the most this deck seats.'); return; }
   setErr(''); el.value='';
-  mutate(g=>{ g.players.push(n); g.scores[n]=0; return g; });
+  /* Both tests run again in here, against the state that is actually written.
+     Players are keyed by name, so two phones adding the same name at once used
+     to give them one shared hand and bidding could never complete. */
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;
+    if (g.players.some(x=>x.toLowerCase()===n.toLowerCase())) return g;
+    if (g.players.length >= 7) return g;
+    g.players.push(n); g.scores[n]=0; return g;
+  });
 }
 function removePlayer(n){
-  mutate(g=>{ g.players=g.players.filter(p=>p!==n); delete g.scores[n]; return g; });
-  if (me===n) me=null;
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;     // a stale tap must not empty a seat mid-round
+    g.players=g.players.filter(p=>p!==n); delete g.scores[n]; return g;
+  });
+  if (me===n){ me=null; vpForgetSeat(GAME_ID, ROOM); }
 }
 function setMax(m){ mutate(g=>{ g.maxCards=m; return g; }); }
 function toggleCoach(){ mutate(g=>{ g.coach=!g.coach; return g; }); }
 
 function startGame(){
+  // checked twice on purpose: here so the tap can explain itself, and again
+  // inside the commit against the state we actually deal from
   if (G.players.length < 3){ setErr('Judgement needs at least 3 players.'); return; }
-  const cap = Math.floor(52 / G.players.length);
-  const max = Math.min(G.maxCards, cap);
   setErr('');
   mutate(g=>{
+    if (g.phase !== 'setup') return g;
+    if (g.players.length < 3 || g.players.length > 7) return g;
+    // the cap MUST come from the fresh player list — a concurrent Add landing
+    // between the tap and the save is what used to deal a seat two cards
+    const max = Math.min(g.maxCards, Math.floor(52 / g.players.length));
     g.rounds = buildRounds(max);
     g.round = 0; g.dealer = 0;
     g.players.forEach(p=>g.scores[p]=0);
@@ -389,9 +405,17 @@ function dealRound(g){
   return g;
 }
 function placeBid(n){
+  if (!me) return;
   mutate(g=>{
-    const p = g.players[g.turn];
+    if (g.phase !== 'bidding') return g;
+    // resolve the bidder from WHO TAPPED, never from g.turn: on a retry the
+    // turn has moved on, and this used to write your number into their bid
+    if (g.players[g.turn] !== me) return g;
+    const p = me;
     if (g.bids[p] !== undefined && g.bids[p] !== null) return g;
+    // the last bidder may not make the bids add up to the tricks available
+    const left = g.players.filter(x => g.bids[x] === undefined || g.bids[x] === null);
+    if (left.length === 1 && bidTotal(g) + n === cardsThisRound(g)) return g;
     g.bids[p] = n;
     if (allBidsIn(g)){
       g.phase = 'playing';
@@ -403,8 +427,11 @@ function placeBid(n){
   });
 }
 function playCard(card){
+  if (!me) return;
   mutate(g=>{
-    const p = g.players[g.turn];
+    if (g.phase !== 'playing') return g;
+    if (g.players[g.turn] !== me) return g;
+    const p = me;
     const hand = g.hands[p] || [];
     if (!hand.includes(card)) return g;
     if (!legalCards(hand, g.led).includes(card)) return g;
@@ -424,6 +451,7 @@ function playCard(card){
 }
 function nextTrick(){
   mutate(g=>{
+    if (g.phase !== 'trickend' || !g.lastTrick) return g;
     const w = g.lastTrick.winner;
     g.trick = []; g.led = '';
     g.turn = g.players.indexOf(w);
@@ -441,6 +469,7 @@ function nextTrick(){
 }
 function nextRound(){
   mutate(g=>{
+    if (g.phase !== 'roundend') return g;
     if (g.round + 1 >= g.rounds.length){
       g.phase = 'done';
       if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
@@ -456,6 +485,7 @@ function playAgain(keep){
   me = keep ? me : null;
   mutate(g=>{
     const n = structuredClone(FRESH);
+    if (g._group) n._group = g._group;   // or the group scoreboard loses the room
     if (keep){ n.players=g.players; n.maxCards=g.maxCards; n.coach=g.coach;
                g.players.forEach(p=>n.scores[p]=0); }
     return n;
@@ -496,7 +526,8 @@ function tableHTML(){
 function whoAmIHTML(){
   if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
       You are <b style="color:var(--ink)">${esc(me)}</b> ·
-      <a href="#" onclick="me=null;render();return false" style="color:var(--gold)">not you?</a></p></div>`;
+      <a href="#" onclick="me=null;vpForgetSeat(GAME_ID,ROOM);render();return false"
+         style="color:var(--gold)">not you?</a></p></div>`;
   return `<div class="panel">
       <div class="eyebrow">Which seat is yours?</div>
       <p class="faint" style="font-size:14px;margin-top:6px">Your cards show only on your own phone.</p>
@@ -573,9 +604,13 @@ function render(){
       const trumpLine = G.trump === 'N'
         ? `there are <b>no trumps</b> this round, so the led suit decides every trick`
         : `you hold <b>${trumps} trump${trumps===1?'':'s'}</b>`;
+      let suggest = Math.max(0, Math.round(est));
+      // never recommend the number this same panel has greyed out
+      if (suggest === forbidden) suggest = est > forbidden ? forbidden + 1 : Math.max(0, forbidden - 1);
+      suggest = Math.min(suggest, n);
       coach = `<div class="coach">A rough guide: ${trumpLine}
         and your hand is worth about <b>${est.toFixed(1)} tricks</b>, so
-        <b>${Math.max(0,Math.round(est))}</b> is a sensible bid.
+        <b>${suggest}</b> is a sensible bid.
         ${forbidden>=0 ? `You're last to bid, so you can't say ${forbidden} — the bids must not add up to ${n}.` : ''}
         Remember: exact is everything, and bidding 0 is a real strategy.</div>`;
     }
@@ -604,12 +639,19 @@ function render(){
 
     let coach = '';
     if (G.coach && me && myTurn){
-      if (G.led && legal.length < (G.hands[me]||[]).length){
+      // ask whether you HOLD the led suit. Comparing legal.length to hand.length
+      // says "you have none" when your whole hand is that suit, since then every
+      // card is legal and the two are equal.
+      const hasLed = (G.hands[me]||[]).some(c => suitOf(c) === G.led);
+      if (G.led && hasLed){
         coach = `<div class="coach"><b>${SUIT_CH[G.led]} was led and you have ${SUIT_NAME[G.led]}</b>,
-          so you have to follow suit. Only those cards can be tapped.</div>`;
+          so you have to follow suit.${legal.length < (G.hands[me]||[]).length
+            ? ' Only those cards can be tapped.' : ' Your whole hand is that suit, so play any of them.'}</div>`;
       } else if (G.led){
-        coach = `<div class="coach">You have no ${SUIT_NAME[G.led]}, so you can play anything —
-          including a trump ${SUIT_CH[G.trump]} to try to win it${G.trump==='N'?'':''}.</div>`;
+        coach = `<div class="coach">You have no ${SUIT_NAME[G.led]}, so you can play anything — ${
+          G.trump === 'N'
+            ? 'but there are no trumps this round, so you cannot win this trick. Throw your worst card.'
+            : `including a trump ${SUIT_CH[G.trump]} to try to win it.`}</div>`;
       } else {
         const need = (G.bids[me]||0) - (G.tricksWon[me]||0);
         coach = `<div class="coach">You lead. You bid <b>${G.bids[me]}</b> and have won
