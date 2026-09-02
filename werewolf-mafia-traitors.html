@@ -156,21 +156,90 @@
   <div id="roombar"></div>
   <div id="app"><p class="faint center" style="margin-top:60px">Reading the room…</p></div>
 
-  <section class="howto">
+  <section class="howto" id="howto">
     <h2>How to play Werewolf, Mafia or Traitors</h2>
+    <p>One game under three names — the rules are identical, only the words change. Pick whichever
+       one your table argues is the real one.</p>
     <ol>
-      <li>Everyone joins on their own phone and taps their own name. Tap the face-down card and it tells you, privately, whether you are one of the <b>villagers</b> or one of the <b>wolves</b> — and hands you any special token you have been given.</li>
-      <li><b>Night.</b> One phone reads the instructions aloud: everyone closes their eyes and <b>keeps tapping their phone</b>, so the room cannot hear who is doing something. The wolves choose their victim on their own screens. Nobody else's screen shows anything unusual.</li>
-      <li><b>Morning.</b> Only the person who was taken sees it — their screen turns, and they hold it up. Everyone else finds out by looking at them.</li>
-      <li><b>Day.</b> Argue. Then everyone votes at once, secretly, and the votes are revealed together so nobody follows the room.</li>
-      <li>The village wins when every wolf is gone. The wolves win the moment they equal the villagers in number.</li>
+      <li>Everyone joins on their own phone and taps their own name. Tap the face-down card and it
+          tells you, privately, whether you are one of the <b>villagers</b> or one of the
+          <b>wolves</b> — and hands you any special role or token you have been given.</li>
+      <li><b>Night.</b> One phone, chosen at random each round, reads the instructions aloud.
+          Everyone closes their eyes and <b>keeps tapping their phone</b>, so the room cannot hear
+          who is doing something. The wolves choose their victim on their own screens, and the Seer
+          and Doctor act at the same moment. Nobody else's screen shows anything unusual.</li>
+      <li><b>Morning.</b> Only the person who was taken sees it — their screen turns, and they hold
+          it up. Everyone else finds out by looking at them.</li>
+      <li><b>Day.</b> Argue. Then everyone votes at once, secretly, and the votes are revealed
+          together so nobody follows the room.</li>
+      <li>The village wins when every wolf is gone. The wolves win the moment they <b>equal</b> the
+          villagers in number — they do not need to outnumber them.</li>
     </ol>
+
+    <h3>The two sides</h3>
+    <p><b>Wolves</b> know each other from the first night and see each other's choices while they
+       pick. Everyone else starts knowing nothing but their own card. That asymmetry is the game:
+       the wolves' problem is talking like someone who does not know, and the village's problem is
+       that its only evidence is how people talk.</p>
+
+    <h3>The two special villagers</h3>
+    <p>Both are optional and both are switched on before the deal. They are always on the village
+       side, and neither can be turned by a recruiting wolf.</p>
+    <ul>
+      <li><b>🔮 The Seer</b> — each night, look at one person and the app tells you, truthfully,
+          which side they are on. It is the strongest information in the game, which is exactly why
+          saying so out loud makes you the next victim. Your reading appears in the morning behind a
+          tap, so you choose when to look at it. If you are killed, it dies with you.</li>
+      <li><b>🩺 The Doctor</b> — each night, protect one person. If the wolves attacked them, they
+          live and the morning says nobody died. You are never told whether it worked, so a quiet
+          morning might be your save or might be the wolves choosing somebody you did not cover.
+          You may protect yourself.</li>
+    </ul>
+
+    <h3>The tokens</h3>
+    <p>Optional, dealt face down at the start, and <b>only ever to the village side</b> — a shield
+       on a wolf would be a wasted token, since nobody attacks them at night. Nobody is told who
+       holds what. You may hold more than one, or none at all.</p>
+    <ul>
+      <li><b>🗡️ Dagger</b> — your vote counts twice, every day, for as long as you live. The
+          verdict shows the totals but never who voted for whom, because printing both would say
+          whose vote was doubled.</li>
+      <li><b>🛡️ Shield</b> — the first attempt on your life fails and the token is spent. You are
+          told, privately, that they came for you. Nobody else is.</li>
+      <li><b>🎭 Mask</b> — at the start you were shown one other player's identity, at random. You
+          know one true thing that nobody knows you know.</li>
+      <li><b>🏮 Lantern</b> — once, during any day, prove what you are. The app displays it beside
+          your name on every phone, so it cannot be faked or misquoted. Spend it too early and it
+          is wasted; hold it too long and you are voted out with it in your pocket.</li>
+    </ul>
+
+    <h3>Recruiting</h3>
+    <p>Off by default. With it on, a wolf left <b>alone</b> may spend a night turning a villager
+       instead of killing one — nobody dies, and that player wakes up on the other side and is told
+       so privately. It is the last wolf's way back into a game they are losing. The Seer and the
+       Doctor cannot be turned.</p>
+
+    <h3>The details that come up</h3>
+    <ul>
+      <li><b>A tied vote banishes nobody.</b> The day ends, night falls, and the wolves get another
+          one — so a deadlocked village is a village losing.</li>
+      <li><b>The wolves must agree.</b> Their picks are tallied; if they split, the first choice
+          made wins, which is as close as an app gets to "they argued and one of them moved
+          first".</li>
+      <li><b>Whether the dead are revealed is a setting.</b> With it off, nobody ever learns what
+          the banished were, and the argument never gets a clean answer.</li>
+      <li><b>The dead keep tapping and say nothing.</b> Their phone shows them nothing new.</li>
+      <li><b>Nobody moderates.</b> There is no host and no phone in charge, so everybody plays.</li>
+    </ul>
+
     <h3>An example</h3>
     <div class="eg"><p style="margin:0">Eight play, with two wolves. On the first night the wolves
       both tap <b>Priya</b>. But Priya was dealt the <b>shield</b>, so in the morning everyone's
       screen says the night passed without a death — and Priya alone is told she was attacked and
-      survived. She now knows something nobody else does, and has to decide whether saying so makes
-      her safe or makes her the next target.</p></div>
+      survived. She now knows something nobody else does: she is not a wolf, and the wolves know
+      where she is. Saying so proves nothing to anyone and paints her for the next night. Saying
+      nothing leaves the village a day behind. That decision, with nothing but talk to settle it,
+      is the whole game.</p></div>
     <p class="facts">5–20 players · 20–45 minutes · suggested from age 12 · free, no sign-up, and nobody has to sit out to moderate.</p>
   </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
@@ -1063,6 +1132,7 @@ function renderLobby(msg){
   if (ROOM) await joinRoom(ROOM); else renderLobby();
 })();
 </script>
+<script src="vp-rules.js"></script>
 <script src="vp-report.js"></script>
 </body>
 </html>

@@ -5,5 +5,6 @@ Allow: /
 Disallow: /lobby.html
 Disallow: /group.html
 Disallow: /feedback/
+Disallow: /admin/
 
 Sitemap: https://velaparties.com/sitemap.xml

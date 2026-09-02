@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<meta name="vp-no-report" content="1">
+<title>Admin — Vela Parties</title>
+<meta name="description" content="What is in the database right now.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🗄️</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Karla:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#FFF8EE; --panel:#FFFFFF; --line:#E7D9C4; --ink:#2A2118; --faint:#736451;
+          --marigold:#E08A1E; --magenta:#B5246B; --green:#2E7D4F; --red:#C0392B;
+          --blue:#2E6FA8; --violet:#6B4FA8; }
+  * { box-sizing:border-box; font-family:'Karla',system-ui,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); min-height:100vh; }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 14px 48px; }
+  header { padding:22px 0 2px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.06em;
+       font-size:clamp(24px,6vw,34px); margin:4px 0 0; }
+  h1 .s { color:var(--magenta); }
+  h2 { font-family:'Space Grotesk',sans-serif; font-size:16px; letter-spacing:.05em;
+       margin:0 0 2px; }
+  .eyebrow { color:var(--marigold); letter-spacing:.2em; font-size:12px;
+             text-transform:uppercase; font-weight:700; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px;
+           padding:16px; margin-top:12px; }
+  .faint { color:var(--faint); }
+  .center { text-align:center; }
+  a { color:var(--magenta); }
+  input { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:9px;
+          font-size:16px; background:#fff; color:var(--ink); }
+  button { cursor:pointer; border-radius:9px; font-family:'Karla',system-ui,sans-serif; }
+  .btn { background:var(--magenta); color:#fff; border:none; padding:11px 16px;
+         font-size:14px; font-weight:700; }
+  .btn.full { display:block; width:100%; margin-top:10px; }
+  .btn-ghost { background:transparent; border:1px solid var(--line); color:var(--faint);
+               padding:8px 12px; font-size:13px; }
+  .btn-ghost.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .err { color:var(--red); font-weight:600; min-height:20px; margin:8px 0 0; font-size:14px; }
+
+  /* the numbers across the top */
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:10px; }
+  .stat { border:1px solid var(--line); border-radius:11px; padding:11px 12px; background:#fff; }
+  .stat .n { font-family:'Space Grotesk',sans-serif; font-size:25px; font-weight:700;
+             line-height:1.1; }
+  .stat .k { color:var(--faint); font-size:11.5px; text-transform:uppercase;
+             letter-spacing:.09em; margin-top:3px; }
+  .stat.warn .n { color:var(--red); }
+  .stat.good .n { color:var(--green); }
+
+  .tablewrap { overflow-x:auto; margin-top:10px; -webkit-overflow-scrolling:touch; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; min-width:600px; }
+  th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.09em;
+       color:var(--faint); font-weight:700; padding:6px 9px; border-bottom:1px solid var(--line);
+       white-space:nowrap; }
+  td { padding:8px 9px; border-bottom:1px solid #F2E9DA; vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; }
+  .tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 7px;
+         border-radius:999px; border:1px solid var(--line); color:var(--faint);
+         white-space:nowrap; }
+  .tag.live { background:rgba(46,125,79,.12); color:var(--green); border-color:rgba(46,125,79,.4); }
+  .tag.doom { background:rgba(192,57,43,.1); color:var(--red); border-color:rgba(192,57,43,.35); }
+  .tag.done { background:rgba(107,79,168,.1); color:var(--violet); border-color:rgba(107,79,168,.35); }
+  .bar { height:6px; background:#F2E9DA; border-radius:99px; overflow:hidden; margin-top:5px; }
+  .bar span { display:block; height:100%; background:var(--marigold); }
+  .note { background:rgba(224,138,30,.09); border:1px solid rgba(224,138,30,.32);
+          border-radius:11px; padding:12px 14px; margin-top:12px; font-size:13.5px; }
+  footer { margin-top:26px; text-align:center; color:var(--faint); font-size:12px;
+           letter-spacing:.12em; text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Vela Parties</div>
+    <h1>ADMIN<span class="s">.</span></h1>
+    <p class="faint" style="margin:6px 0 0;font-size:14px">What is in the database right now.</p>
+  </header>
+
+  <p class="err" id="err"></p>
+  <div id="app"></div>
+
+  <footer>NOINDEX · NOT LINKED FROM THE SITE</footer>
+</div>
+
+<script>
+const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
+
+/* The password is NOT checked here. It is sent to admin_inventory(), which
+   checks it in the database before reading a single row. A check in this file
+   would be theatre — the browser is the reader's own machine, and anyone can
+   delete an `if`. Nothing sensitive is in this page's source. */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+let PASS = sessionStorage.getItem('vp:admin') || '';
+let DATA = null, tab = 'games', busy = false;
+
+function setErr(m){ $('err').textContent = m || ''; }
+
+async function fetchInventory(pass){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/admin_inventory`, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', apikey:SUPABASE_KEY,
+              Authorization:'Bearer ' + SUPABASE_KEY },
+    body: JSON.stringify({ pass })
+  });
+  if (r.status === 404)
+    throw new Error('The admin_inventory function is not in the database yet — run migrations/004-admin-inventory.sql.');
+  if (!r.ok) throw new Error(r.status === 400 || r.status === 500
+    ? 'That password was refused.' : 'Could not reach the database (' + r.status + ').');
+  return r.json();
+}
+
+async function load(pass){
+  if (busy) return;
+  busy = true; setErr('');
+  const btn = $('go'); if (btn){ btn.disabled = true; btn.textContent = 'Checking…'; }
+  try {
+    DATA = await fetchInventory(pass);
+    PASS = pass; sessionStorage.setItem('vp:admin', pass);
+  } catch (e) {
+    setErr(e.message || 'Something went wrong.');
+    if (String(e.message).includes('refused')){ PASS = ''; sessionStorage.removeItem('vp:admin'); }
+  }
+  busy = false; render();
+}
+
+function signIn(){
+  const el = $('pass'); if (!el || !el.value.trim()) return;
+  load(el.value.trim());
+}
+function signOut(){ PASS = ''; DATA = null; sessionStorage.removeItem('vp:admin'); render(); }
+function show(t){ tab = t; render(); }
+
+// ── formatting ──────────────────────────────────────────────
+function ago(iso){
+  if (!iso) return '—';
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 90) return Math.round(s) + 's';
+  if (s < 5400) return Math.round(s/60) + 'm';
+  if (s < 172800) return Math.round(s/3600) + 'h';
+  return Math.round(s/86400) + 'd';
+}
+function bytes(n){
+  n = Number(n) || 0;
+  if (n < 1024) return n + ' B';
+  if (n < 1048576) return (n/1024).toFixed(1) + ' KB';
+  return (n/1048576).toFixed(2) + ' MB';
+}
+const NAMES = {
+  antakshari:'Antakshari', charades:'Dumb Charades', cipher:'Cipher', clover:'Clover',
+  dial:'The Dial', facedown:'Face Down', fibbers:'Fibbers', insync:'In Sync', ito:'Ito',
+  jeopardy:'Bollywood Jeopardy', judgement:'Judgement', kaalitiri:'Kaali Tiri',
+  mostlikely:'Most Likely To', oneword:'One Word', outsider:'The Outsider',
+  tambola:'Tambola', thisorthat:'This or That', traitors:'The Round Table',
+  twotruths:'Two Truths', werewolf:'Werewolf / Mafia / Traitors'
+};
+const FILES = {
+  antakshari:'antakshari-online.html', charades:'dumb-charades-online.html',
+  cipher:'cipher-online.html', clover:'clover-online.html', dial:'the-dial-online.html',
+  facedown:'face-down-online.html', fibbers:'fibbers-online.html',
+  insync:'in-sync-online.html', ito:'ito-game-online.html',
+  jeopardy:'bollywood-jeopardy-online.html', judgement:'judgement-card-game-online.html',
+  kaalitiri:'kaali-tiri-online.html', mostlikely:'most-likely-online.html',
+  oneword:'one-word-online.html', outsider:'the-outsider-online.html',
+  tambola:'tambola-housie-online.html', thisorthat:'this-or-that-online.html',
+  traitors:'traitors-vote-online.html', twotruths:'two-truths-online.html',
+  werewolf:'werewolf-mafia-traitors.html'
+};
+const gameName = (slug) => NAMES[slug] || slug;
+const DONE = ['gameover','done','over'];
+
+function statHTML(n, k, cls){
+  return `<div class="stat ${cls||''}"><div class="n">${esc(n)}</div><div class="k">${esc(k)}</div></div>`;
+}
+
+// ── the screens ─────────────────────────────────────────────
+function gate(){
+  return `<div class="panel">
+      <h2>Sign in</h2>
+      <p class="faint" style="margin:4px 0 12px;font-size:13.5px">The password is checked in the
+        database, not in this page. Nothing here is readable without it.</p>
+      <input type="password" id="pass" placeholder="Admin password" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')signIn()">
+      <button class="btn full" id="go" onclick="signIn()">Show me the database</button>
+    </div>`;
+}
+
+function overview(){
+  const t = DATA.totals || {};
+  return `<div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <h2>Right now</h2>
+        <span class="faint" style="font-size:12.5px">read ${ago(DATA.generated_at)} ago ·
+          <a href="#" onclick="load(PASS);return false">refresh</a> ·
+          <a href="#" onclick="signOut();return false">sign out</a></span>
+      </div>
+      <div class="stats" style="margin-top:10px">
+        ${statHTML(t.live_now || 0, 'phones live', (t.live_now ? 'good' : ''))}
+        ${statHTML(t.active_1h || 0, 'touched · 1h')}
+        ${statHTML(t.active_24h || 0, 'touched · 24h')}
+        ${statHTML(t.games || 0, 'game rooms')}
+        ${statHTML(t.lobbies || 0, 'lobbies')}
+        ${statHTML(t.groups || 0, 'groups')}
+        ${statHTML(t.rows || 0, 'rows in all')}
+        ${statHTML(bytes(t.bytes), 'stored')}
+        ${statHTML(t.doomed || 0, 'purge tonight', (t.doomed ? 'warn' : ''))}
+      </div>
+      ${t.doomed ? `<div class="note"><b>${t.doomed}</b> row${t.doomed===1?'':'s'} will be deleted
+        by the next nightly purge — rooms untouched for 24 hours, group hubs quiet for three
+        months, and rooms whose group has gone. That is the design, not a fault. They are marked
+        <span class="tag doom">purge</span> in the tables below.</div>` : ''}
+    </div>`;
+}
+
+function tabs(){
+  const t = DATA.totals || {};
+  const one = (k, label, n) =>
+    `<button class="btn-ghost ${tab===k?'on':''}" onclick="show('${k}')">${label} ${
+      n === null ? '' : '<b>' + n + '</b>'}</button>`;
+  return `<div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:14px">
+      ${one('games', 'By game', null)}
+      ${one('rooms', 'Rooms', t.games || 0)}
+      ${one('lobbies', 'Lobbies &amp; groups', (t.lobbies || 0) + (t.groups || 0))}
+      ${one('feedback', 'Feedback', (DATA.feedback && DATA.feedback.reports) || 0)}
+    </div>`;
+}
+
+function byGame(){
+  const rows = DATA.by_game || [];
+  if (!rows.length) return `<div class="panel"><p class="faint" style="margin:0">No game rooms in
+    the database. Every room is deleted 24 hours after it goes quiet, so an empty table here on a
+    weekday morning is normal.</p></div>`;
+  const max = Math.max(...rows.map(r => r.rooms), 1);
+  return `<div class="panel"><h2>Which games get played</h2>
+    <p class="faint" style="margin:4px 0 0;font-size:13px">Every room that still exists, by game.
+      Remember the 24-hour purge: this is recent play, not all-time.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Game</th><th class="num">Rooms</th><th class="num">24h</th>
+          <th class="num">Finished</th><th class="num">Seats</th><th class="num">Live</th>
+          <th class="num">Last seen</th></tr>
+      ${rows.map(r => `<tr>
+        <td><b>${esc(gameName(r.slug))}</b>
+          ${FILES[r.slug] ? `<div class="faint mono" style="font-size:11.5px">
+            <a href="../${esc(FILES[r.slug])}">${esc(r.slug)}</a></div>` : ''}
+          <div class="bar"><span style="width:${Math.round(r.rooms/max*100)}%"></span></div></td>
+        <td class="num"><b>${r.rooms}</b></td>
+        <td class="num">${r.active_24h}</td>
+        <td class="num">${r.finished}</td>
+        <td class="num">${r.players}</td>
+        <td class="num">${r.live ? `<span class="tag live">${r.live}</span>` : '0'}</td>
+        <td class="num faint">${ago(r.last)}</td>
+      </tr>`).join('')}
+    </table></div></div>`;
+}
+
+function rooms(){
+  const rows = DATA.games || [];
+  if (!rows.length) return `<div class="panel"><p class="faint" style="margin:0">No game rooms
+    right now.</p></div>`;
+  return `<div class="panel"><h2>Every room</h2>
+    <p class="faint" style="margin:4px 0 0;font-size:13px">Newest first, up to 300. Player counts
+      only — no names, no roles, no secret words ever leave the database.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Room</th><th>Game</th><th>Phase</th><th class="num">Seats</th>
+          <th class="num">Live</th><th>Lobby</th><th class="num">Size</th>
+          <th class="num">Idle</th><th></th></tr>
+      ${rows.map(r => `<tr>
+        <td class="mono">${FILES[r.slug]
+          ? `<a href="../${esc(FILES[r.slug])}?room=${esc(r.code)}">${esc(r.code)}</a>`
+          : esc(r.code)}</td>
+        <td>${esc(gameName(r.slug))}</td>
+        <td>${r.phase ? (DONE.includes(r.phase)
+            ? `<span class="tag done">${esc(r.phase)}</span>` : esc(r.phase)) : '<span class="faint">—</span>'}</td>
+        <td class="num">${r.players}</td>
+        <td class="num">${r.live ? `<span class="tag live">${r.live}</span>` : '<span class="faint">0</span>'}</td>
+        <td class="mono faint">${r.group ? esc(r.group) : '—'}</td>
+        <td class="num faint">${bytes(r.bytes)}</td>
+        <td class="num faint">${ago(r.updated_at)}</td>
+        <td>${r.doomed ? '<span class="tag doom">purge</span>' : ''}</td>
+      </tr>`).join('')}
+    </table></div></div>`;
+}
+
+function lobbies(){
+  const rows = DATA.lobbies || [];
+  if (!rows.length) return `<div class="panel"><p class="faint" style="margin:0">No lobbies or
+    groups. Lobbies live three months from their last use, so this empties slowly.</p></div>`;
+  return `<div class="panel"><h2>Lobbies and groups</h2>
+    <p class="faint" style="margin:4px 0 0;font-size:13px">A lobby seats everyone once and every
+      game opened after it reuses those seats. <b>Roster</b> is how many people are in it —
+      the names stay in the database.</p>
+    <div class="tablewrap"><table>
+      <tr><th>Code</th><th>Kind</th><th>Name</th><th class="num">Roster</th>
+          <th class="num">Games run</th><th class="num">Live</th><th class="num">Size</th>
+          <th class="num">Idle</th><th></th></tr>
+      ${rows.map(r => `<tr>
+        <td class="mono"><a href="../lobby.html?lobby=${esc(r.code)}">${esc(r.code)}</a></td>
+        <td>${r.kind === 'lobby' ? '<span class="tag">lobby</span>'
+                                 : '<span class="tag">group</span>'}</td>
+        <td>${r.name ? esc(r.name) : '<span class="faint">—</span>'}</td>
+        <td class="num">${r.roster}</td>
+        <td class="num">${r.launched}</td>
+        <td class="num">${r.live ? `<span class="tag live">${r.live}</span>` : '<span class="faint">0</span>'}</td>
+        <td class="num faint">${bytes(r.bytes)}</td>
+        <td class="num faint">${ago(r.updated_at)}</td>
+        <td>${r.doomed ? '<span class="tag doom">purge</span>' : ''}</td>
+      </tr>`).join('')}
+    </table></div></div>`;
+}
+
+function feedback(){
+  const f = DATA.feedback || {};
+  const has = typeof f.reports === 'number';
+  return `<div class="panel"><h2>Feedback</h2>
+    ${has ? `<div class="stats" style="margin-top:10px">
+        ${statHTML(f.reports || 0, 'reports')}
+        ${statHTML(ago(f.updated_at), 'since the last')}
+        ${statHTML(bytes(f.bytes), 'stored')}
+      </div>
+      <p style="margin:12px 0 0"><a href="../feedback/">Open the inbox to read them →</a></p>`
+    : `<p class="faint" style="margin:4px 0 0">No reports have ever been filed — the
+        <b>feedback-INBOX</b> row does not exist yet. It is created by the first report.</p>`}
+    <div class="note" style="margin-top:14px"><b>Check that
+      <span class="mono">migrations/003-feedback-retention.sql</span> has been run.</b> Without it
+      the nightly purge deletes the whole inbox 24 hours after the last report, and nobody notices
+      until they go looking for a report that mattered.</div>
+  </div>`;
+}
+
+function render(){
+  const app = $('app');
+  if (!PASS || !DATA){ app.innerHTML = gate(); const p = $('pass'); if (p) p.focus(); return; }
+  app.innerHTML = overview() + tabs()
+    + (tab === 'games' ? byGame()
+     : tab === 'rooms' ? rooms()
+     : tab === 'lobbies' ? lobbies()
+     : feedback())
+    + `<div class="panel"><h2>What this page will not show you</h2>
+        <p class="faint" style="margin:6px 0 0;font-size:13.5px">Player names, rosters, roles,
+          secret words, clues and votes stay in the database. The endpoint behind this page returns
+          counts and labels only, so opening it can never spill a live game — the same rule the
+          report button follows, for the same reason. If you ever want names here, that is a
+          deliberate change to
+          <span class="mono">migrations/004-admin-inventory.sql</span>, not an accident.</p>
+      </div>`;
+}
+
+if (PASS) load(PASS); else render();
+</script>
+</body>
+</html>
