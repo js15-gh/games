@@ -430,6 +430,7 @@ function playAgain(keep){
   me = keep ? me : null; draft = [null,null,null];
   mutate(g=>{
     const n = structuredClone(FRESH);
+    if (g._group) n._group = g._group;   // or the group scoreboard loses the room
     if (keep){ n.players=g.players; n.teams=g.teams; }
     return n;
   });

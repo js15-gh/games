@@ -334,7 +334,14 @@ function startNextGame(){
   mutate(g=>{ g.gameNo++; g.phase='voting'; g.players=[...g.roster]; g.votes={}; g.round=1; g.banishedLog=[]; return g; });
 }
 function editPlayers(){ me=null; mutate(g=>{ g.phase='setup'; return g; }); }
-function resetAll(){ me=null; mutate(()=>structuredClone(FRESH)); }
+function resetAll(){
+  me=null;
+  mutate(g=>{
+    const n = structuredClone(FRESH);
+    if (g._group) n._group = g._group;   // or the group scoreboard loses the room
+    return n;
+  });
+}
 
 // ── render ──
 function render(){

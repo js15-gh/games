@@ -390,6 +390,7 @@ function playAgain(keep){
   me = keep ? me : null;
   mutate(g=>{
     const n = structuredClone(FRESH);
+    if (g._group) n._group = g._group;   // or the group scoreboard loses the room
     if (keep){ n.players=g.players; n.teams=g.teams; n.order=g.order; n.script=g.script;
                n.seconds=g.seconds; n.target=g.target; n.scores={};
                g.order.forEach(t=>n.scores[t]=0); }

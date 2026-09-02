@@ -658,6 +658,7 @@ function playAgain(keep){
   me = keep ? me : null; peeked = false;
   mutate(g=>{
     const n = structuredClone(FRESH);
+    if (g._group) n._group = g._group;   // or the group scoreboard loses the room
     if (keep){ n.players=g.players; n.theme=g.theme; n.evilCount=g.evilCount; n.use=g.use;
                n.seer=g.seer; n.doctor=g.doctor; n.recruit=g.recruit; n.revealOnDeath=g.revealOnDeath; }
     return n;

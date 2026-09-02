@@ -385,6 +385,7 @@ function playAgain(keep){
   me = keep ? me : null; draft = { card:null, to:null, claim:null }; peeked = false;
   mutate(g=>{
     const n = structuredClone(FRESH);
+    if (g._group) n._group = g._group;   // or the group scoreboard loses the room
     if (keep) n.players = g.players;
     return n;
   });

@@ -1,0 +1,12 @@
+[   10233ms] ReferenceError: dealTickets is not defined
+    at HTMLButtonElement.onclick (about:blank:1:1)
+    at eval (eval at <anonymous> (eval at evaluate (:311:30)), <anonymous>:31:5)
+    at eval (eval at evaluate (:311:30), <anonymous>:4:50)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+[   19359ms] ReferenceError: dealTickets is not defined
+    at HTMLButtonElement.onclick (about:blank:1:1)
+    at eval (eval at <anonymous> (eval at evaluate (:311:30)), <anonymous>:6:5)
+    at eval (eval at evaluate (:311:30), <anonymous>:4:50)
+    at UtilityScript.evaluate (<anonymous>:313:16)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)

@@ -492,6 +492,7 @@ function restart(keepPlayers){
     const players = keepPlayers ? g.players : [];
     const used = g.usedThemes;
     const n = structuredClone(FRESH);
+    if (g._group) n._group = g._group;   // or the group scoreboard loses the room
     n.players = players; n.usedThemes = used; n.cats = g.cats || [];
     if (keepPlayers && players.length>=2){
       n.phase='playing'; n.hands=drawNumbers(players);

@@ -406,6 +406,7 @@ function playAgain(keep){
   me = keep ? me : null; draft = {};
   mutate(g=>{
     const n = structuredClone(FRESH);
+    if (g._group) n._group = g._group;   // or the group scoreboard loses the room
     if (keep){ n.players=g.players; n.boards=g.boards; n.decoys=g.decoys; }
     return n;
   });
