@@ -225,7 +225,8 @@ const FRESH = { phase:'setup', theme:'werewolf', players:[], evilCount:2,
                 log:[], winner:null, _sessionEnd:null };
 
 let G = null, me = null, stamp = 0, pending = null;
-let peeked = false, taps = 0, primed = false, spokeFor = '';
+let peeked = false, taps = 0, primed = false, spokeFor = '', seerOpen = false;
+let seenPrivate = '';   // round:kind of the private morning card this phone has dismissed
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -278,7 +279,7 @@ async function poll(){
       const changed = JSON.stringify(s) !== JSON.stringify(G);
       const was = G && G.phase;
       G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
-      if (G.phase !== was){ peeked = false; taps = 0; }
+      if (G.phase !== was){ peeked = false; taps = 0; seerOpen = false; }
       if (G.phase === 'night' || G.phase === 'morning') speakFor(G.phase);
       if (changed) render();
     } else if (!G){ G = structuredClone(FRESH); render(); }
@@ -298,14 +299,23 @@ const voteWeight = (g,p) => hasTok(g,p,'dagger') ? 2 : 1;
    phones do not. */
 function nightActors(g){
   const need = evils(g).slice();
-  if (g.seer && g.seerOf && g.alive[g.seerOf]) need.push(g.seerOf);
-  if (g.doctor && g.doctorOf && g.alive[g.doctorOf]) need.push(g.doctorOf);
+  if (g.seer && g.seerOf && g.alive[g.seerOf] && !isEvil(g, g.seerOf)) need.push(g.seerOf);
+  if (g.doctor && g.doctorOf && g.alive[g.doctorOf] && !isEvil(g, g.doctorOf)) need.push(g.doctorOf);
   return [...new Set(need)];
+}
+/* The Seer and the Doctor cannot be turned. Not a balance decision — turning
+   one used to leave the night waiting forever on a pick that player could no
+   longer make, and "the Seer is quietly gone" is a worse story than "the Seer
+   was never available". */
+function recruitable(g){
+  return goods(g).filter(p => p !== g.seerOf && p !== g.doctorOf);
 }
 function nightReady(g){
   const evilDone = evils(g).every(p => g.nightPicks[p] || g.recruitPick);
-  const seerDone = !(g.seer && g.seerOf && g.alive[g.seerOf]) || !!g.seerPick;
-  const docDone  = !(g.doctor && g.doctorOf && g.alive[g.doctorOf]) || !!g.doctorPick;
+  // the isEvil tests matter: nightPick dispatches on isEvil FIRST, so a special
+  // who has turned can never write their pick, and waiting on one is a deadlock
+  const seerDone = !(g.seer && g.seerOf && g.alive[g.seerOf] && !isEvil(g, g.seerOf)) || !!g.seerPick;
+  const docDone  = !(g.doctor && g.doctorOf && g.alive[g.doctorOf] && !isEvil(g, g.doctorOf)) || !!g.doctorPick;
   return evilDone && seerDone && docDone;
 }
 
@@ -396,11 +406,21 @@ function iHaveSeen(){
 }
 
 // ── the night ──
+function narratorSeed(round, up){
+  let h = 2166136261 >>> 0;
+  for (const c of ('r' + round + ':' + up.join(','))){
+    h ^= c.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
 function beginNight(g){
   g.round += 1;
   // drawn here, in shared state, so every phone agrees who is speaking
+  // drawn deterministically from the round and who is left: commit() may re-run
+  // this callback against fresh state, and Math.random() would hand the round to
+  // a second phone after the first had already started speaking
   const up = living(g);
-  g.narrator = up.length ? up[Math.floor(Math.random() * up.length)] : null;
+  g.narrator = up.length ? up[narratorSeed(g.round, up) % up.length] : null;
   g.nightPicks = {}; g.seerPick = null; g.doctorPick = null; g.recruitPick = null;
   g.victim = null; g.savedBy = null; g.attacked = null; g.recruited = null;
   g.votes = {}; g.banished = null;
@@ -448,8 +468,10 @@ function speakFor(phase){
     if (G && G.phase === 'morning') say(morningScript());
   }, 3000);                                  // three seconds to look up first
 }
+/* Deliberately does NOT clear spokeFor: that let the next poll fire speakFor()
+   again and speak the line a second time on top of this one. say() cancels
+   whatever is in flight, so tapping twice is safe. */
 function sayAgain(){
-  spokeFor = '';
   say(G.phase === 'night' ? nightScript() : morningScript());
 }
 function tapPad(){ primeSpeech(); taps++; const el = $('tapcount'); if (el) el.textContent = taps; }
@@ -470,6 +492,7 @@ function recruitPick(target){
   if (!me) return;
   mutate(g=>{
     if (g.phase !== 'night' || !isEvil(g, me) || evils(g).length !== 1 || !g.recruit) return g;
+    if (target !== null && !recruitable(g).includes(target)) return g;
     g.recruitPick = target;
     g.nightPicks[me] = null;
     if (nightReady(g)) return resolveNight(g);
@@ -483,6 +506,10 @@ function resolveNight(g){
   if (g.recruitPick){
     g.recruited = g.recruitPick;
     g.roles[g.recruitPick] = 'evil';
+    // defensive: a hand-made or half-migrated state could still hold a special
+    // here, and a special who has turned deadlocks the next night
+    if (g.seerOf === g.recruitPick) g.seerOf = null;
+    if (g.doctorOf === g.recruitPick) g.doctorOf = null;
     g.victim = null;
     g.log = [{ round:g.round, kind:'recruit', who:g.recruitPick }].concat(g.log).slice(0,40);
   } else {
@@ -584,7 +611,9 @@ function tableHTML(showRoles){
   return `<div class="panel"><div class="eyebrow">${TH().place.replace(/^the /,'')}</div>
     ${G.players.map(p=>{
       const dead = !G.alive[p];
-      const lantern = G.lanternShown[p];
+      // read the LIVE role, not the snapshot: a player who was proven a villager
+      // and later recruited must stop being vouched for
+      const lantern = G.lanternShown[p] ? (isEvil(G,p) ? 'evil' : 'good') : null;
       return `<div class="who">
         <span>${vpAvatar(p)} ${esc(p)}
           ${dead ? '<small>out</small>' : ''}
@@ -752,22 +781,26 @@ function render(){
               ? `<p class="faint" style="font-size:13px;margin-top:6px">With you:
                    ${G.players.filter(p=>isEvil(G,p)&&p!==me&&G.alive[p]).map(p=>
                      esc(p) + (G.nightPicks[p] ? ' → ' + esc(G.nightPicks[p]) : ' (thinking)')).join(' · ')}</p>` : ''}
-            ${mine ? `<p style="margin-top:8px">You chose <b>${esc(mine)}</b>.
+            ${G.recruitPick && isEvil(G,me)
+              ? `<p style="margin-top:8px">You chose to turn <b>${esc(G.recruitPick)}</b>.
+                   Nobody dies tonight.
+                   <a href="#" onclick="recruitPick(null);return false" style="color:var(--violet)">change</a></p>`
+              : mine ? `<p style="margin-top:8px">You chose <b>${esc(mine)}</b>.
                  <a href="#" onclick="nightPick(null);return false" style="color:var(--violet)">change</a></p>`
               : `<div class="grid">${targets.filter(p=>p!==me||G.doctorOf===me).map(p=>
                    `<button class="seat" onclick="nightPick('${jss(p)}')">${esc(p)}</button>`).join('')}</div>`}
-            ${lastEvil ? `<div class="eyebrow" style="margin-top:16px">Or turn one of them instead</div>
+            ${lastEvil && !G.recruitPick ? `<div class="eyebrow" style="margin-top:16px">Or turn one of them instead</div>
               <p class="faint" style="font-size:13px">You are the last one. Nobody dies tonight if you do.</p>
-              <div class="grid">${goods(G).map(p=>
+              <div class="grid">${recruitable(G).map(p=>
                 `<button class="seat" onclick="recruitPick('${jss(p)}')">${esc(p)}</button>`).join('')}</div>` : ''}
           </div>`
         : `<div class="panel center"><p class="faint" style="margin:0">Nothing for you to do but tap.
              Which is exactly what everyone else's screen says too.</p></div>`}
-      <div class="panel"><div class="eyebrow">Done</div>
-        ${nightActors(G).map(p=>`<div class="row"><span>${esc(p) === me ? esc(p) : 'someone'}</span>
-          <span class="${(isEvil(G,p)?G.nightPicks[p]:p===G.seerOf?G.seerPick:G.doctorPick)?'tick':'dot'}">${
-            (isEvil(G,p)?G.nightPicks[p]:p===G.seerOf?G.seerPick:G.doctorPick)?'✓':'…'}</span></div>`).join('')}
-        <p class="faint" style="font-size:12.5px;margin:8px 0 0">Names are hidden here on purpose.</p>
+      <div class="panel center"><div class="eyebrow">Done</div>
+        <p style="margin:8px 0 0;font-size:16px">${nightReady(G)
+          ? 'Everyone has chosen.' : 'Somebody is still choosing.'}</p>
+        <p class="faint" style="font-size:12.5px;margin:8px 0 0">Not how many, and not who.
+          A count here would tell you how many ${esc(TH().evils.toLowerCase())} are left.</p>
       </div>`;
     return;
   }
@@ -800,17 +833,30 @@ function render(){
                  Everybody woke up.</p>
                <p class="faint">Which is its own kind of information.</p>`}
         </div>`}
-      ${G.seerOf === me && G.seerResult && G.seerResult.round === G.round
-        ? `<div class="secret"><div class="eyebrow">🔮 What you saw</div>
-             <p style="margin-top:6px"><b>${esc(G.seerResult.who)}</b> is
-               <b style="color:${G.seerResult.evil?'var(--red)':'var(--green)'}">${
-                 G.seerResult.evil ? esc(TH().evil) : esc(TH().good)}</b>.</p></div>` : ''}
+      ${G.seerOf === me && !isEvil(G,me) && G.seerResult && G.seerResult.round === G.round
+        ? (seerOpen
+          ? `<div class="secret"><div class="eyebrow">🔮 What you saw</div>
+               <p style="margin-top:6px"><b>${esc(G.seerResult.who)}</b> is
+                 <b style="color:${G.seerResult.evil?'var(--red)':'var(--green)'}">${
+                   G.seerResult.evil ? esc(TH().evil) : esc(TH().good)}</b>.</p>
+               <button class="btn-ghost full" style="margin-top:10px"
+                 onclick="seerOpen=false;render()">Cover it</button></div>`
+          : `<div class="secret center"><div class="eyebrow">🔮 What you saw</div>
+               <p class="faint" style="font-size:13px;margin:6px 0 10px">Make sure nobody is reading
+                 over your shoulder${me === G.victim ? ' — and do this before you hold the phone up' : ''}.</p>
+               <button class="btn-ghost full" onclick="seerOpen=true;render()">Show my reading</button></div>`)
+        : ''}
       <div class="panel">
         ${G.victim ? `<p class="faint center" style="margin:0 0 10px">When they have shown you,
            carry on.</p>` : ''}
         <button class="btn full" onclick="toDay()">Open the day</button>
         ${narratorHTML()}
-      </div>` + whoAmIHTML();
+      </div>
+      ${me ? '' : `<div class="panel center"><p class="faint" style="margin:0">Wait for the day to
+         take a seat — choosing one now would let you read somebody else's morning.</p></div>`}`;
+    /* No seat picker here, deliberately. It let anyone clear their seat, pick
+       another, and read that player's private morning card — which is a lookup
+       for "is Vikram dead?" and takes away the reveal entirely. */
     /* No table here on purpose. It marks the dead, which would put the victim's
        name on all six screens and take away the one moment this game is built
        around — the room working it out from somebody holding up a phone. It
@@ -874,9 +920,9 @@ function render(){
             <span>${esc(p)}</span><span class="faint">${tally[p]}</span></div>
             <div class="bar"><span style="width:${Math.round(tally[p]/max*100)}%"></span></div></div>`;
         }).join('') : '<p class="faint">Nobody voted.</p>'}
-        <p class="faint" style="font-size:13px;margin-top:12px">Voted:
-          ${living(G).concat(G.banished?[G.banished]:[]).map(p=>
-            G.votes[p] ? esc(p)+' → '+esc(G.votes[p]) : null).filter(Boolean).join(' · ')}</p>
+        <p class="faint" style="font-size:13px;margin-top:12px">Totals only.
+          ${G.use && G.use.dagger ? 'One of these votes counted twice, and printing who voted for whom would say whose.'
+            : 'Who voted for whom is for the room to say out loud, not the phone.'}</p>
       </div>
       <div class="panel"><button class="btn full" onclick="nextNight()">Night falls again</button></div>
       ` + tableHTML(true) + whoAmIHTML();

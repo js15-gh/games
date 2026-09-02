@@ -29,12 +29,14 @@ new Function('module', [
   chunk('const TOKENS = {', '\n};'),
   chunk('const living =', '\n'), chunk('const evils  =', '\n'), chunk('const goods  =', '\n'),
   chunk('const isEvil =', '\n'), chunk('const hasTok =', '\n'), chunk('const voteWeight =', '\n'),
+  fn('recruitable'), fn('narratorSeed'),
   fn('nightActors'), fn('nightReady'),
   fn('specialsNeeded'), fn('setupProblem'),
   fn('shuffle'), fn('assignRoles'), fn('beginNight'),
   fn('resolveNight'), fn('resolveDay'), fn('checkWin'),
   'module.exports = { THEMES, TOKENS, living, evils, goods, isEvil, hasTok, voteWeight,' +
-  ' nightActors, nightReady, setupProblem, shuffle, assignRoles, beginNight, resolveNight,' +
+  ' nightActors, nightReady, recruitable, narratorSeed, setupProblem, shuffle, assignRoles,' +
+  ' beginNight, resolveNight,' +
   ' resolveDay, checkWin, setG:(g)=>{ G=g; } };'
 ].join('\n'))(mod);
 const M = mod.exports;
@@ -186,6 +188,112 @@ r = night({ roles:{A:'evil',B:'good',C:'good',D:'good',E:'good',F:'good',G:'good
 ok(r.recruited === 'D' && r.roles.D === 'evil', 'the last wolf can turn somebody');
 ok(r.victim === null, 'and nobody dies that night');
 ok(r.alive.D === true, 'the recruit is very much alive');
+
+/* The night gate is the one place this game can STOP. nightPick dispatches on
+   isEvil FIRST, so a special who has turned can never write their pick — and a
+   gate that still waits for it hangs the room with no button on any phone. The
+   suite used to write g.seerPick straight into the state, which is exactly the
+   step that hid this. writePick() below goes through the real dispatch. */
+head('The night can always finish — recruiting must never hang the room');
+
+function writePick(g, who, target){          // mirrors nightPick's ordering
+  if (M.isEvil(g, who)) g.nightPicks[who] = target;
+  else if (g.seerOf === who) g.seerPick = target;
+  else if (g.doctorOf === who) g.doctorPick = target;
+}
+
+let g2 = base({ seer:true, doctor:true, recruit:true, seerOf:'C', doctorOf:'D',
+                roles:{A:'evil',B:'good',C:'good',D:'good',E:'good',F:'good',G:'good',H:'good'} });
+const rec = M.recruitable(g2);
+ok(!rec.includes('C'), 'the Seer cannot be turned');
+ok(!rec.includes('D'), 'nor the Doctor');
+ok(!rec.includes('A'), 'nor another wolf');
+ok(rec.length === 5 && rec.every(p => g2.roles[p] === 'good'),
+   'everyone else is fair game (' + rec.join(',') + ')');
+
+// the deadlock itself: force the state the grid now refuses to produce, and
+// prove the gate no longer waits on somebody who cannot answer
+g2 = base({ seer:true, doctor:true, seerOf:'C', doctorOf:'D',
+            roles:{A:'evil',B:'evil',C:'evil',D:'good',E:'good',F:'good',G:'good',H:'good'} });
+for (const p of M.living(g2)) writePick(g2, p, 'E');
+ok(M.nightReady(g2), 'a turned Seer is not waited on — this used to hang forever');
+g2 = base({ seer:true, doctor:true, seerOf:'C', doctorOf:'D',
+            roles:{A:'evil',B:'evil',C:'good',D:'evil',E:'good',F:'good',G:'good',H:'good'} });
+for (const p of M.living(g2)) writePick(g2, p, 'E');
+ok(M.nightReady(g2), 'and neither is a turned Doctor');
+const acts = M.nightActors(g2);
+ok(acts.filter(p => p === 'D').length === 1,
+   'a turned Doctor is listed once — as a wolf, never twice and never as the Doctor');
+ok(M.nightReady(base(Object.assign(JSON.parse(JSON.stringify(g2)), { nightPicks:{} }))) === false,
+   'and the night still waits for that wolf to choose');
+
+// and resolveNight repairs the binding even if a state arrives holding one
+g2 = base({ seer:true, seerOf:'D', recruit:true, recruitPick:'D',
+            roles:{A:'evil',B:'good',C:'good',D:'good',E:'good',F:'good',G:'good',H:'good'} });
+g2 = M.resolveNight(g2);
+ok(g2.roles.D === 'evil' && g2.seerOf === null,
+   'recruiting the Seer through a hand-made state unbinds the role rather than hanging');
+
+head('Two hundred games that all use recruiting, played through the real dispatch');
+let hung = 0, finished = 0, recruits = 0;
+for (let s = 0; s < 200; s++){
+  let g = base({ evilCount:1, recruit:true, seer: s % 2 === 0, doctor: s % 3 === 0,
+                 use:{ dagger:true, shield:true, mask:true, lantern:true } });
+  M.assignRoles(g);
+  g = M.beginNight(g);
+  let guard = 0;
+  while (!g.winner && guard++ < 60){
+    const wolves = M.evils(g);
+    // the last wolf recruits whenever it can, which is the path that used to hang
+    const canRecruit = wolves.length === 1 && M.recruitable(g).length;
+    if (canRecruit && guard % 2 === 1){
+      g.recruitPick = M.recruitable(g)[0];
+      recruits++;
+      for (const p of wolves) g.nightPicks[p] = null;
+    } else {
+      const targets = M.goods(g);
+      if (!targets.length) break;
+      for (const p of wolves) writePick(g, p, targets[0]);
+    }
+    for (const p of M.living(g)) if (!M.isEvil(g, p)) writePick(g, p, M.living(g)[0]);
+    if (!M.nightReady(g)){ hung++; break; }
+    g = M.resolveNight(g);
+    if (g.winner) break;
+    g.votes = {};
+    const alive = M.living(g);
+    for (const p of alive) g.votes[p] = alive[(alive.indexOf(p) + 1) % alive.length];
+    g = M.resolveDay(g);
+    if (g.winner) break;
+    g = M.beginNight(g);
+  }
+  if (g.winner) finished++;
+}
+ok(hung === 0, 'no game ever reached a night that could not be resolved (' + hung + ' hung)');
+ok(recruits > 100, 'and recruiting really was exercised (' + recruits + ' recruits)');
+ok(finished > 190, 'nearly all of them reached a winner (' + finished + '/200)');
+
+head('The narrator is drawn the same way every time the callback runs');
+/* commit() re-runs its callback against fresh state when a concurrent write
+   lands. Math.random() here handed the round to a second phone after the first
+   had started speaking. */
+const up = ['A','B','C','D','E'];
+ok(M.narratorSeed(3, up) === M.narratorSeed(3, up), 'same round and same table, same draw');
+ok(M.narratorSeed(3, up) !== M.narratorSeed(4, up), 'a new round draws again');
+ok(M.narratorSeed(3, up) !== M.narratorSeed(3, ['A','B','C','D']),
+   'and so does a table that has lost somebody');
+const drawn = {};
+for (let r = 1; r <= 400; r++) drawn[up[M.narratorSeed(r, up) % up.length]] = 1;
+ok(Object.keys(drawn).length === 5, 'over 400 rounds every seat gets the job');
+
+let same = 0;
+for (let r = 1; r <= 200; r++){
+  let g = base({ round:r });
+  g.alive = {}; up.forEach(p => g.alive[p] = true); g.players = up.slice();
+  const a = M.beginNight(Object.assign({}, g, { round:r - 1 })).narrator;
+  const b = M.beginNight(Object.assign({}, g, { round:r - 1 })).narrator;
+  if (a !== b) same++;
+}
+ok(same === 0, 'beginNight run twice on the same state names the same narrator');
 
 // ── 6. the day vote ──────────────────────────────────────────
 head('The day vote');
