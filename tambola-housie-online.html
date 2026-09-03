@@ -177,12 +177,13 @@
   <section class="howto">
     <h2>How to play Tambola (Housie)</h2>
     <ol>
-      <li>One person is the caller; everyone else gets a real three-by-nine ticket on their own phone.</li>
-      <li>The caller taps numbers as they come out. Any number on your ticket fills itself in — no pens, no missed calls.</li>
-      <li>Claim a prize and the app checks it against the numbers actually called, not against what you tapped.</li>
+      <li>One person is the caller; everyone else gets a real three-by-nine ticket on their own phone. There is no bag of tokens — the app draws the numbers.</li>
+      <li>The caller taps <b>Call next number</b> and reads it out. Any number on your ticket that has been called is <b>outlined in gold</b>; tap it to mark it. There is also <b>Mark everything called</b> if you have fallen behind.</li>
+      <li>Claim a prize and the app checks it against the numbers actually called, not against what you tapped — so marking a number you did not hear will not win you anything.</li>
+      <li>Six prizes: Early Five, the three lines, Four Corners and Full House. Each goes once, to whoever claims it first.</li>
     </ol>
     <h3>An example</h3>
-    <div class="eg"><p style="margin:0">The caller taps <b>47</b>. It is on your ticket, so it fills in. Two calls later your top row is complete and you tap <b>Top Line</b>. The app checks all five numbers against what has genuinely been called and awards it — so a wrong claim is caught before it becomes an argument.</p></div>
+    <div class="eg"><p style="margin:0">The caller taps <b>Call next number</b> and the app draws <b>47</b>. It is on your ticket, so it lights up gold; you tap it to mark it. Two calls later your top row is complete, so you tap <b>Top Line</b>. The app checks all five of those numbers against what has genuinely been called — not against what you have tapped — and awards it. Claim too early and it tells you so, quietly, and nothing is lost. That is the argument this game usually has, settled before it starts.</p></div>
     <p class="facts">2–30 players · about 20–40 minutes · suggested from age 6 · free, no sign-up, plays in any browser.</p>
   </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
@@ -221,6 +222,8 @@ let me = null;      // this device's identity (local)
 let stamp = 0;
 let pending = null;
 let flash = '';
+let boardOpen = false;   // local: the full board must survive a re-render, and at
+                         // thirty phones the state changes about once a second
 
 // A room row may have been created by the group page, which writes only the
 // group marker, so fill any missing fields from FRESH before using it.
@@ -439,9 +442,14 @@ function callNext(){
 }
 function toggleMark(n){
   if (!me) return;
+  // decide WHAT WE WANT once, out here. Flipping inside the callback is not
+  // idempotent, and commit() re-runs the callback on a conflict — so the mark
+  // was toggled twice and quietly went back to how it started.
+  const want = !((G.marks[me] || []).includes(n));
   mutate(g=>{
     const cur = g.marks[me] || [];
-    g.marks[me] = cur.includes(n) ? cur.filter(x=>x!==n) : [...cur, n];
+    if (cur.includes(n) === want) return g;
+    g.marks[me] = want ? [...cur, n] : cur.filter(x=>x!==n);
     return g;
   });
 }
@@ -467,8 +475,15 @@ function claim(key){
     return;
   }
   setErr('');
-  flash = `${me} takes ${PRIZES.find(x=>x.key===key).label}!`;
-  mutate(g=>{
+  // no banner until the write has settled — announcing the win before the race
+  // is decided left the LOSER's phone claiming a prize they never got
+  flash = '';
+  claimAndTell(key);
+}
+async function claimAndTell(key){
+  const label = PRIZES.find(x=>x.key===key).label;
+  const who = me;
+  await mutate(g=>{
     if (g.phase !== 'playing') return g;
     if (!g.tickets[me]) return g;
     if (!checkClaim(g.tickets[me], g.called, key)) return g;
@@ -478,6 +493,12 @@ function claim(key){
       g._sessionEnd = new Date().toISOString();
     return g;
   });
+  // now the shared state has settled the race, so say what actually happened
+  const winner = G && G.prizes ? G.prizes[key] : null;
+  if (winner === who) flash = `${who} takes ${label}!`;
+  else if (winner)    flash = `${winner} got there first — ${label.toLowerCase()} has gone.`;
+  else                flash = '';
+  render();
 }
 function newGame(keep){
   me = keep ? me : null;
@@ -489,7 +510,12 @@ function newGame(keep){
     return n;
   });
 }
-function backToSetup(){ flash=''; mutate(g=>{ g.phase='setup'; return g; }); }
+function backToSetup(){
+  // a phone that never took a seat should not be able to end everybody's game
+  if (G.phase === 'playing' && !me){ setErr('Tap your name first.'); return; }
+  flash=''; setErr('');
+  mutate(g=>{ g.phase='setup'; return g; });
+}
 
 // ── render ──
 function boardHTML(){
@@ -586,7 +612,8 @@ function render(){
         ${G.called.length < 90 && !allGone
           ? `<button class="btn-red full" style="margin-top:16px" onclick="callNext()">Call next number</button>`
           : `<p class="faint" style="margin-top:16px">${allGone?'Every prize has gone.':'All 90 numbers are out.'}</p>`}
-        <details style="margin-top:14px"><summary>Show the full board</summary>${boardHTML()}</details>
+        <details style="margin-top:14px" ${boardOpen?'open':''}
+          ontoggle="boardOpen=this.open"><summary>Show the full board</summary>${boardHTML()}</details>
       </div>
       ${flash ? `<p class="ok">${esc(flash)}</p>` : ''}
       ${me
@@ -650,6 +677,7 @@ function enterRoom(){
 
 function leaveRoom(){
   if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  if (ROOM) vpForgetSeat(GAME_ID, ROOM);   // or rejoining puts you back in the same seat
   joined = false; ROOM = ''; G = null; me = null; pending = null; flash = '';
   history.replaceState(null, '', location.pathname);
   $('roombar').innerHTML = '';

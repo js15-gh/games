@@ -22,8 +22,11 @@ function chunk(a, b){
   return src.slice(i, src.indexOf(b, i) + b.length);
 }
 function fn(name){
-  const a = src.indexOf('function ' + name + '(');
+  let a = src.indexOf('function ' + name + '(');
   if (a < 0) throw new Error('no ' + name);
+  // keep the `async` keyword if there is one — slicing it off gives a plain
+  // function with an await in it, which will not even parse
+  if (src.slice(a - 6, a) === 'async ') a -= 6;
   let d = 0;
   for (let j = src.indexOf('{', a); j < src.length; j++){
     if (src[j] === '{') d++;
@@ -33,26 +36,36 @@ function fn(name){
 const mod = { exports:{} };
 new Function('module', [
   chunk('const PRIZES = [', '\n];'), chunk('const FRESH = {', 'null} };'),
-  'let G = null, me = null, flash = "", __name = "";',
+  'let G = null, me = null, flash = "", __name = "", boardOpen = false;',
   'let __conflict = false, __lost = null;',
   // commit() applies fn, has its save refused, then applies THE SAME fn
   // again to freshly fetched state. That second application is where a
   // Math.random() inside the callback changes its mind.
+  'let __replay = false;',
+  /* Two different failures, two different models.
+     __conflict: the save is REFUSED, so commit() re-runs fn against freshly
+       fetched state. The losing application is discarded.
+     __replay: the save LANDS but the response is lost, so mutate() parks fn
+       in `pending` and the next poll applies it AGAIN — this time on top of
+       its own earlier result. A callback that flips a value rather than
+       setting one silently undoes itself here. */
   'function mutate(fn){ if (__conflict) __lost = fn(JSON.parse(JSON.stringify(G)));'
-  + ' G = fn(G); return G; }',
+  + ' G = fn(G); if (__replay) G = fn(G); return G; }',
   'function setErr(){} function render(){}',
   'function $(id){ return { value: __name, textContent: "" }; }',
   fn('colRange'), fn('shuffle'), fn('columnCounts'), fn('rowLayout'), fn('makeTicket'),
   chunk('const ticketNumbers =', '\n'),
   fn('rowNums'), fn('cornerNums'), fn('claimNumbers'), fn('checkClaim'),
   fn('addPlayer'), fn('removePlayer'), fn('dealTickets'), fn('callNext'),
-  fn('toggleMark'), fn('markAllCalled'), fn('claim'), fn('newGame'),
+  fn('toggleMark'), fn('markAllCalled'), fn('claim'), fn('claimAndTell'), fn('newGame'),
   'module.exports = { PRIZES, FRESH, colRange, columnCounts, rowLayout, makeTicket,' +
   ' ticketNumbers, rowNums, cornerNums, claimNumbers, checkClaim, dealTickets, callNext,' +
-  ' toggleMark, markAllCalled, claim, newGame, removePlayer,' +
+  ' toggleMark, markAllCalled, claim, claimAndTell, newGame, removePlayer,' +
   ' addNamed:(n)=>{ __name = n; return addPlayer(); },' +
   ' setG:(g)=>{ G = g; }, getG:()=>G, setMe:(m)=>{ me = m; },' +
-  ' conflict:(b)=>{ __conflict = b; __lost = null; }, lost:()=>__lost };'
+  ' conflict:(b)=>{ __conflict = b; __lost = null; },' +
+  ' replay:(b)=>{ __replay = b; }, lost:()=>__lost,' +
+  ' flash:()=>flash, boardOpen:()=>boardOpen };'
 ].join('\n'))(mod);
 const M = mod.exports;
 
@@ -62,6 +75,7 @@ const head = s => console.log('\n' + s);
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const fresh = (over) => Object.assign(clone(M.FRESH), over || {});
 
+(async function main(){
 // ── 1. the ticket ────────────────────────────────────────────
 head('Twenty thousand tickets, every rule of a real Housie ticket');
 const faults = { none:0, shape:0, fifteen:0, dupes:0, row5:0, emptyCol:0,
@@ -223,22 +237,22 @@ head('A prize goes to exactly one person and stays there');
 g = playing(['Asha','Bilal']);
 g.called = M.ticketNumbers(g.tickets.Asha).slice();
 M.setG(g);
-M.setMe('Asha'); M.claim('full');
+M.setMe('Asha'); await M.claimAndTell('full');
 ok(M.getG().prizes.full === 'Asha', 'Asha has the full house');
 // Bilal races for the same prize on a ticket that also happens to be complete
 g = M.getG();
 g.called = [...new Set([...g.called, ...M.ticketNumbers(g.tickets.Bilal)])];
 M.setG(g);
-M.setMe('Bilal'); M.claim('full');
+M.setMe('Bilal'); await M.claimAndTell('full');
 ok(M.getG().prizes.full === 'Asha', 'the second claim does not take it off her');
 
 head('A claim you have not earned is refused');
 g = playing(['Asha','Bilal']);
 g.called = [];
 M.setG(g);
-M.setMe('Asha'); M.claim('top');
+M.setMe('Asha'); await M.claimAndTell('top');
 ok(M.getG().prizes.top === null, 'with nothing called, a top line is not yours');
-M.claim('five');
+await M.claimAndTell('five');
 ok(M.getG().prizes.five === null, 'nor an early five');
 
 head('Claiming needs a seat and a ticket');
@@ -277,6 +291,45 @@ let threw = false;
 try { M.markAllCalled(); } catch { threw = true; }
 ok(!threw, 'a seat with no ticket does not crash the page');
 
+head('The loser of a claim race is never told they won');
+/* `flash` used to be set optimistically before the write. Two people claiming
+   Full House in the same second both saw "you take Full House!", and nothing
+   ever withdrew it from the one who lost. */
+g = playing(['Asha','Bilal']);
+g.called = [...new Set([...M.ticketNumbers(g.tickets.Asha), ...M.ticketNumbers(g.tickets.Bilal)])];
+M.setG(g);
+M.setMe('Asha'); await M.claimAndTell('full');
+ok(M.getG().prizes.full === 'Asha', 'Asha wins the race');
+ok(/Asha takes Full House/.test(M.flash()), 'and her phone says so: ' + M.flash());
+M.setMe('Bilal'); await M.claimAndTell('full');
+ok(M.getG().prizes.full === 'Asha', 'Bilal does not take it off her');
+ok(!/Bilal takes/.test(M.flash()), 'and Bilal is NOT told he won');
+ok(/Asha/.test(M.flash()) && /got there first/.test(M.flash()),
+   'he is told who did: ' + M.flash());
+
+head('A mark cannot vanish when the write is retried');
+/* toggleMark flipped the value inside the commit callback, and commit() re-runs
+   that callback on a conflict — so the mark was toggled twice and went back to
+   where it started. At thirty phones, conflicts are constant. */
+g = playing(['Asha','Bilal']);
+M.setG(g);
+M.setMe('Asha');
+M.replay(true);
+M.toggleMark(42);
+ok((M.getG().marks.Asha || []).includes(42), 'the mark survives its own write being replayed');
+M.toggleMark(42);
+ok(!(M.getG().marks.Asha || []).includes(42), 'and so does un-marking it');
+M.replay(false);
+let flips = 0;
+for (let i = 0; i < 200; i++){
+  M.setG(playing(['Asha','Bilal'])); M.setMe('Asha');
+  M.replay(true);
+  M.toggleMark(7);
+  if (!(M.getG().marks.Asha || []).includes(7)) flips++;
+  M.replay(false);
+}
+ok(flips === 0, 'two hundred replayed marks, none lost (' + flips + ')');
+
 // ── 7. starting over ─────────────────────────────────────────
 head('A new game keeps the group it belongs to');
 /* Rebuilding from FRESH used to drop _group, so a room in a group silently
@@ -308,7 +361,7 @@ for (let s = 0; s < 200; s++){
       for (const pr of M.PRIZES){
         if (cur.prizes[pr.key]) continue;
         if (M.checkClaim(cur.tickets[p], cur.called, pr.key)){
-          M.setMe(p); M.claim(pr.key);
+          M.setMe(p); await M.claimAndTell(pr.key);
           const after = M.getG();
           if (after.prizes[pr.key] !== p) wrongWinner++;
           // and it must genuinely have been earned
@@ -326,5 +379,7 @@ ok(wrongWinner === 0, 'every prize went to the player who actually earned it');
 ok(doubleAward === 0, 'and no prize was awarded on an unearned claim');
 ok(allWon === 200, 'by the ninetieth number every prize has been won (' + allWon + '/200)');
 
+})().then(() => {
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
+});
