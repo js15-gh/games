@@ -175,11 +175,13 @@
     <h3>An example</h3>
     <div class="eg"><p style="margin:0">You bid <b>160</b> and call the <b>ace of hearts</b> as your partner card. Somebody at the table is now on your side and neither of you knows it. Three tricks later the ace appears — and everyone finds out at the same moment who has been helping whom.</p></div>
     <h3>How the bidding works</h3>
-    <div class="eg"><p style="margin:0">After the deal, bidding starts to the dealer's left and
-      goes round in steps of <b>10</b>. Your phone shows you <b>how many points are in your own
-      hand</b>, which is the sum you would otherwise be squinting at. Pass and you are out of that
-      auction; when one bidder is left, they take the contract. If everyone passes, the deal is
-      thrown in and dealt again.</p></div>
+    <div class="eg"><p style="margin:0"><b>Bidding is open — there is no turn order.</b> After the
+      deal, anybody can raise at any moment, in steps of <b>10</b>, as long as they beat the standing
+      bid. That is how a real table does it, and waiting your turn was the slowest part of the game.
+      Your phone shows you <b>how many points are in your own hand</b>, which is the sum you would
+      otherwise be squinting at. Pass and you are out of that auction for good; you cannot pass while
+      you are the one in front. When only the leading bidder is left, they take the contract. If
+      everyone passes, the deal is thrown in and dealt again.</p></div>
     <p class="facts">4–10 players · about 40–60 minutes · suggested from age 12 · free, no sign-up, plays in any browser.</p>
   </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
@@ -352,6 +354,47 @@ function biddingTeam(g){
 }
 const onBidTeam = (g,p) => biddingTeam(g).includes(p);
 
+/* Everything the table keeps asking out loud, worked out from the state so
+   nobody has to. `out` is what is still sitting in hands: the total in play
+   minus everything already captured. The bidding side's total is only honest
+   once the partners are known, so before that it counts the bidder alone and
+   says so. */
+function liveScore(g){
+  const inPlay = 250 * g.decks;
+  const capt = {};
+  let taken = 0;
+  for (const p of g.players){
+    const v = (g.captured[p]||[]).reduce((s,c)=>s+cardPoints(c),0);
+    capt[p] = v; taken += v;
+  }
+  const team = biddingTeam(g);
+  let us = 0, them = 0;
+  for (const p of g.players){ if (team.includes(p)) us += capt[p]; else them += capt[p]; }
+  return { inPlay, taken, out: inPlay - taken, capt, us, them, team,
+           need: Math.max(0, (g.highBid||0) - us) };
+}
+function scoreboardHTML(){
+  if (!G.highBidder) return '';
+  const s = liveScore(G);
+  const known = (G.revealed||[]).length >= G.partnerCards.length;
+  return `<div class="panel">
+    <div class="eyebrow">Where the points are</div>
+    <div class="row" style="border:none;padding:6px 0">
+      <span><b>${esc(G.highBidder)}'s side</b>${known ? '' :
+        ' <span class="faint" style="font-size:12px">(partner still hidden)</span>'}</span>
+      <span><b style="color:var(--gold)">${s.us}</b></span></div>
+    <div class="row" style="border:none;padding:6px 0">
+      <span>Everyone else</span><span><b>${s.them}</b></span></div>
+    <div class="row" style="border:none;padding:6px 0;border-top:1px solid var(--line)">
+      <span class="faint">Still out in hands</span><span class="faint">${s.out}</span></div>
+    <p class="faint" style="font-size:13px;margin:8px 0 0">Bid <b style="color:var(--ink)">${G.highBid}</b>
+      — ${s.need > 0
+        ? `<b style="color:var(--ink)">${s.need}</b> more needed${s.need > s.out
+            ? ', which is more than is left. The bid is down.' : '.'}`
+        : '<b style="color:var(--green,#2E7D4F)">made</b>.'}</p>
+  </div>`;
+}
+
 // ── actions ──
 function addPlayer(){
   const el=$('nameInput'); const n=el.value.trim();
@@ -390,56 +433,75 @@ function dealHand(g){
   g.phase = 'bidding';
   return g;
 }
+/* Anybody may raise at any moment until the bidding closes — no turn order.
+   Waiting your turn is a thing a table does not do: people call over each other
+   until it stops, and making five players watch one person think was the
+   slowest part of the game. The only rules are that you must beat the standing
+   bid and that passing is final. */
 function bid(n){
+  if (!me) return;
   mutate(g=>{
-    const p = g.players[g.turn];
-    if (g.passed.includes(p)) return g;
-    g.bids[p] = n; g.highBid = n; g.highBidder = p;
-    advanceBidding(g);
+    if (g.phase !== 'bidding') return g;
+    if (!g.players.includes(me)) return g;
+    if (g.passed.includes(me)) return g;             // passing is final
+    if (n < g.minBid) return g;
+    if (g.highBidder && n <= g.highBid) return g;    // must beat the standing bid
+    if (n > 250 * g.decks) return g;
+    g.bids[me] = n; g.highBid = n; g.highBidder = me;
+    closeBiddingIfDone(g);
     return g;
   });
 }
 function passBid(){
+  if (!me) return;
   mutate(g=>{
-    const p = g.players[g.turn];
-    if (!g.passed.includes(p)) g.passed.push(p);
-    advanceBidding(g);
+    if (g.phase !== 'bidding') return g;
+    if (!g.players.includes(me)) return g;
+    if (g.highBidder === me) return g;               // you cannot pass on your own lead
+    if (!g.passed.includes(me)) g.passed.push(me);
+    closeBiddingIfDone(g);
     return g;
   });
 }
-function advanceBidding(g){
+function closeBiddingIfDone(g){
   const live = g.players.filter(p=>!g.passed.includes(p));
-  if (live.length <= 1 && g.highBidder){
+  if (!live.length){ dealHand(g); return g; }        // everyone passed — redeal
+  if (live.length === 1 && g.highBidder){
     g.phase = 'naming';
     g.turn = g.players.indexOf(g.highBidder);
-    return g;
   }
-  if (!live.length){ dealHand(g); return g; }        // everyone passed — redeal
-  let i = g.turn;
-  do { i = (i+1) % g.players.length; } while (g.passed.includes(g.players[i]));
-  g.turn = i;
   return g;
 }
-function chooseTrump(s){ mutate(g=>{ g.trump = s; return g; }); }
+/* Kept on the bidder's own phone until they confirm. Writing it straight to
+   shared state put trump in every phone's breadcrumb the instant it was tapped
+   — while the same screens still said the bidder was deciding — so the table
+   watched ace-high hearts become spades and back, which tells them the shape of
+   the hand. */
+let pickTrump = '', pickCards = [];
+function chooseTrump(s){ pickTrump = s; render(); }
 function namePartner(card){
-  mutate(g=>{
-    if (g.partnerCards.includes(card)) { g.partnerCards = g.partnerCards.filter(c=>c!==card); return g; }
-    if (g.partnerCards.length >= g.partnersWanted) return g;
-    g.partnerCards.push(card);
-    return g;
-  });
+  if (pickCards.includes(card)) pickCards = pickCards.filter(c=>c!==card);
+  else if (pickCards.length < G.partnersWanted) pickCards.push(card);
+  render();
 }
 function confirmNaming(){
-  if (!G.trump){ setErr('Pick a trump suit first.'); return; }
-  if (G.partnerCards.length !== G.partnersWanted){
+  if (!pickTrump){ setErr('Pick a trump suit first.'); return; }
+  if (pickCards.length !== G.partnersWanted){
     setErr(`Name ${G.partnersWanted} partner card${G.partnersWanted===1?'':'s'}.`); return;
   }
   const mine = G.hands[G.highBidder] || [];
-  if (G.partnerCards.some(pc => mine.some(c => face(c) === pc))){
+  if (pickCards.some(pc => mine.some(c => face(c) === pc))){
     setErr("You can't call a card you're holding yourself."); return;
   }
   setErr('');
-  mutate(g=>{ g.phase='playing'; g.turn = g.players.indexOf(g.highBidder); return g; });
+  const trump = pickTrump, cards = pickCards.slice();
+  mutate(g=>{
+    if (g.phase !== 'naming' || me !== g.highBidder) return g;
+    g.trump = trump; g.partnerCards = cards;
+    g.phase='playing'; g.turn = g.players.indexOf(g.highBidder);
+    return g;
+  });
+  pickTrump = ''; pickCards = [];
 }
 function playCard(card){
   mutate(g=>{
@@ -583,9 +645,18 @@ function render(){
         <div class="grid">${[1,2].map(d=>
           `<button class="seat ${G.decks===d?'on':''}" onclick="setDecks(${d})">${d} deck${d>1?'s':''}</button>`).join('')}</div>
         <p class="faint" style="font-size:14px;margin-top:8px">${250*G.decks} points in play.
-          ${G.players.length ? (() => { const ex=(52*G.decks)%G.players.length;
-            return ex ? `With ${G.players.length} players, ${ex} worthless card${ex===1?'':'s'} will be removed so hands come out even.`
-                      : `${52*G.decks} cards divide evenly between ${G.players.length}.`; })() : ''}</p>
+          ${G.players.length ? (() => {
+            const ex = (52*G.decks) % G.players.length;
+            const each = ((52*G.decks) - ex) / G.players.length;
+            // say the hand size out loud. Two decks at six players is seventeen
+            // cards, which is a lot to hold on a phone, and nobody should find
+            // that out only after the deal.
+            return `<br><b style="color:var(--ink)">${G.players.length} players × ${G.decks} deck${
+              G.decks>1?'s':''} = ${each} cards each.</b>${
+              each > 13 ? ' That is a big hand for a phone screen — one deck deals '
+                + Math.floor(52/G.players.length) + '.' : ''}${
+              ex ? ` ${ex} worthless card${ex===1?'':'s'} removed so the hands come out even.` : ''}`;
+          })() : ''}</p>
 
         <div class="eyebrow" style="margin-top:18px">Minimum bid</div>
         <div class="grid">${bids.map(b=>
@@ -606,8 +677,13 @@ function render(){
              A is 10, and every 5 is 5 — ${250*G.decks} in all.</p>
           <p>The 3♠ is worth the most but <b style="color:var(--ink)">is not the highest card</b> —
              it is an ordinary spade, and a 4♠ beats it.</p>
-          <p>Bid how many points you think you can take. The highest bidder picks trump and calls a
+          <p>Bid how many points you think you can take — <b style="color:var(--ink)">anyone can raise
+             at any time</b>, there is no turn order. The highest bidder picks trump and calls a
              card; whoever holds it is secretly on their side.</p>
+          <p>Once play starts, every phone shows the <b style="color:var(--ink)">trump</b>, the
+             <b style="color:var(--ink)">called cards</b>, what each side has taken so far and
+             <b style="color:var(--ink)">how many points are still out in hands</b> — so nobody has
+             to keep a tally in their head.</p>
           <p><b style="color:var(--ink)">Partners are only revealed when they play the called card.</b>
              Nobody announces it — if you weren't paying attention, that's your problem.</p>
           <p>A deal ends when the cards run out; the scores carry on and you deal again for as long
@@ -623,12 +699,16 @@ function render(){
   const mine = me ? sortHand(G.hands[me]||[], G.trump) : [];
 
   if (G.phase === 'bidding'){
-    const myTurn = me === up;
-    const next = Math.max(G.minBid, G.highBid + 10);
+    // open bidding: no turn, anybody still in may raise whenever they like
+    const iPassed = me && G.passed.includes(me);
+    const iLead   = me === G.highBidder;
+    const canBid  = me && !iPassed && !iLead;
+    const next = Math.max(G.minBid, G.highBid ? G.highBid + 10 : G.minBid);
     const opts = []; for (let b=next; b<=Math.min(250*G.decks, next+90); b+=10) opts.push(b);
+    const live = G.players.filter(x=>!G.passed.includes(x));
     app.innerHTML = `
       <div class="panel center">
-        <div class="eyebrow">${myTurn ? 'Your bid' : esc(up)+' is bidding'}</div>
+        <div class="eyebrow">${G.highBidder ? 'Bidding — raise whenever you like' : 'Bidding is open'}</div>
         <p class="faint" style="font-size:15px;margin-top:8px">
           ${G.highBidder ? `<b style="color:var(--ink)">${esc(G.highBidder)}</b> leads on
              <b style="color:var(--ink)">${G.highBid}</b>` : `No bids yet — minimum is ${G.minBid}`}</p>
@@ -636,11 +716,16 @@ function render(){
           <p class="faint" style="font-size:13px">Your hand holds
             <b style="color:var(--ink)">${mine.reduce((s,c)=>s+cardPoints(c),0)}</b> points.</p>`
           : '<p class="faint" style="font-size:14px;margin-top:10px">Pick your seat to see your cards.</p>'}
-        ${myTurn ? `<div class="grid">${opts.map(b=>
+        ${canBid ? `<div class="grid">${opts.map(b=>
             `<button class="seat" onclick="bid(${b})">${b}</button>`).join('')}</div>
           <button class="btn-ghost full" onclick="passBid()">Pass</button>`
-          : `<p class="faint" style="font-size:14px;margin-top:12px">Waiting for ${esc(up)}…</p>`}
-        ${G.passed.length ? `<p class="faint" style="font-size:13px;margin-top:10px">Passed: ${G.passed.map(esc).join(', ')}</p>`:''}
+          : iLead ? `<p class="faint" style="font-size:14px;margin-top:12px">You lead on
+              <b style="color:var(--ink)">${G.highBid}</b>. Wait and see if anyone goes over you.</p>`
+          : iPassed ? '<p class="faint" style="font-size:14px;margin-top:12px">You have passed.</p>'
+          : '<p class="faint" style="font-size:14px;margin-top:12px">Take a seat to bid.</p>'}
+        <p class="faint" style="font-size:13px;margin-top:10px">Still in:
+          ${live.map(esc).join(', ') || 'nobody'}${G.passed.length
+            ? ` · Passed: ${G.passed.map(esc).join(', ')}` : ''}</p>
       </div>
       ${G.removed.length ? `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
         Removed to even the hands: ${G.removed.map(c=>RANK_LABEL[rankOf(c)]||rankOf(c))
@@ -659,15 +744,25 @@ function render(){
           <p class="faint" style="font-size:15px;margin-top:8px">Pick trump, then call
             ${G.partnersWanted} card${G.partnersWanted===1?'':'s'}. Whoever holds one is on your side —
             and nobody will know until they play it.</p>
+          <!-- your own hand, because trump is chosen on suit LENGTH and you
+               cannot count what you cannot see -->
+          <div class="hand">${mine.map(c=>cardHTML(c,{small:true})).join('')}</div>
+          <p class="faint" style="font-size:13px">${SUITS.map(s=>{
+            const n = mine.filter(c=>suitOf(c)===s).length;
+            return n ? `<b style="color:${s==='H'||s==='D'?'var(--red)':'var(--ink)'}">${SUIT_CH[s]}${n}</b>` : '';
+          }).filter(Boolean).join(' · ')} · <b style="color:var(--ink)">${
+            mine.reduce((s,c)=>s+cardPoints(c),0)}</b> points in hand</p>
           <div class="grid">${SUITS.map(s=>
-            `<button class="seat ${G.trump===s?'on':''}" onclick="chooseTrump('${s}')"
-              style="${s==='H'||s==='D'?'color:var(--red)':''}">${SUIT_CH[s]} ${SUIT_NAME[s]}</button>`).join('')}</div>
+            `<button class="seat ${pickTrump===s?'on':''}" onclick="chooseTrump('${s}')"
+              style="${s==='H'||s==='D'?'color:var(--red)':''}">${SUIT_CH[s]} ${SUIT_NAME[s]}
+              <small class="faint"> ${mine.filter(c=>suitOf(c)===s).length}</small></button>`).join('')}</div>
           <div class="eyebrow" style="margin-top:16px">Call ${G.partnersWanted} card${G.partnersWanted===1?'':'s'}
-            (${G.partnerCards.length} chosen)</div>
-          <p class="faint" style="font-size:13px;margin-top:4px">Cards you're holding are greyed out.</p>
+            (${pickCards.length} chosen)</div>
+          <p class="faint" style="font-size:13px;margin-top:4px">Cards you're holding are greyed out.
+            Nothing is sent until you tap Start, so change your mind as often as you like.</p>
           <div class="hand">${SUITS.flatMap(s=>['A','K','Q','J','T'].map(r=>{
             const c = r+s; const own = held.has(c);
-            return cardHTML(c, { small:true, dead:own, play:G.partnerCards.includes(c),
+            return cardHTML(c, { small:true, dead:own, play:pickCards.includes(c),
               onclick: own ? '' : `namePartner('${c}')` });
           })).join('')}</div>
           <button class="btn-gold full" onclick="confirmNaming()">Start the hand</button>`
@@ -693,9 +788,19 @@ function render(){
     app.innerHTML = `
       <div class="panel center">
         <div class="trumpbar"><span class="faint" style="font-size:13px">TRUMP</span>
-          <span class="suit" style="color:${G.trump==='H'||G.trump==='D'?'var(--red)':'var(--ink)'}">${SUIT_CH[G.trump]}</span>
+          <span class="suit" style="color:${G.trump==='H'||G.trump==='D'?'var(--red)':'var(--ink)'}">${
+            G.trump ? SUIT_CH[G.trump] : '—'}</span>
+          <span class="faint" style="font-size:13px">${esc(G.highBidder||'')} · ${G.highBid}</span>
 </div>
-        <div class="eyebrow" style="margin-top:8px">${ended ? 'Trick complete'
+        <p class="faint" style="font-size:13.5px;margin:6px 0 0">Called:
+          ${G.partnerCards.length ? G.partnerCards.map(c=>
+            `<b style="color:${suitOf(c)==='H'||suitOf(c)==='D'?'var(--red)':'var(--ink)'}">${
+              (RANK_LABEL[rankOf(c)]||rankOf(c))+SUIT_CH[suitOf(c)]}</b>`).join(' · ')
+            : 'nothing'}${(G.revealed||[]).length
+              ? ` — <b style="color:var(--ink)">${G.revealed.map(esc).join(', ')}</b> ${
+                  G.revealed.length===1?'is':'are'} with ${esc(G.highBidder)}`
+              : ' — nobody has shown yet'}</p>
+        <div class="eyebrow" style="margin-top:10px">${ended ? 'Trick complete'
           : (myTurn ? 'Your turn' : esc(up)+' to play')}${G.led&&!ended?` · ${SUIT_CH[G.led]} led`:''}</div>
         <div class="trick">${(t.cards||[]).map(x=>
           `<div class="tw">${cardHTML(x.card,{small:true})}<div class="who">${esc(x.name)}</div></div>`).join('')
@@ -712,7 +817,7 @@ function render(){
           onclick: myTurn && legal.includes(c) ? `playCard('${c}')` : '' })).join('')}</div>
         ${!myTurn && !ended ? `<p class="faint" style="font-size:14px;margin-top:10px">Waiting for ${esc(up)}…</p>`:''}
       </div>`:''}
-      <div class="panel">${scoreTable()}</div>` + whoAmIHTML();
+      ` + scoreboardHTML() + `<div class="panel">${scoreTable()}</div>` + whoAmIHTML();
     return;
   }
 
