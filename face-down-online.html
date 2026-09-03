@@ -297,6 +297,8 @@ function startGame(){
   if (G.players.length < 3){ setErr('Face Down needs at least 3.'); return; }
   setErr('');
   mutate(g=>{
+    if (g.phase !== 'setup') return g;
+    if (g.players.length < 3 || g.players.length > 8) return g;
     g.lost = {}; g.wins = {}; g.log = []; g.winner = null; g._sessionEnd = null;
     for (const p of g.players) g.wins[p] = 0;
     dealDiscs(g);
@@ -310,13 +312,27 @@ function addPlayer(){
   if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
   if (G.players.length>=8){ setErr('Eight is plenty.'); return; }
   setErr(''); el.value='';
-  mutate(g=>{ g.players.push(n); return g; });
+  /* All three again, against the state actually written. A name added after the
+     deal has no discs, can never place, and nothing in the room can move on. */
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;
+    if (g.players.some(x=>x.toLowerCase()===n.toLowerCase())) return g;
+    if (g.players.length >= 8) return g;
+    g.players.push(n); return g;
+  });
 }
 function removePlayer(n){
-  mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; });
-  if (me===n) me=null;
+  mutate(g=>{
+    // taking somebody out mid-hand loses their whole stack: returnAll() walks
+    // g.players, so a removed player's discs are never given back
+    if (g.phase !== 'setup') return g;
+    g.players=g.players.filter(p=>p!==n); return g;
+  });
+  if (me===n){ me=null; vpForgetSeat(GAME_ID, ROOM); }
 }
-function setTarget(n){ mutate(g=>{ g.target=n; return g; }); }
+function setTarget(n){
+  mutate(g=>{ if (g.phase !== 'setup') return g; g.target=n; return g; });
+}
 
 /* The opening round: everybody hides one disc at the same time, so nobody
    learns anything from the order in which they went down. */
@@ -394,6 +410,7 @@ function flipFrom(who){
   if (me !== G.bidder) return;
   mutate(g=>{
     if (g.phase !== 'flip') return g;
+    if (me !== g.bidder) return g;                          // still the bidder?
     if (who !== g.bidder && !ownStackClear(g)) return g;     // own stack first
     const st = g.stack[who] || [];
     if (!st.length) return g;
@@ -450,6 +467,9 @@ function bust(g){
 }
 function nextHand(){
   mutate(g=>{
+    // newHand() empties every stack. It may ONLY run from a finished hand,
+    // where returnAll() has already put the discs back in their owners' hands.
+    if (g.phase !== 'result' && g.phase !== 'gameover') return g;
     if (g.winner){
       g.phase = 'gameover';
       if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
@@ -468,7 +488,17 @@ function playAgain(keep){
     return n;
   });
 }
-function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+function backToSetup(){
+  // a phone that never sat down should not be able to end everybody's hand
+  if (!me && G.phase !== 'setup'){ setErr('Tap your name first.'); return; }
+  setErr('');
+  mutate(g=>{
+    if (g.phase === 'place' || g.phase === 'turn' || g.phase === 'bid' || g.phase === 'flip'){
+      returnAll(g);                       // never abandon discs on the table
+    }
+    g.phase='setup'; return g;
+  });
+}
 
 // ── render ──
 function discHTML(kind, revealed){
@@ -672,7 +702,14 @@ function render(){
         <p class="bidnum" style="color:${made?'var(--green)':'var(--red)'}">${l ? l.bid : ''}</p>
         <p class="faint">${esc(l?l.bidder:'')} ${made
           ? 'turned them all over. That is a bet won.'
-          : 'found a thorn' + (l && l.removed ? ' and lost a ' + (l.removed===THORN?'thorn':'petal') : '') + '.'}</p>
+          : 'found a thorn' + (l && l.removed ? ' and lost a disc' : '') + '.'}</p>
+        ${l && l.removed && me === l.bidder
+          ? `<p class="faint" style="font-size:14px;margin-top:6px">You lost
+               <b style="color:var(--ink)">a ${l.removed===THORN?'thorn':'petal'}</b>.
+               Only you know which.</p>`
+          : (l && l.removed
+            ? '<p class="faint" style="font-size:13px;margin-top:6px">Which one, only they know.</p>'
+            : '')}
         <div class="discs" style="justify-content:center;margin-top:12px">
           ${(l?l.flips:[]).map(f=>discHTML(f.disc,true)).join('')}</div>
         <button class="btn-rose full" onclick="nextHand()">${G.winner ? 'Final' : 'Next hand'}</button>

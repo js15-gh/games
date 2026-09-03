@@ -52,8 +52,20 @@ const FD = build([
   fd.chunk('const totalOnTable =', '\n'),
   fd.fn('advance'), fd.fn('advanceBidder'), fd.fn('newHand'), fd.fn('dealDiscs'),
   fd.fn('ownStackClear'), fd.fn('returnAll'), fd.fn('succeed'), fd.fn('bust'),
+  // drive the handlers through mutate(), because every guard lives inside a
+  // commit callback and reaching around it tests something that does not ship
+  'let G=null, me=null, __name="";',
+  'function mutate(f){ G = f(G); return G; }',
+  'function setErr(){} function render(){} function vpForgetSeat(){}',
+  'const GAME_ID="facedown", ROOM="TEST";',
+  'function $(id){ return { value: __name, textContent:"" }; }',
+  fd.fn('startGame'), fd.fn('addPlayer'), fd.fn('removePlayer'), fd.fn('setTarget'),
+  fd.fn('nextHand'), fd.fn('backToSetup'),
 ], 'module.exports = { PETAL, THORN, alive, discsLeft, current, stillBidding, totalOnTable, ' +
-   'advance, advanceBidder, newHand, dealDiscs, ownStackClear, returnAll, succeed, bust };');
+   'advance, advanceBidder, newHand, dealDiscs, ownStackClear, returnAll, succeed, bust, ' +
+   'startGame, removePlayer, setTarget, nextHand, backToSetup, ' +
+   'addNamed:(n)=>{ __name=n; return addPlayer(); }, ' +
+   'setG:(g)=>{G=g;}, getG:()=>G, setMe:(m)=>{me=m;} };');
 
 head('Face Down — the deal');
 const P4 = ['Asha','Bilal','Chetan','Devi'];
@@ -138,6 +150,105 @@ ok(FD.totalOnTable({ players:P4, lost:{}, stack:{ Asha:['p','p'], Bilal:['p'], C
    'only hidden discs count towards a bet');
 ok(FD.totalOnTable({ players:P4, lost:{ Asha:true }, stack:{ Asha:['p','p'], Bilal:['p'], Chetan:[], Devi:[] } }) === 1,
    'and discs belonging to a player who is out do not');
+
+head('Face Down — discs are never destroyed by a stale tap');
+/* nextHand() had no phase guard anywhere, and newHand() empties every stack on
+   the stated precondition that returnAll() has already handed the discs back.
+   A stale tap from a phone still on the result screen ran that against a hand
+   in progress and the discs on the table simply ceased to exist. This is the
+   same class as the bust() fault that returnAll() was written to fix — it was
+   just still open on the one path that never got a guard. */
+// totalDiscs() is defined above and counts flips too, which matters here:
+// a disc already turned over is in neither a hand nor a stack.
+function midHand(){
+  let s = { phase:'setup', players:P4.slice(), hand:{}, stack:{}, lost:{}, wins:{},
+            passed:[], flips:[], log:[], turn:0, bidder:null, bid:0, target:2,
+            winner:null, outcome:null };
+  FD.setG(s);
+  FD.startGame();
+  const g = FD.getG();
+  // put one disc down for everybody, then two more, as a real hand would
+  for (const p of P4){ g.stack[p] = [g.hand[p].pop()]; }
+  g.stack[P4[1]].push(g.hand[P4[1]].pop());
+  g.stack[P4[2]].push(g.hand[P4[2]].pop());
+  g.phase = 'turn';
+  FD.setG(g);
+  return g;
+}
+let mid = midHand();
+const before = totalDiscs(mid);
+ok(before === 16, 'sixteen discs in a four-player hand (' + before + ')');
+ok(FD.totalOnTable(mid) === 6, 'six of them are on the table');
+FD.nextHand();
+ok(totalDiscs(FD.getG()) === before,
+   'a stale "Next hand" during the turn destroys nothing (' + totalDiscs(FD.getG()) + ')');
+ok(FD.getG().phase === 'turn', 'and does not drag the room out of the hand');
+
+mid = midHand(); mid.phase = 'flip'; mid.bidder = P4[0]; mid.bid = 3;
+// a turned disc LEAVES the stack and lives in g.flips — build the state the
+// way the game builds it, or the test is measuring its own arithmetic
+mid.flips = [{ player:P4[0], disc: mid.stack[P4[0]].pop() }];
+FD.setG(mid);
+FD.nextHand();
+ok(totalDiscs(FD.getG()) === 16, 'nor during a flip, which used to cost half the game');
+ok((FD.getG().flips||[]).length === 1, 'and the flips already turned are still there');
+
+mid = midHand(); mid.phase = 'result';
+mid.log = [{ bidder:P4[0], bid:2, outcome:'made', removed:null, flips:[] }];
+FD.returnAll(mid); FD.setG(mid);
+FD.nextHand();
+ok(FD.getG().phase === 'place', 'from the result screen it does start the next hand');
+ok(totalDiscs(FD.getG()) === 16, 'with every disc still in the game');
+
+head('Face Down — a ghost player cannot wedge the room');
+/* An Add from a phone still on the setup screen inserted a name with no discs.
+   alive() counted them, the place phase can only advance when everybody has
+   placed, and they could never place — so no phone in the room had any action,
+   and the place screen has no way back to setup. */
+mid = midHand();
+mid.phase = 'place';
+FD.setG(mid);
+FD.addNamed('Latecomer');
+ok(!FD.getG().players.includes('Latecomer'), 'no seat is added after the deal');
+FD.setMe('Asha');
+FD.removePlayer('Bilal');
+ok(FD.getG().players.includes('Bilal'), 'and no live player is removed mid-hand');
+ok(totalDiscs(FD.getG()) === 16, 'so nobody\'s discs leave with them');
+
+head('Face Down — the setup guards hold where it counts');
+FD.setG({ phase:'setup', players:['Solo','Duo'], hand:{}, stack:{}, lost:{}, wins:{},
+          passed:[], flips:[], log:[], turn:0, target:2, winner:null });
+FD.startGame();
+ok(FD.getG().phase === 'setup', 'three is really the minimum');
+FD.setG({ phase:'setup', players:[], hand:{}, stack:{}, lost:{}, wins:{},
+          passed:[], flips:[], log:[], turn:0, target:2, winner:null });
+for (let i = 0; i < 12; i++) FD.addNamed('P' + i);
+ok(FD.getG().players.length === 8, 'and eight is really the maximum');
+FD.addNamed('P0');
+ok(FD.getG().players.filter(x=>x==='P0').length === 1, 'a name cannot be seated twice');
+
+head('Face Down — leaving mid-hand hands the discs back');
+mid = midHand();
+FD.setMe('Asha');
+FD.setG(mid);
+FD.backToSetup();
+ok(FD.getG().phase === 'setup', '"Change players" does return to setup');
+ok(FD.totalOnTable(FD.getG()) === 0, 'with nothing abandoned on the table');
+ok(totalDiscs(FD.getG()) === 16, 'and all sixteen discs back in hands');
+
+head('Face Down — which disc you lost is yours to know');
+/* The result screen told all four phones whether the busted player gave up
+   their thorn or a petal. Once the table knows the thorn is gone, that
+   player's stack is safe to bid on for the rest of the game and the bluffing
+   stops — it is the single most valuable fact in the game, and in the game
+   this is built on the discard is face down. */
+const page = fs.readFileSync(__dirname + '/face-down-online.html', 'utf8');
+const resultBlock = page.slice(page.indexOf("const made = l && l.outcome === 'made'"),
+                               page.indexOf('tableHTML(true)', page.indexOf("const made = l")));
+ok(/lost a disc/.test(resultBlock), 'everyone is told a disc was lost');
+ok(/me === l\.bidder/.test(resultBlock), 'but the kind is gated on being the one who lost it');
+ok(!/l\.removed===THORN\?'thorn':'petal'\)\s*:\s*''\)\s*\+\s*'\.'/.test(resultBlock),
+   'and the old unconditional reveal is gone');
 
 // ════════════════════════════════════════════════════════════
 //  FIBBERS
