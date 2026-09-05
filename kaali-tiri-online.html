@@ -196,8 +196,8 @@ const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
 const GAME_ID = "kaalitiri";
 
 const SUITS = ['S','H','D','C'];
-const SUIT_CH = { S:'♠', H:'♥', D:'♦', C:'♣' };
-const SUIT_NAME = { S:'spades', H:'hearts', D:'diamonds', C:'clubs' };
+const SUIT_CH = { S:'♠', H:'♥', D:'♦', C:'♣', N:'—' };
+const SUIT_NAME = { S:'spades', H:'hearts', D:'diamonds', C:'clubs', N:'no trump' };
 const RANKS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
 const RANK_LABEL = { T:'10' };
 
@@ -353,17 +353,22 @@ function trickWinner(trick, led, trump){
 const trickPoints = (trick) => trick.reduce((s,p)=>s+cardPoints(p.card), 0);
 
 // ── teams (hidden until a partner card appears) ─────────────
+/* Who was dealt one of the called cards. dealtTo maps a FACE to the list of
+   players holding it — a list because two decks mean two copies. Old rooms
+   saved before this fix hold a bare string, so accept either shape rather than
+   breaking a game already in progress. */
+function holdersOf(g, pc){
+  const v = (g.dealtTo||{})[pc];
+  return v == null ? [] : (Array.isArray(v) ? v : [v]);
+}
 function partnerHolders(g){
-  const out = [];
-  for (const p of g.players){
-    const all = (g.hands[p]||[]).concat((g.captured[p]||[]).map(x=>x));
-    if (g.partnerCards.some(pc => (g.dealtTo||{})[pc] === p)) out.push(p);
-  }
-  return out;
+  const out = new Set();
+  for (const pc of g.partnerCards) for (const who of holdersOf(g, pc)) out.add(who);
+  return [...out];
 }
 function biddingTeam(g){
   const t = new Set([g.highBidder]);
-  for (const pc of g.partnerCards){ const who = (g.dealtTo||{})[pc]; if (who) t.add(who); }
+  for (const who of partnerHolders(g)) t.add(who);
   return [...t];
 }
 const onBidTeam = (g,p) => biddingTeam(g).includes(p);
@@ -437,7 +442,9 @@ function dealHand(g){
   g.hands = {}; g.dealtTo = {}; g.captured = {}; g.bids = {}; g.passed = [];
   g.players.forEach((p,i)=>{
     g.hands[p] = deck.slice(i*per, (i+1)*per);
-    g.hands[p].forEach(c => g.dealtTo[c] = p);
+    // by FACE, and to a LIST: with two decks the called card exists twice, and
+    // whoever holds either copy is on the bidder's side
+    g.hands[p].forEach(c => { const f = face(c); (g.dealtTo[f] = g.dealtTo[f] || []).push(p); });
     g.captured[p] = [];
   });
   g.removed = removed;
@@ -692,8 +699,11 @@ function render(){
           <p>The 3♠ is worth the most but <b style="color:var(--ink)">is not the highest card</b> —
              it is an ordinary spade, and a 4♠ beats it.</p>
           <p>Bid how many points you think you can take — <b style="color:var(--ink)">anyone can raise
-             at any time</b>, there is no turn order. The highest bidder picks trump and calls a
-             card; whoever holds it is secretly on their side.</p>
+             at any time</b>, there is no turn order. The highest bidder picks a trump suit — or
+             <b style="color:var(--ink)">no trump</b>, where the led suit decides every trick — and
+             then calls a card. <b style="color:var(--ink)">Any card, not just the high ones.</b>
+             Whoever holds it is secretly on their side; on two decks the card exists twice, so it
+             can be two people.</p>
           <p>Once play starts, every phone shows the <b style="color:var(--ink)">trump</b>, the
              <b style="color:var(--ink)">called cards</b>, what each side has taken so far and
              <b style="color:var(--ink)">how many points are still out in hands</b> — so nobody has
@@ -769,12 +779,16 @@ function render(){
           <div class="grid">${SUITS.map(s=>
             `<button class="seat ${pickTrump===s?'on':''}" onclick="chooseTrump('${s}')"
               style="${s==='H'||s==='D'?'color:var(--red)':''}">${SUIT_CH[s]} ${SUIT_NAME[s]}
-              <small class="faint"> ${mine.filter(c=>suitOf(c)===s).length}</small></button>`).join('')}</div>
+              <small class="faint"> ${mine.filter(c=>suitOf(c)===s).length}</small></button>`).join('')}
+            <button class="seat ${pickTrump==='N'?'on':''}" onclick="chooseTrump('N')"
+              style="grid-column:1/-1">— no trump
+              <small class="faint">the led suit decides every trick</small></button></div>
           <div class="eyebrow" style="margin-top:16px">Call ${G.partnersWanted} card${G.partnersWanted===1?'':'s'}
             (${pickCards.length} chosen)</div>
-          <p class="faint" style="font-size:13px;margin-top:4px">Cards you're holding are greyed out.
+          <p class="faint" style="font-size:13px;margin-top:4px">Any card, not just the high ones —
+            calling a low one is the move nobody watches for. Cards you're holding are greyed out.
             Nothing is sent until you tap Start, so change your mind as often as you like.</p>
-          <div class="hand">${SUITS.flatMap(s=>['A','K','Q','J','T'].map(r=>{
+          <div class="hand">${SUITS.flatMap(s=>[...RANKS].reverse().map(r=>{
             const c = r+s; const own = held.has(c);
             return cardHTML(c, { small:true, dead:own, play:pickCards.includes(c),
               onclick: own ? '' : `namePartner('${c}')` });
@@ -796,8 +810,10 @@ function render(){
       coach = `<div class="coach"><b>${SUIT_CH[G.led]} was led and you have ${SUIT_NAME[G.led]}</b>,
         so you must follow suit. Only those cards can be tapped.</div>`;
     } else if (myTurn && G.led){
-      coach = `<div class="coach">You have no ${SUIT_NAME[G.led]}, so you can play anything — a trump
-        ${SUIT_CH[G.trump]} to take it, or throw away a card worth nothing.</div>`;
+      coach = `<div class="coach">You have no ${SUIT_NAME[G.led]}, so you can play anything — ${
+        G.trump === 'N'
+          ? 'but there are no trumps this deal, so you cannot win this trick. Throw away whatever is worth least.'
+          : `a trump ${SUIT_CH[G.trump]} to take it, or throw away a card worth nothing.`}</div>`;
     }
     app.innerHTML = `
       <div class="panel center">
