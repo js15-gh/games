@@ -247,10 +247,17 @@ function setErr(m){ $('err').textContent = m || ''; }
    take the seeded names into them. Only in setup, and only when the teams are
    genuinely empty, so a game already under way is never touched. */
 function adoptSeeded(g){
+  /* Once, and only once. This runs inside hydrate() on every poll, so a guard
+     of "are the teams empty" makes a table somebody has deliberately cleared
+     look identical to one that was never seeded — and the lobby's names come
+     back by themselves. The marker records that the room has had its chance. */
+  if (g._seated) return g;
   if (g.phase !== 'setup') return g;
   if (!Array.isArray(g.players) || !g.players.length) return g;
-  if ((g.teams.A || []).length || (g.teams.B || []).length) return g;
-  g.players.forEach((p, i) => g.teams[i % 2 === 0 ? 'A' : 'B'].push(p));
+  if (!(g.teams.A || []).length && !(g.teams.B || []).length){
+    g.players.forEach((p, i) => g.teams[i % 2 === 0 ? 'A' : 'B'].push(p));
+  }
+  g._seated = true;
   return g;
 }
 const hydrate = (s) => adoptSeeded(Object.assign(structuredClone(FRESH), s || {}));

@@ -196,6 +196,13 @@ const GAMES = [
 const gameById = (id) => GAMES.find(g => g.id === id);
 
 const HOST_QUIET = 120000;    // two minutes without a heartbeat and the chair is open
+/* render() replaces the whole of #app, and with six phones each beating every
+   thirty seconds that happens every few seconds. Anything the person is in the
+   middle of — a half-typed name, an open panel — has to survive it. Every game
+   page already does this; the lobby was the one file that did not, on the very
+   screen where every name on the site is typed. */
+let nameDraft = '';
+const openPanels = { points:false, about:false };
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
 const $ = (id) => document.getElementById(id);
@@ -218,7 +225,12 @@ const lobbyURL = () => location.origin + location.pathname + '?lobby=' + CODE;
 function hostIsQuiet(hub){
   if (!hub.host) return true;
   const seen = (hub._seen || {})[hub.host];
-  return !seen || (Date.now() - seen) > HOST_QUIET;
+  /* No heartbeat yet is NOT the same as gone quiet. A host who has just made
+     the lobby has not had time to beat — vp.js beats every thirty seconds — and
+     reading that as absent put "has gone quiet, take over" on every phone while
+     they were sitting right there. Fall back to when the chair was taken. */
+  const since = seen || hub._hostAt || 0;
+  return !since || (Date.now() - since) > HOST_QUIET;
 }
 const iAmHost = () => HUB && me && HUB.host === me;
 
@@ -256,11 +268,21 @@ async function createLobby(){
 }
 async function joinLobby(raw){
   const c = clean(raw);
-  if (c.length < 4){ setErr('Enter the lobby code.'); return; }
+  /* Every failure here has to leave a usable page. Arriving on a link whose
+     code was truncated in a group chat, or on last week's link after the
+     nightly purge, used to leave the visitor looking at "Reading the lobby…"
+     for ever — no Start, no Join box, and no way to recover but knowing to
+     strip the query string off the URL by hand. */
+  if (c.length < 4){ renderStart(); setErr('Enter the lobby code.'); return; }
   setErr('');
   let hub;
-  try { hub = await vpGroupGet(c); } catch { setErr("Couldn't reach the lobby service."); return; }
-  if (!hub){ setErr('No lobby with code ' + c + '.'); return; }
+  try { hub = await vpGroupGet(c); }
+  catch { renderStart(); setErr("Couldn't reach the lobby service. Check your connection."); return; }
+  if (!hub){
+    renderStart();
+    setErr('No lobby with code ' + c + '. It may have been a while — start a new one below.');
+    return;
+  }
   CODE = c; HUB = hub; enter();
 }
 function enter(){
@@ -293,24 +315,39 @@ function addPlayer(){
   if (!n) return;
   if ((HUB.roster || []).some(p => p.toLowerCase() === n.toLowerCase())){ setErr('That name is taken.'); return; }
   if ((HUB.roster || []).length >= 20){ setErr('Twenty is as many as any of these games take.'); return; }
-  setErr(''); el.value = '';
-  save(h => { h.roster = (h.roster || []).concat([n]);
-              if (!h.host) h.host = n;                  // the first person in gets the chair
+  setErr(''); el.value = ''; nameDraft = '';
+  save(h => {
+    // both again, against the state actually written: two phones typing the
+    // same name both passed the check above and both got in
+    if ((h.roster || []).some(p => p.toLowerCase() === n.toLowerCase())) return null;
+    if ((h.roster || []).length >= 20) return null;
+    h.roster = (h.roster || []).concat([n]);
+              if (!h.host){ h.host = n; h._hostAt = Date.now(); }   // first in takes the chair
               return h; });
 }
 function removePlayer(n){
+  if (!me){ setErr('Tap your own name first.'); return; }
   save(h => {
+    if (!(h.roster || []).includes(me)) return null;   // only somebody at the table
     h.roster = (h.roster || []).filter(p => p !== n);
-    if (h.host === n) h.host = h.roster[0] || null;
+    if (h.host === n){ h.host = h.roster[0] || null; h._hostAt = Date.now(); }
     return h;
   });
   if (me === n){ me = null; vpForgetSeat('lobby', CODE); }
 }
 function sit(n){ me = n; vpRememberSeat('lobby', CODE, n); render(); }
 function claimHost(){
+  if (!me){ setErr('Tap your own name first.'); return; }
   save(h => {
+    if (!(h.roster || []).includes(me)) return null;   // not at this table
     if (!hostIsQuiet(h) && h.host !== me){ setErr('The host is still here.'); return null; }
-    h.host = me; return h;
+    h.host = me;
+    // stamp the moment the chair changed hands, or the next racer finds the new
+    // host "quiet" as well and takes it straight back
+    h._hostAt = Date.now();
+    h._seen = h._seen || {}; h._seen[me] = Date.now();
+    setErr('');
+    return h;
   });
 }
 
@@ -353,7 +390,8 @@ function playersHTML(){
   return `<div class="panel">
     <div class="eyebrow">Everyone playing</div>
     <div style="display:flex;gap:8px;margin:12px 0">
-      <input type="text" id="nameInput" placeholder="Add a name">
+      <input type="text" id="nameInput" placeholder="Add a name"
+        value="${esc(nameDraft)}" oninput="nameDraft=this.value">
       <button class="btn" onclick="addPlayer()">Add</button>
     </div>
     ${roster.length ? roster.map(p => `<div class="row">
@@ -377,7 +415,7 @@ function gamesHTML(){
     <div class="eyebrow">Start a game</div>
     <p class="faint" style="font-size:13.5px;margin-top:6px">${
       iAmHost() ? 'Everyone here is put straight into it — no names to type again.'
-      : HUB.host ? esc(HUB.host) + ' is choosing. Their pick opens on your phone too.'
+      : HUB.host ? esc(HUB.host) + ' is choosing. When they do, it appears below as “Join” — tap it.'
       : 'Nobody has the chair yet.'}</p>
     <div class="grid">${GAMES.map(g => `
       <button class="gtile" id="launch-${g.id}" onclick="launch('${g.id}')" ${iAmHost()&&n>=2?'':'disabled'}
@@ -412,7 +450,8 @@ function standingsHTML(){
       <span>${vpAvatar(p)} ${esc(p)}</span>
       <span class="faint">${s[p].played} played · <b class="score" style="color:var(--magenta)">${s[p].won}</b> won</span>
       </div>`).join('')}
-    <details style="margin-top:10px"><summary>Points by game</summary>
+    <details style="margin-top:10px" ${openPanels.points?'open':''}
+      ontoggle="openPanels.points=this.open"><summary>Points by game</summary>
       <p class="faint" style="font-size:13px;margin-top:8px">Points only compare within one game —
          a Judgement night is worth a few hundred and an Ito night about four.</p>
       ${order.map(p => `<div style="margin-top:8px"><b>${esc(p)}</b>
@@ -442,7 +481,8 @@ function render(){
         Tap your own name above so the games know which phone is yours.</p></div>`}
     ${launchedHTML()}
     ${standingsHTML()}
-    <div class="panel"><details><summary>What a lobby is for</summary>
+    <div class="panel"><details ${openPanels.about?'open':''}
+      ontoggle="openPanels.about=this.open"><summary>What a lobby is for</summary>
       <div class="faint" style="font-size:14px;line-height:1.65;margin-top:8px">
         <p>Without one, every game means a new code and everybody's names typed in again. Here you
            do it <b style="color:var(--ink)">once</b>, and every game you start puts the same people

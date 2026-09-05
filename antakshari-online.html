@@ -213,14 +213,20 @@ let tick = null;
    deal the seeded names round the teams it is set up for. Only in setup, and
    only when the teams are genuinely empty. */
 function adoptSeeded(g){
+  /* Once, and only once — see the note in cipher-online.html. A guard of "are
+     the teams empty" cannot tell a table somebody has cleared on purpose from
+     one that was never seeded. */
+  if (g._seated) return g;
   if (g.phase !== 'setup') return g;
   if (!Array.isArray(g.players) || !g.players.length) return g;
   const order = (g.order && g.order.length) ? g.order : TEAM_NAMES.slice(0, 2);
-  if (order.some(t => ((g.teams || {})[t] || []).length)) return g;
-  const teams = {}, scores = {};
-  order.forEach(t => { teams[t] = []; scores[t] = (g.scores || {})[t] || 0; });
-  g.players.forEach((p, i) => teams[order[i % order.length]].push(p));
-  g.order = order; g.teams = teams; g.scores = scores;
+  if (!order.some(t => ((g.teams || {})[t] || []).length)){
+    const teams = {}, scores = {};
+    order.forEach(t => { teams[t] = []; scores[t] = (g.scores || {})[t] || 0; });
+    g.players.forEach((p, i) => teams[order[i % order.length]].push(p));
+    g.order = order; g.teams = teams; g.scores = scores;
+  }
+  g._seated = true;
   return g;
 }
 const hydrate = (s) => adoptSeeded(Object.assign(structuredClone(FRESH), s || {}));

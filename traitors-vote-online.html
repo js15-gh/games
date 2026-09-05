@@ -196,10 +196,15 @@ let stamp = 0;          // monotonic counter for last-write-wins
    the lobby does not write, so it used to open with an empty table and a
    disabled Start. Only in setup, and only when the roster is genuinely empty. */
 function adoptSeeded(g){
+  /* Once, and only once. This is the one that actually bit: removePlayer here
+     empties `roster` but leaves `players` alone, so clearing the table left
+     exactly the state a fresh lobby launch produces, and every name came back
+     on the next poll. */
+  if (g._seated) return g;
   if (g.phase !== 'setup') return g;
   if (!Array.isArray(g.players) || !g.players.length) return g;
-  if ((g.roster || []).length) return g;
-  g.roster = g.players.slice();
+  if (!(g.roster || []).length) g.roster = g.players.slice();
+  g._seated = true;
   return g;
 }
 const hydrate = (s) => adoptSeeded(Object.assign(structuredClone(FRESH), s || {}));
@@ -322,7 +327,17 @@ function addPlayer(){
   setErr(''); el.value='';
   mutate(g=>{ g.roster.push(n); return g; });
 }
-function removePlayer(n){ mutate(g=>{ g.roster=g.roster.filter(p=>p!==n); return g; }); }
+function removePlayer(n){
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;
+    g.roster = g.roster.filter(p=>p!==n);
+    // and out of `players` too, the way the five team games do it — leaving
+    // them behind is what let a cleared table re-seed itself
+    g.players = (g.players || []).filter(p=>p!==n);
+    return g;
+  });
+  if (me===n){ me=null; vpForgetSeat(GAME_ID, ROOM); }
+}
 function startVoting(){
   if (G.roster.length<3){ setErr('You need at least 3 players.'); return; }
   setErr('');
