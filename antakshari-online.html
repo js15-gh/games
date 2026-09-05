@@ -233,13 +233,19 @@ async function loadState(){
 }
 async function saveState(next){
   if (!ROOM) throw new Error('no room');
-  next._stamp = ++stamp;
+  /* Stamp a COPY, and adopt the number only once the server has taken it. This
+     was `next._stamp = ++stamp` before the request, and `next` is the local G
+     by then — so a save that never arrived still pushed this phone past the
+     server, and poll() then rejected every update from the room as stale. */
+  const mine = stamp + 1;
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/game_save`, {
     method:'POST', headers: HDRS(),
-    body: JSON.stringify({ p_id: roomKey(), p_state: next })
+    body: JSON.stringify({ p_id: roomKey(), p_state: Object.assign({}, next, { _stamp: mine }) })
   });
   if (!r.ok) throw new Error('save '+r.status);
-  try { return (await r.json()) === true; } catch { return true; }
+  let accepted; try { accepted = (await r.json()) === true; } catch { accepted = true; }
+  if (accepted){ stamp = mine; next._stamp = mine; }
+  return accepted;
 }
 async function commit(fn){
   for (let attempt = 0; attempt < 4; attempt++){
@@ -267,8 +273,15 @@ async function poll(){
     mutate(g => vpStampSeen(g, me, t));
   }
   try {
-    if (pending){ const fn = pending; pending = null;
-      if (await commit(fn)) setErr(''); else pending = fn; }
+    if (pending){
+      const fn = pending;
+      /* Stays queued until it has actually landed. Clearing it first meant a
+         retry that THREW — which is what a dropped connection does — lost the
+         write for good, and poll's own catch below swallowed the error. */
+      try {
+        if (await commit(fn)){ if (pending === fn) pending = null; setErr(''); }
+      } catch { /* still queued; the next poll will try again */ }
+    }
     const s = await loadState();
     if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
       const changed = JSON.stringify(s) !== JSON.stringify(G);
