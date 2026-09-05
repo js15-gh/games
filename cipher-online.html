@@ -224,7 +224,18 @@ const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','
 const jss = (s) => String(s).replace(/\\/g, '\\\\').replace(/'/g, '\\u0027')
   .replace(/"/g, '\\u0022').replace(/&/g, '\\u0026').replace(/[\r\n]+/g, ' ');
 function setErr(m){ $('err').textContent = m || ''; }
-const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+/* A room opened from the lobby arrives as {phase:'setup', players:[...]} —
+   the one shape the lobby can know. This game keeps its roster in teams, so
+   take the seeded names into them. Only in setup, and only when the teams are
+   genuinely empty, so a game already under way is never touched. */
+function adoptSeeded(g){
+  if (g.phase !== 'setup') return g;
+  if (!Array.isArray(g.players) || !g.players.length) return g;
+  if ((g.teams.A || []).length || (g.teams.B || []).length) return g;
+  g.players.forEach((p, i) => g.teams[i % 2 === 0 ? 'A' : 'B'].push(p));
+  return g;
+}
+const hydrate = (s) => adoptSeeded(Object.assign(structuredClone(FRESH), s || {}));
 const configured = () => SUPABASE_URL.startsWith('https://') && !SUPABASE_KEY.includes('PASTE');
 const HDRS = () => ({ 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' });
 

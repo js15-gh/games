@@ -208,7 +208,22 @@ let tick = null;
 
 // A room row may have been created by the group page, which writes only the
 // group marker, so fill any missing fields from FRESH before using it.
-const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+/* A room opened from the lobby arrives as {phase:'setup', players:[...]} —
+   the one shape the lobby can know. This game keeps its roster in teams, so
+   deal the seeded names round the teams it is set up for. Only in setup, and
+   only when the teams are genuinely empty. */
+function adoptSeeded(g){
+  if (g.phase !== 'setup') return g;
+  if (!Array.isArray(g.players) || !g.players.length) return g;
+  const order = (g.order && g.order.length) ? g.order : TEAM_NAMES.slice(0, 2);
+  if (order.some(t => ((g.teams || {})[t] || []).length)) return g;
+  const teams = {}, scores = {};
+  order.forEach(t => { teams[t] = []; scores[t] = (g.scores || {})[t] || 0; });
+  g.players.forEach((p, i) => teams[order[i % order.length]].push(p));
+  g.order = order; g.teams = teams; g.scores = scores;
+  return g;
+}
+const hydrate = (s) => adoptSeeded(Object.assign(structuredClone(FRESH), s || {}));
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

@@ -191,7 +191,18 @@ let stamp = 0;          // monotonic counter for last-write-wins
 
 // A room row may have been created by the group page, which writes only the
 // group marker, so fill any missing fields from FRESH before using it.
-const hydrate = (s) => Object.assign(structuredClone(FRESH), s || {});
+/* A room opened from the lobby arrives as {phase:'setup', players:[...]} —
+   the one shape the lobby can know. This game seats people in `roster`, which
+   the lobby does not write, so it used to open with an empty table and a
+   disabled Start. Only in setup, and only when the roster is genuinely empty. */
+function adoptSeeded(g){
+  if (g.phase !== 'setup') return g;
+  if (!Array.isArray(g.players) || !g.players.length) return g;
+  if ((g.roster || []).length) return g;
+  g.roster = g.players.slice();
+  return g;
+}
+const hydrate = (s) => adoptSeeded(Object.assign(structuredClone(FRESH), s || {}));
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
