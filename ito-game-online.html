@@ -164,10 +164,14 @@
     <ol>
       <li>Everyone is dealt a secret number from 1 to 100. You can see only your own.</li>
       <li>A theme appears — <i>how frightening</i>, <i>how expensive</i>, <i>how loud</i>. Describe your number as a thing on that scale, without saying any number.</li>
-      <li>Then play the cards in ascending order. Get the order wrong and the thread snaps.</li>
+      <li>Then play the cards in ascending order, lowest first. Getting it wrong does not end the
+          game — every card you skipped over is cut from the thread and <b>costs one life</b>. Lose
+          all three and it snaps.</li>
+      <li>Nobody has a turn. Anyone may play at any moment, which is the whole tension: the longer
+          you wait to be sure, the more likely somebody below you waits too.</li>
     </ol>
     <h3>An example</h3>
-    <div class="eg"><p style="margin:0">The theme is <b>how frightening</b>. You are holding 73, so you say “a wasp in the car”. Someone holding 12 says “a slightly cold bath”. Now the table has to decide who goes first — and if 73 is played before 12, you lose a life.</p></div>
+    <div class="eg"><p style="margin:0">The theme is <b>how frightening</b>. You are holding 73, so you say “a wasp in the car”. Someone holding 12 says “a slightly cold bath”. Now the table has to decide who goes first. If 73 goes down before 12, the 12 is cut from the thread and shown to everyone, and the table loses <b>one life</b> — two lives if it skipped two people. You play on with what is left, which is why a bad round early is survivable and a bad round late is not.</p></div>
     <p class="facts">2–10 players · about 15–30 minutes · suggested from age 9 · free, no sign-up, plays in any browser.</p>
   </section>
   <footer>LIVE GAME — EVERYONE ON THIS LINK PLAYS TOGETHER</footer>
@@ -447,21 +451,46 @@ function addPlayer(){
   if (G.players.length>=10){ setErr('Ito plays with at most 10.'); return; }
   if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
   setErr(''); el.value='';
-  mutate(g=>{ g.players.push(n); return g; });
+  /* All three again, against the state actually written. A name added after the
+     deal has no number: it can never play, can never be auto-cut, and the round
+     can therefore never end — with no restart on the playing screen, the only
+     way out is losing all three lives. */
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;
+    if (g.players.length >= 10) return g;
+    if (g.players.some(x=>x.toLowerCase()===n.toLowerCase())) return g;
+    g.players.push(n); return g;
+  });
 }
-function removePlayer(n){ mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; }); }
+function removePlayer(n){
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;   // taking a seat out mid-round breaks the order
+    g.players=g.players.filter(p=>p!==n); return g;
+  });
+}
 function startRound(){
   if (G.players.length<2){ setErr('You need 2–10 players.'); return; }
   setErr(''); peek=false;
   mutate(g=>{
+    // two grown-ups both tapping Deal used to re-draw every number after the
+    // children had already looked at theirs
+    if (g.phase !== 'setup') return g;
+    if (g.players.length < 2 || g.players.length > 10) return g;
     g.phase='playing'; g.hands=drawNumbers(g.players); g.played=[];
-    g.theme=pickTheme(g); g.usedThemes=[...g.usedThemes,g.theme].slice(-12);
+    g.theme=pickTheme(g); g.usedThemes=[...g.usedThemes,g.theme].slice(-40);
     return g;
   });
 }
 function rerollTheme(){
   if (G.played.length>0) return;
-  mutate(g=>{ g.theme=pickTheme(g); g.usedThemes=[...g.usedThemes,g.theme].slice(-12); return g; });
+  mutate(g=>{
+    // the theme must not change once anybody has committed a card to it
+    if (g.phase !== 'playing' || g.played.length > 0) return g;
+    const before = g.theme;
+    for (let i = 0; i < 8 && g.theme === before; i++) g.theme = pickTheme(g);
+    g.usedThemes=[...g.usedThemes,g.theme].slice(-40);
+    return g;
+  });
 }
 function pickMe(n){ me=n; peek=false; render(); }
 function togglePeek(){ peek=!peek; render(); }
@@ -469,6 +498,9 @@ function playCard(){
   const who=me; if (!who) return;
   peek=false;
   mutate(g=>{
+    if (g.phase !== 'playing') return g;
+    if (!g.players.includes(who)) return g;
+    if (g.played.some(c => c.name === who)) return g;   // already down, in any form
     const myNum = g.hands[who];
     if (myNum==null) return g;
     const skipped = unplayed(g).filter(p=>p!==who && g.hands[p]<myNum)
@@ -487,9 +519,15 @@ function playCard(){
 function nextRound(){
   peek=false;
   mutate(g=>{
-    g.round++; g.cleared++;
+    // two taps used to advance twice and re-deal, silently changing a number
+    // somebody had already looked at
+    if (g.phase !== 'roundend') return g;
+    g.round++;
+    // only a round that went in order is a round cleared. This counted every
+    // round, so "the thread holds" appeared after one that had cost two lives.
+    if (!g.played.some(c => c.auto)) g.cleared++;
     g.phase='playing'; g.hands=drawNumbers(g.players); g.played=[];
-    g.theme=pickTheme(g); g.usedThemes=[...g.usedThemes,g.theme].slice(-12);
+    g.theme=pickTheme(g); g.usedThemes=[...g.usedThemes,g.theme].slice(-40);
     return g;
   });
 }
@@ -617,8 +655,18 @@ function render(){
     app.innerHTML = themePanel() +
       `<div class="panel"><div class="eyebrow">The thread — lowest first</div>${threadHTML()}</div>
        <div class="panel center">
-        <div class="eyebrow">Round ${G.round} cleared</div>
-        <p style="font-size:18px;margin:12px 0 0">The thread holds. ${G.lives} ${G.lives===1?'life':'lives'} remaining.</p>
+        ${(() => {
+          // a round in which cards were cut is not a round cleared, and saying
+          // so contradicted the crumb at the top of the same screen
+          const cut = G.played.filter(c => c.auto).length;
+          return cut
+            ? `<div class="eyebrow" style="color:var(--red)">Round ${G.round} — the thread was cut</div>
+               <p style="font-size:18px;margin:12px 0 0">${cut} card${cut===1?'':'s'} went down out of
+                 order. ${G.lives} ${G.lives===1?'life':'lives'} remaining.</p>`
+            : `<div class="eyebrow">Round ${G.round} cleared</div>
+               <p style="font-size:18px;margin:12px 0 0">The thread holds. ${G.lives} ${
+                 G.lives===1?'life':'lives'} remaining.</p>`;
+        })()}
         <div class="stack">
           <button class="btn-red" onclick="nextRound()">Round ${G.round+1} · new numbers</button>
           <button class="btn-ghost" onclick="restart(true)">Restart with full lives</button>
