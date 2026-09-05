@@ -173,8 +173,12 @@ const SUPABASE_URL = "https://wwfoeclbsizxqfasvgsf.supabase.co";
 const SUPABASE_KEY = "sb_publishable_cFOQk3yLvX_OuB5baJA8Sg_ZqiY0sSl";
 const GAME_ID = "insync";
 
-// Level N deals N cards to each player. Lives start at the table size, which
-// keeps a big group from being punished for having more cards in play.
+/* Level N deals N cards to each player. Lives are a SETTING, three by default,
+   chosen on the setup screen — not derived from the table size. (An older
+   comment here claimed they scaled with the number of players. They never have.
+   Scaling them would be defensible — a bigger table has more cards in play and
+   so more chances to slip — but that is a change to how hard the game is, not a
+   comment fix, so it is left alone.) */
 const FRESH = { phase:'setup', players:[], level:1, maxLevel:8, lives:3, startLives:3,
                 hands:{}, played:[], missed:[], cleared:0, _sessionEnd:null };
 
@@ -283,19 +287,33 @@ function addPlayer(){
   if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
   if (G.players.length>=8){ setErr('Eight minds is plenty.'); return; }
   setErr(''); el.value='';
-  mutate(g=>{ g.players.push(n); return g; });
+  /* Both again, against the state actually written. Hands are keyed by name, so
+     two phones adding the same name gave those players ONE shared hand. */
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;
+    if (g.players.some(x=>x.toLowerCase()===n.toLowerCase())) return g;
+    if (g.players.length >= 8) return g;
+    g.players.push(n); return g;
+  });
 }
 function removePlayer(n){
   mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; });
   if (me===n) me=null;
 }
 function setMaxLevel(n){ mutate(g=>{ g.maxLevel=n; return g; }); }
-function setLives(n){ mutate(g=>{ g.lives=n; g.startLives=n; return g; }); }
+function setLives(n){
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;   // never change the lives mid-game
+    g.lives=n; g.startLives=n; return g;
+  });
+}
 
 function startGame(){
   if (G.players.length < 2){ setErr('In Sync needs at least 2 players.'); return; }
   setErr('');
   mutate(g=>{
+    if (g.phase !== 'setup') return g;        // never re-deal a running game
+    if (g.players.length < 2 || g.players.length > 8) return g;
     g.level=1; g.cleared=0; g.lives=g.startLives; g._sessionEnd=null;
     deal(g); g.phase='playing';
     return g;
@@ -305,16 +323,24 @@ function startGame(){
 // still in someone's hand is a mistake that costs a life.
 function playLowest(){
   if (!me) return;
+  // Pin the card OUT HERE. Deciding it inside the callback made the play
+  // non-idempotent: commit() re-runs the callback on a refused save, and the
+  // retry re-read hand[0] — a different card if the first had gone down in the
+  // meantime. The button said "Play 34" and 61 went instead.
+  const card = (G.hands[me] || [])[0];
+  if (card == null) return;
   mutate(g=>{
+    if (g.phase !== 'playing') return g;      // a retry must not land in setup
+    if (!g.players.includes(me)) return g;
     const hand = g.hands[me] || [];
     if (!hand.length) return g;
-    const card = hand[0];
+    if (hand[0] !== card) return g;           // somebody else's play moved my hand on
     const skipped = [];
     for (const p of g.players){
       if (p === me) continue;
       for (const c of (g.hands[p]||[])) if (c < card) skipped.push({ player:p, card:c });
     }
-    g.hands[me] = hand.slice(1);
+    g.hands[me] = hand.filter(c => c !== card);
     for (const s of skipped) g.hands[s.player] = (g.hands[s.player]||[]).filter(c=>c!==s.card);
     g.played = g.played.concat(
       skipped.sort((a,b)=>a.card-b.card).map(s=>({ player:s.player, card:s.card, bad:true })),
@@ -328,7 +354,8 @@ function playLowest(){
       if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
     } else if (stillOut(g) === 0){
       g.cleared += 1;
-      if (g.level >= g.maxLevel){
+      // on levels genuinely cleared, not on the counter that merely counts up
+      if (g.cleared >= g.maxLevel){
         g.phase = 'won';
         if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
       } else g.phase = 'levelend';
@@ -337,7 +364,12 @@ function playLowest(){
   });
 }
 function nextLevel(){
-  mutate(g=>{ g.level += 1; deal(g); g.phase='playing'; return g; });
+  mutate(g=>{
+    // two taps used to skip a level outright and re-deal one already running
+    if (g.phase !== 'levelend') return g;
+    if (g.level >= g.maxLevel) return g;
+    g.level += 1; deal(g); g.phase='playing'; return g;
+  });
 }
 function playAgain(keep){
   me = keep ? me : null;
@@ -348,7 +380,12 @@ function playAgain(keep){
     return n;
   });
 }
-function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+function backToSetup(){
+  // a phone that never took a seat should not be able to end everybody's game
+  if (!me && G.phase !== 'setup'){ setErr('Tap your name first.'); return; }
+  setErr('');
+  mutate(g=>{ g.phase='setup'; return g; });
+}
 
 // ── render ──
 function livesHTML(){
