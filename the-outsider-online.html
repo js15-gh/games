@@ -264,7 +264,15 @@ async function poll(){
     const s = await loadState();
     if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
       const changed = JSON.stringify(s) !== JSON.stringify(G);
+      const was = G && G.phase;
       G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
+      /* `peeked` is this phone's own "I have looked at my card". It is cleared
+         by the handlers that run on the phone that TAPPED — so when somebody
+         else taps "Next round", every other phone kept peeked===true and drew
+         the new round's card unbidden, with no shoulder-check, while the
+         phones were face-up on the table. Clear it whenever the phase moves
+         under us, the same way werewolf-mafia-traitors.html does. */
+      if (G.phase !== was) peeked = false;
       if (changed) render();
     } else if (!G){ G = structuredClone(FRESH); render(); }
   } catch { if (!G){ G = structuredClone(FRESH); render(); } }
@@ -444,7 +452,7 @@ function voteSeat(i){ castVote(G.players[i]); }
 function whoAmIHTML(){
   if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
       You are <b style="color:var(--ink)">${esc(me)}</b> ·
-      <a href="#" onclick="me=null;peeked=false;render();return false" style="color:var(--amber)">not you?</a></p></div>`;
+      <a href="#" onclick="me=null;vpForgetSeat(GAME_ID,ROOM);peeked=false;render();return false" style="color:var(--amber)">not you?</a></p></div>`;
   return `<div class="panel"><div class="eyebrow">Which one are you?</div>
       <p class="faint" style="font-size:14px;margin-top:6px">Your card shows only on your own phone.</p>
       <div class="grid">${G.players.map((p,i)=>

@@ -109,6 +109,68 @@ const withNames = GAMES.filter(f => /\('\$\{\s*jss\s*\(/.test(html(f)));
 ok(withNames.every(f => html(f).includes('const jss =')),
    withNames.length + ' games pass a name into a handler, and every one defines jss()');
 
+// ── 2b. backing out of a seat has to stick ──────────────────
+head('"Not you?" must not put the phone straight back in that seat');
+/* poll() re-seats from the remembered seat whenever `me` is falsy, so a handler
+   that only clears `me` is undone within one poll — about a second. Tap the
+   wrong name, see that player's private screen, tap "not you?", and a second
+   later you are back in their seat reading their secret. The seat has to be
+   forgotten, not just dropped. */
+let seatNotForgotten = [];
+for (const f of GAMES){
+  const src = html(f);
+  if (!/vpRecallSeat/.test(src)) continue;        // this game does not remember seats
+  const re = /onclick="(me\s*=\s*null;[^"]*)"/g;
+  let m;
+  while ((m = re.exec(src)) !== null){
+    if (!/vpForgetSeat/.test(m[1])) seatNotForgotten.push(f + ' -> ' + m[1].slice(0, 46));
+  }
+}
+ok(seatNotForgotten.length === 0,
+   'every "not you?" handler forgets the remembered seat' +
+   (seatNotForgotten.length ? ' — DOES NOT: ' + seatNotForgotten.slice(0,4).join(' | ') : ''));
+
+let leaveKeepsSeat = [];
+for (const f of GAMES){
+  const src = html(f);
+  if (!/vpRecallSeat/.test(src)) continue;
+  const body = bodyOf(src, 'leaveRoom');
+  if (body && !/vpForgetSeat/.test(body)) leaveKeepsSeat.push(f);
+}
+ok(leaveKeepsSeat.length === 0,
+   'and so does leaving the room' +
+   (leaveKeepsSeat.length ? ' — DOES NOT: ' + leaveKeepsSeat.join(', ') : ''));
+
+// ── 2c. a private card must not draw itself ─────────────────
+head('A device-local reveal flag must be cleared when the phase moves remotely');
+/* `peeked` means "I have looked at my own card" and lives on one phone. It is
+   cleared by handlers that run on the phone that TAPPED — so when somebody else
+   taps "Next round", every OTHER phone still had it set and drew the new
+   round's secret unbidden, with no shoulder-check, while the phones were lying
+   face-up on the table. */
+let flagNotCleared = [];
+for (const f of GAMES){
+  const src = html(f);
+  const flag = /\blet peeked\b/.test(src) ? 'peeked' : (/\blet peek\b/.test(src) ? 'peek' : null);
+  if (!flag) continue;
+  /* Check the PROPERTY, not one spelling of it. Inside poll(), the game must
+     capture something about the state it is replacing and set the flag false
+     when it differs. What it keys on is its own business: werewolf and the
+     outsider use the phase, ito uses phase plus theme, fibbers uses the card in
+     flight — all four correct for their game. My first version of this check
+     matched three literal expressions and called the fourth a bug. */
+  const poll = bodyOf(src, 'poll');
+  // squash the whitespace so this needs no escaping and no guess about spacing
+  const tight = poll ? poll.replace(/\s+/g, '') : '';
+  const clears = !!poll
+    && /\bconst was/.test(poll)
+    && tight.includes(flag + '=false');
+  if (!clears) flagNotCleared.push(f + ' (' + flag + ')');
+}
+ok(flagNotCleared.length === 0,
+   'every game with a peek flag clears it on a remote change' +
+   (flagNotCleared.length ? ' — DOES NOT: ' + flagNotCleared.join(', ') : ''));
+
 // ── 3. the rules are reachable ───────────────────────────────
 head('Rules must be reachable during a round, not just present on the page');
 /* Every page carried a full how-to and not one had a link to it. It sits below

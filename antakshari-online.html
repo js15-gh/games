@@ -563,6 +563,7 @@ function enterRoom(){
   if (!pollTimer) pollTimer = setInterval(poll, 2500);
 }
 function leaveRoom(){
+  if (ROOM) vpForgetSeat(GAME_ID, ROOM);   // or rejoining drops you back into the same seat
   if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
   if (tick){ clearInterval(tick); tick = null; }
   joined = false; ROOM = ''; G = null; me = null; pending = null;

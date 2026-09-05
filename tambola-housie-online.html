@@ -620,7 +620,7 @@ function render(){
         ? `<div class="panel">
              <div class="rb-top">
                <span class="eyebrow">${esc(me)}'s ticket</span>
-               <button class="btn-ghost" onclick="me=null;render()">Not you?</button>
+               <button class="btn-ghost" onclick="me=null;vpForgetSeat(GAME_ID,ROOM);render()">Not you?</button>
              </div>
              ${ticketHTML(me)}
              <button class="btn-ghost full" onclick="markAllCalled()">Mark all called</button>

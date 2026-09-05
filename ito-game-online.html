@@ -395,7 +395,14 @@ async function poll(){
     const s = await loadState();
     if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
       const changed = JSON.stringify(s) !== JSON.stringify(G);
+      const was = G && (G.phase + ':' + (G.theme || ''));
       G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
+      /* `peek` is this phone's own "I am looking at my number", and it is only
+         ever cleared by a tap on THIS phone. So when somebody else started the
+         next round, every other phone kept peek===true and drew its brand-new
+         secret number at 56px, untouched, while the phone may be lying face-up
+         on the table. Clear it whenever the round moves under us. */
+      if (was !== G.phase + ':' + (G.theme || '')) peek = false;
       if (changed) render();
     } else if (!G){ G = structuredClone(FRESH); render(); }
   } catch {
@@ -589,7 +596,7 @@ function render(){
         }).join('')}</div>`;
     } else if (iPlayed){
       inner = `<p class="faint">Your card is on the thread, ${esc(me)}. Cheer the others on.</p>
-        <button class="btn-ghost" onclick="me=null;render()">Switch player</button>`;
+        <button class="btn-ghost" onclick="me=null;vpForgetSeat(GAME_ID,ROOM);render()">Switch player</button>`;
     } else {
       inner = `<div class="eyebrow">${esc(me)}'s secret number</div>
         <div class="secret" onclick="togglePeek()" role="button">
@@ -598,7 +605,7 @@ function render(){
         </div>
         <p class="faint" style="font-size:14px;line-height:1.5">Describe it through the theme — never say the number. Play it when you think yours is the lowest still in hand.</p>
         <button class="btn-red full" onclick="playCard()">Play my card</button>
-        <button class="btn-ghost full" onclick="me=null;peek=false;render()">Not ${esc(me)}? Switch player</button>`;
+        <button class="btn-ghost full" onclick="me=null;vpForgetSeat(GAME_ID,ROOM);peek=false;render()">Not ${esc(me)}? Switch player</button>`;
     }
     app.innerHTML = themePanel() +
       `<div class="panel"><div class="eyebrow">The thread — lowest first</div>${threadHTML()}</div>
@@ -674,6 +681,7 @@ function enterRoom(){
 }
 
 function leaveRoom(){
+  if (ROOM) vpForgetSeat(GAME_ID, ROOM);   // or rejoining drops you back into the same seat
   if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
   joined = false; ROOM = ''; G = null; me = null; pending = null; peek = false;
   history.replaceState(null, '', location.pathname);

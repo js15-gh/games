@@ -424,7 +424,7 @@ function pairHTML(p, cls, onclick){
 function whoAmIHTML(){
   if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
       You are <b style="color:var(--ink)">${esc(me)}</b> ·
-      <a href="#" onclick="me=null;draft={};render();return false" style="color:var(--leaf)">not you?</a></p></div>`;
+      <a href="#" onclick="me=null;vpForgetSeat(GAME_ID,ROOM);draft={};render();return false" style="color:var(--leaf)">not you?</a></p></div>`;
   return `<div class="panel"><div class="eyebrow">Which one are you?</div>
       <p class="faint" style="font-size:14px;margin-top:6px">The pairs behind the clues show only on
          the writer's phone.</p>

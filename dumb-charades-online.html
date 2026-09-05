@@ -652,7 +652,7 @@ function render(){
 function whoAmIHTML(){
   if (me) return `<div class="panel center">
       <p class="faint" style="font-size:14px;margin:0">You are <b style="color:var(--ink)">${esc(me)}</b>
-      (Team ${teamOf(G,me)||'?'}) · <a href="#" onclick="me=null;render();return false" style="color:var(--gold)">not you?</a></p>
+      (Team ${teamOf(G,me)||'?'}) · <a href="#" onclick="me=null;vpForgetSeat(GAME_ID,ROOM);render();return false" style="color:var(--gold)">not you?</a></p>
     </div>`;
   return `<div class="panel">
       <div class="eyebrow">Who are you?</div>
@@ -700,6 +700,7 @@ function enterRoom(){
 }
 
 function leaveRoom(){
+  if (ROOM) vpForgetSeat(GAME_ID, ROOM);   // or rejoining drops you back into the same seat
   if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
   if (tick){ clearInterval(tick); tick = null; }
   joined = false; ROOM = ''; G = null; me = null; pending = null;

@@ -388,7 +388,7 @@ function render(){
         <p class="faint" style="font-size:14px;margin-top:6px">${G.votes[me]?'You may change it until the reveal.':'Choose who you suspect.'}</p>
         <div class="grid">${G.players.filter(p=>p!==me).map(p=>
           `<button class="seat ${G.votes[me]===p?'chosen':''}" onclick="castVote('${jss(p)}')">${esc(p)}</button>`).join('')}</div>
-        <button class="btn-ghost" style="margin-top:14px" onclick="me=null;render()">Not ${esc(me)}? Switch player</button>`;
+        <button class="btn-ghost" style="margin-top:14px" onclick="me=null;vpForgetSeat(GAME_ID,ROOM);render()">Not ${esc(me)}? Switch player</button>`;
     }
     app.innerHTML = `<div class="panel">${inner}</div>`
       + voteStatusHTML()
@@ -524,6 +524,7 @@ function enterRoom(){
 }
 
 function leaveRoom(){
+  if (ROOM) vpForgetSeat(GAME_ID, ROOM);   // or rejoining drops you back into the same seat
   if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
   joined = false; ROOM = ''; G = null; me = null; pending = null; 
   history.replaceState(null, '', location.pathname);

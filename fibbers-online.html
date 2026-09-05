@@ -421,7 +421,7 @@ function myHandHTML(){
 function whoAmIHTML(){
   if (me) return `<div class="panel center"><p class="faint" style="font-size:14px;margin:0">
       You are <b style="color:var(--ink)">${esc(me)}</b> ·
-      <a href="#" onclick="me=null;peeked=false;render();return false" style="color:var(--brass)">not you?</a></p></div>`;
+      <a href="#" onclick="me=null;vpForgetSeat(GAME_ID,ROOM);peeked=false;render();return false" style="color:var(--brass)">not you?</a></p></div>`;
   return `<div class="panel"><div class="eyebrow">Which one are you?</div>
       <p class="faint" style="font-size:14px;margin-top:6px">Your hand shows only on your own phone.</p>
       <div class="grid">${G.players.map(p=>
