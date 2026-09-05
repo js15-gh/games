@@ -345,6 +345,12 @@ function startGame(){
   if (G.players.length < 3){ setErr('One Word needs at least 3 — a guesser and two clue-givers.'); return; }
   setErr('');
   mutate(g=>{
+    /* Again, against the state we actually deal from. The Start button is on
+       every phone, and commit() re-runs this callback on a refused save — so
+       without this a second tap re-deals a game already in progress and
+       everybody's hand changes underneath them. */
+    if (g.phase !== 'setup') return g;
+    if (g.players.length < 3) return g;
     g.round = 1; g.won = 0; g.log = []; g.used = []; g._sessionEnd = null;
     return dealRound(g);
   });

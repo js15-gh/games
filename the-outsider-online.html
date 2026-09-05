@@ -314,6 +314,12 @@ function startGame(){
   if (G.players.length < 3){ setErr('The Outsider needs at least 3 players.'); return; }
   setErr(''); peeked = false;
   mutate(g=>{
+    /* Again, against the state we actually deal from. The Start button is on
+       every phone, and commit() re-runs this callback on a refused save — so
+       without this a second tap re-deals a game already in progress and
+       everybody's hand changes underneath them. */
+    if (g.phase !== 'setup') return g;
+    if (g.players.length < 3) return g;
     g.round = 1; g.scores = {}; g.log = []; g.outsider = null; g._sessionEnd = null;
     for (const p of g.players) g.scores[p] = 0;
     return dealRound(g);

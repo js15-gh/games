@@ -353,6 +353,12 @@ function startGame(){
   if (G.players.length < 2){ setErr('You need at least 2 singers.'); return; }
   setErr('');
   mutate(g=>{
+    /* Again, against the state we actually deal from. The Start button is on
+       every phone, and commit() re-runs this callback on a refused save — so
+       without this a second tap re-deals a game already in progress and
+       everybody's hand changes underneath them. */
+    if (g.phase !== 'setup') return g;
+    if (g.players.length < 2) return g;
     g.phase='playing'; g.turn=0; g.songs=[]; g.awaiting=null;
     g.order.forEach(t=>g.scores[t]=0);
     g.letter = randLetter(g);

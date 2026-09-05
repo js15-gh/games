@@ -434,7 +434,13 @@ function setPartners(n){ mutate(g=>{ g.partnersWanted=n; return g; }); }
 function startGame(){
   if (G.players.length < 4){ setErr('Kaali Tiri wants at least 4 players.'); return; }
   setErr('');
-  mutate(g=>{ g.hand=0; g.dealer=0; g.players.forEach(p=>g.scores[p]=0); dealHand(g); return g; });
+  mutate(g=>{
+    /* Again, against the state we actually deal from. The Start button is on
+       every phone, and commit() re-runs this callback on a refused save — so
+       without this a second tap re-deals a game already in progress and
+       everybody's hand changes underneath them. */
+    if (g.phase !== 'setup') return g;
+    if (g.players.length < 4) return g; g.hand=0; g.dealer=0; g.players.forEach(p=>g.scores[p]=0); dealHand(g); return g; });
 }
 function dealHand(g){
   const { deck, removed } = trimDeck(newDeck(g.decks), g.players.length);

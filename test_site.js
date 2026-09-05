@@ -171,6 +171,32 @@ ok(flagNotCleared.length === 0,
    'every game with a peek flag clears it on a remote change' +
    (flagNotCleared.length ? ' — DOES NOT: ' + flagNotCleared.join(', ') : ''));
 
+// ── 2d. the start button must not re-deal a running game ──
+head('Starting a game must be refused against a game already running');
+/* Every start handler checked the player count OUTSIDE its commit and dealt
+   inside it, with nothing testing the phase. The button is drawn on every
+   phone, and commit() re-runs the callback on a refused save — so a second tap,
+   or one phone whose screen had not caught up, re-dealt a game in progress and
+   everybody's hand, role or secret word changed underneath them. Thirteen games
+   had it. */
+const STARTERS = ['startGame', 'startRound', 'dealTickets'];
+let unguardedStart = [], startsChecked = 0;
+for (const f of GAMES){
+  const src = html(f);
+  for (const name of STARTERS){
+    const body = bodyOf(src, name);
+    if (!body || !body.includes('mutate(')) continue;
+    startsChecked++;
+    const inner = body.slice(body.indexOf('mutate('));
+    if (!/g\.phase\s*!==\s*'setup'/.test(inner)) unguardedStart.push(f + ':' + name);
+    break;
+  }
+}
+ok(startsChecked >= 19, startsChecked + ' start handlers examined');
+ok(unguardedStart.length === 0,
+   'every one refuses when the fresh state is no longer in setup' +
+   (unguardedStart.length ? ' — UNGUARDED: ' + unguardedStart.join(', ') : ''));
+
 // ── 3. the rules are reachable ───────────────────────────────
 head('Rules must be reachable during a round, not just present on the page');
 /* Every page carried a full how-to and not one had a link to it. It sits below

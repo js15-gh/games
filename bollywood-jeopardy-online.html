@@ -375,6 +375,12 @@ function startGame(){
   if (clues.length < 25){ setErr('Not enough questions for that decade. Try Mixed.'); return; }
   setErr('');
   mutate(g=>{
+    /* Again, against the state we actually deal from. The Start button is on
+       every phone, and commit() re-runs this callback on a refused save — so
+       without this a second tap re-deals a game already in progress and
+       everybody's hand changes underneath them. */
+    if (g.phase !== 'setup') return g;
+    if (g.players.length < 2) return g;
     g.clues = clues; g.phase='playing'; g.turn=0; g.current=null; g.revealed=false; g.log=[];
     g.order.forEach(t => g.scores[t] = 0);
     return g;

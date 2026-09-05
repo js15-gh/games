@@ -300,6 +300,12 @@ function startGame(){
   if (G.players.length < 3){ setErr('Fibbers needs at least 3 — you have to have somewhere to pass it.'); return; }
   setErr('');
   mutate(g=>{
+    /* Again, against the state we actually deal from. The Start button is on
+       every phone, and commit() re-runs this callback on a refused save — so
+       without this a second tap re-deals a game already in progress and
+       everybody's hand changes underneath them. */
+    if (g.phase !== 'setup') return g;
+    if (g.players.length < 3) return g;
     const deck = [];
     for (const K of KINDS) for (let i=0;i<COPIES;i++) deck.push(K.k);
     for (let i=deck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [deck[i],deck[j]]=[deck[j],deck[i]]; }

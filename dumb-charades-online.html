@@ -401,6 +401,12 @@ function startGame(){
   if (G.players.length < 4){ setErr('Dumb charades wants at least 4 players.'); return; }
   setErr('');
   mutate(g=>{
+    /* Again, against the state we actually deal from. The Start button is on
+       every phone, and commit() re-runs this callback on a refused save — so
+       without this a second tap re-deals a game already in progress and
+       everybody's hand changes underneath them. */
+    if (g.phase !== 'setup') return g;
+    if (g.teams.A.length < 1 || g.teams.B.length < 1) return g;
     g.phase='ready'; g.turn='A'; g.round=1;
     g.scores={A:0,B:0}; g.used=[]; g.actorIdx={A:0,B:0}; g.film=null; g.last=null;
     return g;

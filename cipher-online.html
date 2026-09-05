@@ -359,6 +359,12 @@ function startGame(){
   }
   setErr('');
   mutate(g=>{
+    /* Again, against the state we actually deal from. The Start button is on
+       every phone, and commit() re-runs this callback on a refused save — so
+       without this a second tap re-deals a game already in progress and
+       everybody's hand changes underneath them. */
+    if (g.phase !== 'setup') return g;
+    if (g.teams.A.length < 2 || g.teams.B.length < 2) return g;
     g.round = 1; g.turn = 'A'; g.history = []; g.winner = null; g.seen = {};
     g.tokens = { A:{mis:0,inter:0}, B:{mis:0,inter:0} };
     g._sessionEnd = null;
