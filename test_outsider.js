@@ -79,10 +79,27 @@ ok(repeats === 0, 'nobody is the Outsider twice running (got ' + repeats + ')');
 ok(seenCats.size === CATS.length, 'every category comes up over 3000 deals');
 ok(seenWords.size > 100, 'the secret varies widely (' + seenWords.size + ' distinct)');
 
-// a two-player table has no alternative, so the rule must yield rather than hang
+/* THE ANTI-REPEAT RULE MUST NOT APPLY AT THREE PLAYERS. Excluding whoever was
+   Outsider last round leaves two candidates; a knower rules themselves out and
+   knows the third with certainty, every round after the first. At four and up
+   there is room for the rule; at three it hands the game away. Repeating is a
+   mild annoyance — deducing the Outsider for free is the whole game. */
+let recurred = 0;
+let gThree = { players:["Asha","Bilal","Chetan"], cats:[], outsider:"Asha" };
+for (let i = 0; i < 3000; i++){
+  const before = gThree.outsider;
+  gThree = dealRound(gThree);
+  if (gThree.outsider === before) recurred++;
+}
+ok(recurred > 700,
+   'at three players the Outsider CAN recur, so nobody can deduce it (' +
+   recurred + '/3000, expected about a third)');
+
+// and the rule must never hang, however small the table
 let g2 = { players:['Asha','Bilal'], cats:[], outsider:'Asha' };
 g2 = dealRound(g2);
-ok(g2.outsider === 'Bilal', 'with two players the role simply alternates');
+ok(['Asha','Bilal'].includes(g2.outsider),
+   'a two-player table still gets a seated Outsider rather than hanging');
 
 // category filter is honoured
 let g3 = { players:P, cats:['cricket','music'], outsider:null };
@@ -183,6 +200,137 @@ ok(!/onclick="\w+\('\$\{esc\(/.test(src),
 ok(/function guessWord\(i\)/.test(src) && /function pickSeat\(i\)/.test(src)
    && /function voteSeat\(i\)/.test(src) && /function dropSeat\(i\)/.test(src),
    'handlers take indices instead');
+
+
+// ── 7. the handlers ──────────────────────────────────────────
+/* Everything above lifts pure functions. That is why this suite could have 88
+   assertions and still miss a clue box that handed the Outsider the secret
+   word: every guard in this game lives inside a commit callback, or in the few
+   lines just before one, and none of it was ever run here. */
+const H = (() => {
+  const mod2 = { exports:{} };
+  new Function('module', [
+    slice('const CATS = [', '];'),
+    slice('const FRESH = {', '_sessionEnd:null };'),
+    'let G = null, me = null, peeked = false, clueDraft = "", __name = "", __clue = "";',
+    'let __replay = false;',
+    'function mutate(fn){ G = fn(G); if (__replay) G = fn(G); return G; }',
+    'function setErr(){} function render(){} function vpForgetSeat(){}',
+    'const GAME_ID = "outsider", ROOM = "TEST";',
+    'function $(id){ return id === "clueInput" ? { value: __clue } : { value: __name }; }',
+    fn('pick'), fn('dealRound'), fn('tally'), fn('score'),
+    fn('submitClue'), fn('goToVote'), fn('anotherClueRound'), fn('nextRound'),
+    fn('addPlayer'), fn('removePlayer'), fn('backToSetup'),
+    'module.exports = { FRESH, dealRound, goToVote, anotherClueRound, nextRound,' +
+    ' removePlayer, backToSetup,' +
+    ' clue:(s)=>{ __clue = s; return submitClue(); },' +
+    ' addNamed:(n)=>{ __name = n; return addPlayer(); },' +
+    ' setG:(g)=>{G=g;}, getG:()=>G, setMe:(m)=>{me=m;}, replay:(b)=>{__replay=b;} };'
+  ].join('\n'))(mod2);
+  return mod2.exports;
+})();
+
+const clone = (o) => JSON.parse(JSON.stringify(o));
+function inClue(over){
+  const g = Object.assign(clone(H.FRESH), {
+    phase:'clue', players:P.slice(), outsider:'Bilal', secret:'Yorker', cat:'cricket',
+    clues:{}, votes:{}, ready:{}, clueRound:1, clueRounds:1, round:1, rounds:5,
+    scores:{Asha:0,Bilal:0,Chetan:0,Devi:0}, log:[]
+  }, over || {});
+  H.setG(g);
+  return g;
+}
+
+head('The clue box must not tell the Outsider the word');
+/* The check ran on every phone against its own copy of the secret, before any
+   write, and returned WITHOUT clearing the box — so the Outsider could type a
+   board word, read the red bar, and learn the word for free. Sixteen words, one
+   probe a round. */
+inClue();
+H.setMe('Bilal');                       // the Outsider
+H.clue('Yorker');                       // types the secret itself
+let cg = H.getG();
+ok((cg.clues.Bilal || []).length === 1,
+   'the Outsider typing the word sends it as their clue rather than being told');
+ok((cg.clues.Bilal || [])[0] === 'Yorker', 'and it is the word they typed');
+
+inClue();
+H.setMe('Asha');                        // somebody who knows
+H.clue('Yorker');
+ok((H.getG().clues.Asha || []).length === 0,
+   'but a knower is still stopped from just saying it');
+H.clue('bouncer');
+ok((H.getG().clues.Asha || [])[0] === 'bouncer', 'and can give a real clue after');
+
+head('A clue is one word, from a seated player, in the clue phase');
+inClue();
+H.setMe('Asha'); H.clue('two words');
+ok((H.getG().clues.Asha || []).length === 0, 'two words is refused');
+inClue({ phase:'vote' });
+H.setMe('Asha'); H.clue('bouncer');
+ok((H.getG().clues.Asha || []).length === 0, 'and a clue cannot land after the clue phase');
+
+head('The clue round closes when everyone has given one');
+inClue();
+for (const who of P){ H.setMe(who); H.clue('word' + who); }
+ok(H.getG().phase === 'clueshow', 'four clues in, the round moves on');
+
+head('A stale tap must not re-open a round that has been scored');
+/* goToVote, anotherClueRound and nextRound were bare phase assignments with no
+   test of the state they were handed. commit() replays a refused callback
+   against fresh state, so a stale tap on a finished round LANDED: the room went
+   back to a vote where every seat already showed a vote, and one tap of
+   "change" re-ran the tally and paid the whole round a second time. */
+inClue({ phase:'result', outcome:'caught', accused:'Bilal',
+         votes:{Asha:'Bilal',Bilal:'Chetan',Chetan:'Bilal',Devi:'Bilal'},
+         scores:{Asha:1,Bilal:0,Chetan:1,Devi:1} });
+H.goToVote();
+ok(H.getG().phase === 'result', 'a stale "go to the vote" cannot rewind a result');
+ok(H.getG().scores.Asha === 1, 'so nobody is paid twice');
+
+inClue({ phase:'result' });
+H.anotherClueRound();
+ok(H.getG().phase === 'result', 'nor can a stale "second clue round"');
+
+inClue({ phase:'clueshow', clueRound:1, clueRounds:1 });
+H.anotherClueRound();
+ok(H.getG().clueRound === 1, 'and the clue round never goes past the agreed number');
+inClue({ phase:'clueshow', clueRound:1, clueRounds:2 });
+H.anotherClueRound();
+ok(H.getG().clueRound === 2 && H.getG().phase === 'clue', 'but a legitimate one works');
+
+head('Two taps on "next round" advance once');
+inClue({ phase:'result', round:1, rounds:5 });
+H.nextRound();
+const after = clone(H.getG());
+H.nextRound(); H.nextRound();
+ok(H.getG().round === after.round, 'the round advances exactly once (' + after.round + ')');
+ok(H.getG().secret === after.secret, 'and nobody is dealt a new word underneath them');
+
+head('The table cannot change underneath a running round');
+inClue();
+H.addNamed('Latecomer');
+ok(!H.getG().players.includes('Latecomer'),
+   'a name added after the deal would have no card and stall the round forever');
+H.setMe('Asha');
+H.removePlayer('Bilal');
+ok(H.getG().players.includes('Bilal'),
+   'and removing the live Outsider mid-round would make it unwinnable');
+
+H.setG(Object.assign(clone(H.FRESH), { phase:'setup', players:[] }));
+H.addNamed('Sam'); H.addNamed('sam');
+ok(H.getG().players.length === 1, 'the same name cannot be seated twice');
+for (let i = 0; i < 16; i++) H.addNamed('P' + i);
+ok(H.getG().players.length === 12, 'and twelve is really the ceiling');
+
+head('"Change players" needs a seat');
+inClue();
+H.setMe(null);
+H.backToSetup();
+ok(H.getG().phase === 'clue', 'a phone with no seat cannot end everybody\'s game');
+H.setMe('Asha');
+H.backToSetup();
+ok(H.getG().phase === 'setup', 'but a player can');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

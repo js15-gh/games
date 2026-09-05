@@ -211,7 +211,11 @@ const FRESH = { phase:'setup', players:[], rounds:5, clueRounds:1, cats:[],
                 scores:{}, log:[], _sessionEnd:null };
 
 let G = null, me = null, stamp = 0, pending = null;
-let peeked = false;          // local only: has this phone revealed its own card?
+let peeked = false;
+/* What this phone has typed but not sent. render() rebuilds the input on every
+   poll that sees a change, and without this the half-typed clue — and the
+   keyboard — went with it, about once a second while everyone is typing. */
+let clueDraft = '';          // local only: has this phone revealed its own card?
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -279,6 +283,10 @@ async function poll(){
     if (s && (!G || (s._stamp||0) >= (G._stamp||0))){
       const changed = JSON.stringify(s) !== JSON.stringify(G);
       const was = G && G.phase;
+      // a seat that has left the table must stop rendering that player's card
+      if (me && s && Array.isArray(s.players) && s.players.length && !s.players.includes(me)){
+        me = null; vpForgetSeat(GAME_ID, ROOM);
+      }
       G = hydrate(s); stamp = Math.max(stamp, s._stamp||0);
       /* `peeked` is this phone's own "I have looked at my card". It is cleared
          by the handlers that run on the phone that TAPPED — so when somebody
@@ -300,9 +308,12 @@ function dealRound(g){
   const cat = pick(pool.length ? pool : CATS);
   g.cat = cat.key;
   g.secret = pick(cat.words);
-  // don't hand the same person the Outsider role twice running if there is
-  // anyone else available — it is the one pattern a table notices immediately
-  const others = g.players.filter(p => p !== g.outsider);
+  /* Don't hand the same person the Outsider twice running — it is the one
+     pattern a table notices immediately. But NOT at three players: excluding
+     last round's Outsider leaves two candidates, and a knower who rules
+     themselves out then knows the third with certainty, every round. Repeating
+     is a mild annoyance; deducing the Outsider for free is the whole game. */
+  const others = g.players.length > 3 ? g.players.filter(p => p !== g.outsider) : [];
   g.outsider = pick(others.length ? others : g.players);
   g.ready = {}; g.clues = {}; g.clueRound = 1; g.votes = {};
   g.accused = null; g.guess = null; g.outcome = null;
@@ -332,11 +343,22 @@ function addPlayer(){
   if (G.players.some(p=>p.toLowerCase()===n.toLowerCase())){ setErr('That name is taken.'); return; }
   if (G.players.length>=12){ setErr('Twelve is as many as one word can carry.'); return; }
   setErr(''); el.value='';
-  mutate(g=>{ g.players.push(n); return g; });
+  /* All three again, against the state actually written. A name added after the
+     deal has no card and gives no clue, so `players.every(...)` never completes
+     and the round can never end. */
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;
+    if (g.players.some(x=>x.toLowerCase()===n.toLowerCase())) return g;
+    if (g.players.length >= 12) return g;
+    g.players.push(n); return g;
+  });
 }
 function removePlayer(n){
-  mutate(g=>{ g.players=g.players.filter(p=>p!==n); return g; });
-  if (me===n) me=null;
+  mutate(g=>{
+    if (g.phase !== 'setup') return g;   // removing the Outsider mid-round ends it
+    g.players=g.players.filter(p=>p!==n); return g;
+  });
+  if (me===n){ me=null; vpForgetSeat(GAME_ID, ROOM); }
 }
 function setRounds(n){ mutate(g=>{ g.rounds=n; return g; }); }
 function setClueRounds(n){ mutate(g=>{ g.clueRounds=n; return g; }); }
@@ -363,11 +385,17 @@ function submitClue(){
   const el = $('clueInput'); const raw = el.value.trim();
   if (!raw) return;
   if (/\s/.test(raw)){ setErr('One word only — that is the whole difficulty.'); return; }
-  if (G.secret && raw.toLowerCase() === String(G.secret).toLowerCase()){
+  /* Only for somebody who KNOWS the word. Running it for the Outsider turned
+     the clue box into a yes/no oracle on the secret: the check happens on this
+     phone, before any write, and leaves the text in the box, so a wrong probe
+     costs nothing and a right one is announced in red. An Outsider who types
+     the word has guessed it; let it stand as their clue and let the table make
+     of that what it will. */
+  if (me !== G.outsider && G.secret && raw.toLowerCase() === String(G.secret).toLowerCase()){
     setErr('You cannot just say the word.'); return;
   }
   if (raw.length > 24){ setErr('One word, and a real one.'); return; }
-  setErr(''); el.value = '';
+  setErr(''); el.value = ''; clueDraft = '';
   mutate(g=>{
     if (g.phase !== 'clue') return g;   // the Outsider gives a clue too — they bluff
     g.clues[me] = (g.clues[me] || []).slice(0, g.clueRound - 1).concat([raw]);
@@ -376,9 +404,20 @@ function submitClue(){
   });
 }
 function anotherClueRound(){
-  mutate(g=>{ g.clueRound += 1; g.phase = 'clue'; return g; });
+  mutate(g=>{
+    if (g.phase !== 'clueshow') return g;
+    if (g.clueRound >= g.clueRounds) return g;   // never past the agreed number
+    g.clueRound += 1; g.phase = 'clue'; return g;
+  });
 }
-function goToVote(){ mutate(g=>{ g.phase = 'vote'; return g; }); }
+function goToVote(){
+  mutate(g=>{
+    // without this a stale tap re-opened a round that had already been scored,
+    // and re-voting paid every correct guess a second time
+    if (g.phase !== 'clueshow') return g;
+    g.phase = 'vote'; return g;
+  });
+}
 
 function castVote(name){
   if (!me) return;
@@ -432,6 +471,7 @@ function score(g){
 function nextRound(){
   peeked = false;
   mutate(g=>{
+    if (g.phase !== 'result') return g;   // two taps used to skip a whole round
     if (g.round >= g.rounds){
       g.phase = 'gameover';
       if (!g._sessionEnd) g._sessionEnd = new Date().toISOString();
@@ -450,7 +490,12 @@ function playAgain(keep){
     return n;
   });
 }
-function backToSetup(){ mutate(g=>{ g.phase='setup'; return g; }); }
+function backToSetup(){
+  // a phone that never took a seat should not be able to end everybody's game
+  if (!me && G.phase !== 'setup'){ setErr('Tap your name first.'); return; }
+  setErr('');
+  mutate(g=>{ g.phase='setup'; return g; });
+}
 
 // ── render ──
 function boardHTML(showSecret, pickable){
@@ -606,7 +651,8 @@ function render(){
         : `<div class="panel">
              <div class="eyebrow">Your one-word clue</div>
              <div style="display:flex;gap:8px;margin-top:12px">
-               <input id="clueInput" placeholder="One word" autocomplete="off" spellcheck="false">
+               <input id="clueInput" placeholder="One word" autocomplete="off" spellcheck="false"
+                 value="${esc(clueDraft)}" oninput="clueDraft=this.value">
                <button class="btn-amber" onclick="submitClue()">Send</button>
              </div>
              ${me === G.outsider
